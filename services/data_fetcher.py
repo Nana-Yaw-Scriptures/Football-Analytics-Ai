@@ -39,8 +39,16 @@ def _get(endpoint, params=None):
     resp.raise_for_status()
     return resp.json()
 
-
 def fetch_teams(league):
+    import json
+    cache_path = os.path.join(os.path.dirname(__file__), '..', 'cache', 'teams_cache.json')
+    try:
+        with open(cache_path, 'r', encoding='utf-8') as f:
+            cached = json.load(f)
+        if league in cached:
+            return cached[league]
+    except Exception:
+        pass
     code = LEAGUE_CODES.get(league, "PL")
     data = _get(f"competitions/{code}/teams")
     return [
@@ -77,9 +85,9 @@ def fetch_matches(league, status="FINISHED", limit=100, season=None):
 def fetch_standings(league, season=None):
     """
     Fetch standings with 1-hour in-memory TTL cache.
-    This is the single biggest speed win — standings are fetched on
-    every prediction without caching, causing ~3-5s latency per call.
+    Loads from static JSON cache first to avoid football-data.org timeouts.
     """
+    import json
     cache_key = f"{league}:{season or 'current'}"
     now       = time.time()
 
@@ -88,13 +96,24 @@ def fetch_standings(league, season=None):
         if now - fetched_at < STANDINGS_TTL:
             return cached_df
 
-    # Cache miss or expired — fetch fresh
+    # Try static file cache first
+    static_path = os.path.join(os.path.dirname(__file__), '..', 'cache', 'standings_cache.json')
+    try:
+        with open(static_path, 'r', encoding='utf-8') as f:
+            static = json.load(f)
+        if league in static:
+            df = pd.DataFrame(static[league])
+            _standings_cache[cache_key] = (now, df)
+            return df
+    except Exception:
+        pass
+
+    # Fallback to API
     code   = LEAGUE_CODES.get(league, "PL")
     params = {}
     if season:
         params["season"] = season
     data = _get(f"competitions/{code}/standings", params)
-
     rows = []
     for entry in data["standings"][0]["table"]:
         rows.append({
@@ -111,6 +130,9 @@ def fetch_standings(league, season=None):
             "points":        entry["points"],
             "form":          entry.get("form", ""),
         })
+    df = pd.DataFrame(rows)
+    _standings_cache[cache_key] = (now, df)
+    return df
 
     df = pd.DataFrame(rows)
     _standings_cache[cache_key] = (now, df)
