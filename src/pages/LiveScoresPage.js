@@ -223,7 +223,7 @@ function LiveScoresPage({ onNavigate }) {
     if (!toPredict.length) return;
     toPredict.forEach(async (f) => {
       try {
-        const r = await fetch(`${API_BASE}/predict`, {
+        const r = await fetch(`${API_BASE}/predict/match`, {
           method:'POST', headers:{'Content-Type':'application/json'},
           body: JSON.stringify({homeTeam:f.homeTeam, awayTeam:f.awayTeam, league:f.league||'Premier League'}),
         });

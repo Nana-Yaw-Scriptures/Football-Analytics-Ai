@@ -316,7 +316,7 @@ function LeagueDashboard({ league, onNavigate }) {
     if (predictions[key] || loadingPred[key]) return;
     setLoadingPred(p => ({ ...p, [key]: true }));
     try {
-      const r = await fetch(`${API_BASE}/predict`, {
+      const r = await fetch(`${API_BASE}/predict/match`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ homeTeam: fix.homeTeam, awayTeam: fix.awayTeam, league }),
       });
