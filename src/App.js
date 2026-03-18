@@ -1,0 +1,51 @@
+import AdminPanel from './pages/AdminPanel';
+import React, { useState } from 'react';
+import HomePage from './pages/HomePage';
+import AnalysisPage from './pages/AnalysisPage';
+import PlayersPage from './pages/PlayersPage';
+import ManagersPage from './pages/ManagersPage';
+import LeagueDashboard from './pages/LeagueDashboard';
+import AnalyticsPage from './pages/AnalyticsPage';
+import LiveScoresPage from './pages/LiveScoresPage';
+import MatchCenterPage from './pages/MatchCenterPage';
+import SeasonSimulatorPage from './pages/SeasonSimulatorPage';
+import PredictionHistoryPage from './pages/PredictionHistoryPage';
+
+
+function App() {
+  const [currentPage, setCurrentPage] = useState('home');
+  const [selectedLeague, setSelectedLeague] = useState(null);
+  const [navParams, setNavParams] = useState({});
+
+  const handleNavigation = (page, params = null) => {
+    setCurrentPage(page);
+    if (typeof params === 'string') {
+      setSelectedLeague(params);
+      setNavParams({});
+    } else if (params && typeof params === 'object') {
+      setNavParams(params);
+      if (params.league) setSelectedLeague(params.league);
+    } else {
+      setNavParams({});
+    }
+    window.scrollTo(0, 0);
+  };
+
+  return (
+    <>
+      {currentPage === 'home' && <HomePage onNavigate={handleNavigation} />}
+      {currentPage === 'analysis' && <AnalysisPage onNavigate={handleNavigation} navParams={navParams} />}
+      {currentPage === 'players' && <PlayersPage onNavigate={handleNavigation} />}
+      {currentPage === 'managers' && <ManagersPage onNavigate={handleNavigation} />}
+      {currentPage === 'league' && <LeagueDashboard league={selectedLeague} onNavigate={handleNavigation} />}
+      {currentPage === 'admin' && <AdminPanel onNavigate={handleNavigation} />}
+      {currentPage === 'analytics' && <AnalyticsPage onNavigate={handleNavigation} />}
+      {currentPage === 'live' && <LiveScoresPage onNavigate={handleNavigation} />}
+      {currentPage === 'match' && <MatchCenterPage fixtureId={navParams.fixtureId} onNavigate={handleNavigation} />}
+      {currentPage === 'simulator' && <SeasonSimulatorPage onNavigate={handleNavigation} />}
+      {currentPage === 'history' && <PredictionHistoryPage onNavigate={handleNavigation} />}
+    </>
+  );
+}
+
+export default App;
