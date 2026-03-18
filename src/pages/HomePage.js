@@ -187,7 +187,7 @@ export default function HomePage({ onNavigate }) {
   useEffect(() => {
     const load = async () => {
       try {
-        const r = await fetch(`${API_BASE}/live/scores`);
+        const r = await fetch(`${API_BASE}/live/now`);
         if (r.ok) {
           const d = await r.json();
           setLiveMatches(Array.isArray(d) ? d.slice(0,6) : []);

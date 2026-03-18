@@ -125,7 +125,7 @@ function MatchCenterPage({ fixtureId, onNavigate }) {
 
   /* ── Fetch predicted scorers + re-rank with real season stats ── */
   useEffect(() => {
-    if (!match?.homeTeam || !match?.awayTeam || predictors) return;
+    if (!match?.home_Team || !match?.away_Team || predictors) return;
     (async () => {
       try {
         const ht = encodeURIComponent(match.homeTeam.replace(/ FC$| AFC$/,''));
