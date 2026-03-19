@@ -1294,6 +1294,13 @@ async def analyze_with_gemini(request: dict):
 
     return {"content": [{"type": "text", "text": text}]}
 
+@app.get("/best-picks")
+def get_best_picks_endpoint(refresh: bool = False):
+    try:
+        from services.best_picks_service import get_best_picks
+        return get_best_picks(models, force_refresh=refresh)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn
