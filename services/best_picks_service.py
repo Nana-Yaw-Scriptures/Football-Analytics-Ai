@@ -3,15 +3,13 @@ best_picks_service.py
 Generates top 5 most confident predictions per league from upcoming fixtures.
 Results are cached for 6 hours to avoid repeated expensive ML calls.
 """
-import os
-import json
 import time
 import threading
 from datetime import datetime, timezone
 
-_cache = {}          # { 'picks': [...], 'generated_at': timestamp }
+_cache = {}
 _cache_lock = threading.Lock()
-CACHE_TTL = 21600    # 6 hours
+CACHE_TTL = 21600  # 6 hours
 
 LEAGUES = [
     'Premier League',
@@ -23,33 +21,28 @@ LEAGUES = [
 ]
 
 TEAM_NAME_MAP = {
-    # API-Football name  →  standings name (what find_team_any_league expects)
     'Bayern München':           'Bayern Munich',
-    'Borussia Mönchengladbach': 'Monchengladbach',
+    'Borussia Mönchengladbach': 'Borussia Monchengladbach',
     'FSV Mainz 05':             'Mainz',
     '1. FC Köln':               'Köln',
     '1. FC Heidenheim':         'Heidenheim',
     'Paris Saint Germain':      'Paris Saint-Germain',
     'Stade Brestois 29':        'Brest',
     'Inter':                    'Internazionale',
-    'Atletico Madrid':          'Atletico Madrid',
-    'Sporting CP':              'Sporting CP',
-    'AC Milan':                 'AC Milan',
-    'AS Roma':                  'Roma',
+    'Bayer Leverkusen':         'Bayer 04 Leverkusen',
+    'Monchengladbach':          'Borussia Mönchengladbach',
     'GIL Vicente':              'Gil Vicente',
-    'Guimaraes':                'Vitoria SC',
     'Benfica':                  'Sport Lisboa e Benfica',
     'Sporting CP':              'Sporting Clube de Portugal',
     'SC Braga':                 'Sporting Clube de Braga',
-    'FC Porto':                 'FC Porto',
 }
 
-def _clean_name(name: str) -> str:
-    """Map API-Football team name to a name the prediction engine can find."""
+
+def _clean_name(name):
     if name in TEAM_NAME_MAP:
         return TEAM_NAME_MAP[name]
     cleaned = name
-    for suffix in [' FC', ' AFC', ' CF', ' SC', ' AC', ' AS', ' SS']:
+    for suffix in [' FC', ' AFC', ' CF', ' SC', ' AC', ' AS']:
         if cleaned.endswith(suffix):
             cleaned = cleaned[:-len(suffix)].strip()
     for prefix in ['FC ', 'AFC ', 'AC ', 'AS ', 'RC ']:
@@ -58,11 +51,13 @@ def _clean_name(name: str) -> str:
     return cleaned
 
 
-def _generate_picks(models: dict) -> dict:
-    """
-    Fetch upcoming fixtures, run predictions, return top 5 per league.
-    This runs in a background thread on first request.
-    """
+def _get_val(result, key, default=None):
+    if isinstance(result, dict):
+        return result.get(key, default)
+    return getattr(result, key, default)
+
+
+def _generate_picks(models):
     from services.live_scores_service import get_upcoming_fixtures
     from services.match_service import get_match_prediction
     from pydantic import BaseModel
@@ -72,19 +67,16 @@ def _generate_picks(models: dict) -> dict:
         away_team: str
         league: str = 'Premier League'
 
-    # Fetch next 4 days of fixtures
     try:
         all_fixtures = get_upcoming_fixtures(league=None, days=4)
     except Exception as e:
         print(f'[BestPicks] Fixture fetch error: {e}')
         return {}
 
-    # Filter to known leagues only (exclude UCL)
     fixtures = [f for f in all_fixtures if f.get('league') in LEAGUES]
-
     picks_by_league = {lg: [] for lg in LEAGUES}
     total = len(fixtures)
-    print(f'[BestPicks] Running predictions for {total} fixtures…')
+    print(f'[BestPicks] Running predictions for {total} fixtures...')
 
     for i, fix in enumerate(fixtures):
         home_raw = fix.get('homeTeam', '')
@@ -97,9 +89,14 @@ def _generate_picks(models: dict) -> dict:
             req    = Req(home_team=home, away_team=away, league=league)
             result = get_match_prediction(req, models.get('match_predictor'))
 
-            home_win = result.home_win or 0
-            away_win = result.away_win or 0
-            draw     = result.draw or 0
+            home_win   = _get_val(result, 'home_win', 0) or 0
+            away_win   = _get_val(result, 'away_win', 0) or 0
+            draw       = _get_val(result, 'draw', 0) or 0
+            pred_score = _get_val(result, 'predicted_score', '—') or '—'
+            conf_level = _get_val(result, 'confidence_level', 'Medium') or 'Medium'
+            home_crest = _get_val(result, 'home_crest', '') or fix.get('homeLogo', '')
+            away_crest = _get_val(result, 'away_crest', '') or fix.get('awayLogo', '')
+
             top_prob = max(home_win, away_win)
             is_home  = home_win >= away_win
 
@@ -108,8 +105,8 @@ def _generate_picks(models: dict) -> dict:
                 'awayTeam':   away_raw,
                 'homeLogo':   fix.get('homeLogo', ''),
                 'awayLogo':   fix.get('awayLogo', ''),
-                'homeCrest':  result.home_crest or fix.get('homeLogo', ''),
-                'awayCrest':  result.away_crest or fix.get('awayLogo', ''),
+                'homeCrest':  home_crest,
+                'awayCrest':  away_crest,
                 'date':       fix.get('date', ''),
                 'league':     league,
                 'venue':      fix.get('venue', ''),
@@ -120,15 +117,15 @@ def _generate_picks(models: dict) -> dict:
                 'winner':     _clean_name(home_raw) if is_home else _clean_name(away_raw),
                 'winnerLogo': fix.get('homeLogo') if is_home else fix.get('awayLogo'),
                 'isHomeWin':  is_home,
-                'score':      result.predicted_score or '—',
-                'confidence': result.confidence_level or 'Medium',
+                'score':      pred_score,
+                'confidence': conf_level,
             })
-            print(f'[BestPicks] {i+1}/{total} ✓ {home} vs {away} → {round(top_prob*100)}%')
+            print(f'[BestPicks] {i+1}/{total} OK {home} vs {away} -> {round(top_prob*100)}%')
+
         except Exception as e:
-            print(f'[BestPicks] {i+1}/{total} ✗ {home} vs {away} → {e}')
+            print(f'[BestPicks] {i+1}/{total} FAIL {home} vs {away} -> {e}')
             continue
 
-    # Sort each league by topProb, take top 5
     result_dict = {}
     for lg in LEAGUES:
         sorted_picks = sorted(picks_by_league[lg], key=lambda p: p['topProb'], reverse=True)
@@ -137,17 +134,12 @@ def _generate_picks(models: dict) -> dict:
     return result_dict
 
 
-def get_best_picks(models: dict, force_refresh: bool = False) -> dict:
-    """
-    Returns cached picks or generates fresh ones.
-    On first call, returns empty dict and starts background generation.
-    """
+def get_best_picks(models, force_refresh=False):
     with _cache_lock:
-        now = time.time()
-        cached = _cache.get('picks')
+        now          = time.time()
+        cached       = _cache.get('picks')
         generated_at = _cache.get('generated_at', 0)
 
-        # Return cache if valid and not forcing refresh
         if cached and not force_refresh and (now - generated_at) < CACHE_TTL:
             return {
                 'picks':        cached,
@@ -155,7 +147,6 @@ def get_best_picks(models: dict, force_refresh: bool = False) -> dict:
                 'cached':       True,
             }
 
-        # Start background generation
         def _bg():
             try:
                 picks = _generate_picks(models)
@@ -169,7 +160,6 @@ def get_best_picks(models: dict, force_refresh: bool = False) -> dict:
         thread = threading.Thread(target=_bg, daemon=True)
         thread.start()
 
-        # If we have stale cache, return it while regenerating
         if cached:
             return {
                 'picks':        cached,
@@ -178,9 +168,8 @@ def get_best_picks(models: dict, force_refresh: bool = False) -> dict:
                 'regenerating': True,
             }
 
-        # No cache at all — wait for first generation (up to 120s)
         thread.join(timeout=120)
-        cached = _cache.get('picks', {})
+        cached       = _cache.get('picks', {})
         generated_at = _cache.get('generated_at', time.time())
         return {
             'picks':        cached,
