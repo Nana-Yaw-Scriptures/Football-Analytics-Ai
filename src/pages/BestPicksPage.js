@@ -35,11 +35,25 @@ const CONFIDENCE_LABEL = pct =>
               { label: 'Low',       color: '#ef4444', bg: 'rgba(239,68,68,0.1)',  border: 'rgba(239,68,68,0.25)'  };
 
 // ── Clean team name for prediction engine ────────────────────────────
-const cleanName = n => n
-  .replace(/^FC\s+/i, '').replace(/\s+FC$/i, '')
-  .replace(/^AFC\s+/i,'').replace(/\s+AFC$/i,'')
-  .replace(/\s+CF$/i, '').replace(/\s+SC$/i, '')
-  .trim();
+const cleanName = n => {
+  const aliases = {
+    'bayern münchen': 'Bayern Munich',
+    'paris saint germain': 'Paris Saint-Germain',
+    'borussia mönchengladbach': 'Borussia Monchengladbach',
+    'atletico madrid': 'Atletico Madrid',
+    'sporting cp': 'Sporting CP',
+    'fsv mainz 05': 'Mainz',
+    '1. fc köln': 'Köln',
+    '1. fc heidenheim': 'Heidenheim',
+    'stade brestois 29': 'Brest',
+  };
+  const cleaned = n
+    .replace(/^FC\s+/i, '').replace(/\s+FC$/i, '')
+    .replace(/^AFC\s+/i,'').replace(/\s+AFC$/i,'')
+    .replace(/\s+CF$/i, '').replace(/\s+SC$/i, '')
+    .trim();
+  return aliases[cleaned.toLowerCase()] || cleaned;
+};
 
 // ── PDF Export ───────────────────────────────────────────────────────
 function exportBestPicksPDF(picks, date) {
@@ -284,9 +298,10 @@ export default function BestPicksPage({ onNavigate }) {
           try {
             const pred = await predictMatch(cleanName(f.homeTeam), cleanName(f.awayTeam), f.league);
             return { fixture: f, pred };
-          } catch {
+          } catch (e) {
+            console.error('Prediction failed for', f.homeTeam, 'vs', f.awayTeam, e.message);
             return null;
-          }
+            }
         })
       );
       batchResults.forEach(r => { if (r.status === 'fulfilled' && r.value) results.push(r.value); });
