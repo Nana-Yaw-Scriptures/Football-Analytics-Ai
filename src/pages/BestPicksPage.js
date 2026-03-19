@@ -296,9 +296,10 @@ export default function BestPicksPage({ onNavigate }) {
       const batchResults = await Promise.allSettled(
         batch.map(async f => {
           try {
-            const pred = await predictMatch(cleanName(f.homeTeam), cleanName(f.awayTeam), f.league);
+           const pred = await predictMatch(cleanName(f.homeTeam), cleanName(f.awayTeam), f.league);
+            console.log('Pred:', f.homeTeam, 'vs', f.awayTeam, pred?.home_win, pred?.away_win);
             return { fixture: f, pred };
-          } catch (e) {
+                    } catch (e) {
             console.error('Prediction failed for', f.homeTeam, 'vs', f.awayTeam, e.message);
             return null;
             }
@@ -360,7 +361,6 @@ export default function BestPicksPage({ onNavigate }) {
   const handleRefresh = async () => {
     const fx = await fetchFixtures();
     if (fx.length) await runPredictions(fx);
-    console.log('Pred result:', f.homeTeam, 'vs', f.awayTeam, pred?.home_win, pred?.away_win);
   };
 
   const totalPicks  = Object.values(picks).flat().length;
