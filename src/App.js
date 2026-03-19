@@ -10,6 +10,7 @@ import LiveScoresPage from './pages/LiveScoresPage';
 import MatchCenterPage from './pages/MatchCenterPage';
 import SeasonSimulatorPage from './pages/SeasonSimulatorPage';
 import PredictionHistoryPage from './pages/PredictionHistoryPage';
+import BestPicksPage from './pages/BestPicksPage';
 
 
 function App() {
@@ -44,6 +45,7 @@ function App() {
       {currentPage === 'match' && <MatchCenterPage fixtureId={navParams.fixtureId} onNavigate={handleNavigation} />}
       {currentPage === 'simulator' && <SeasonSimulatorPage onNavigate={handleNavigation} />}
       {currentPage === 'history' && <PredictionHistoryPage onNavigate={handleNavigation} />}
+      {currentPage === 'bestpicks' && <BestPicksPage onNavigate={handleNavigation} />}
     </>
   );
 }
