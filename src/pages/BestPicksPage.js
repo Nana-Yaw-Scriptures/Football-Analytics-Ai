@@ -360,6 +360,7 @@ export default function BestPicksPage({ onNavigate }) {
   const handleRefresh = async () => {
     const fx = await fetchFixtures();
     if (fx.length) await runPredictions(fx);
+    console.log('Pred result:', f.homeTeam, 'vs', f.awayTeam, pred?.home_win, pred?.away_win);
   };
 
   const totalPicks  = Object.values(picks).flat().length;
