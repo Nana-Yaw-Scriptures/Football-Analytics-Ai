@@ -36,25 +36,23 @@ const CONFIDENCE_LABEL = pct =>
 
 // ── Clean team name for prediction engine ────────────────────────────
 const cleanName = n => {
-  const aliases = {
-    'bayern münchen': 'Bayern Munich',
-    'paris saint germain': 'Paris Saint-Germain',
-    'borussia mönchengladbach': 'Borussia Monchengladbach',
-    'atletico madrid': 'Atletico Madrid',
-    'sporting cp': 'Sporting CP',
-    'fsv mainz 05': 'Mainz',
-    '1. fc köln': 'Köln',
-    '1. fc heidenheim': 'Heidenheim',
-    'stade brestois 29': 'Brest',
+  const map = {
+    'Bayern München': 'Bayern Munich',
+    'Paris Saint Germain': 'Paris Saint-Germain',
+    'Borussia Mönchengladbach': 'Monchengladbach',
+    'Atletico Madrid': 'Atletico Madrid',
+    'FSV Mainz 05': 'Mainz',
+    '1. FC Köln': 'Köln',
+    '1. FC Heidenheim': 'Heidenheim',
+    'Stade Brestois 29': 'Brest',
+    'Inter': 'Internazionale',
   };
-  const cleaned = n
+  return map[n] || n
     .replace(/^FC\s+/i, '').replace(/\s+FC$/i, '')
     .replace(/^AFC\s+/i,'').replace(/\s+AFC$/i,'')
     .replace(/\s+CF$/i, '').replace(/\s+SC$/i, '')
     .trim();
-  return aliases[cleaned.toLowerCase()] || cleaned;
 };
-
 // ── PDF Export ───────────────────────────────────────────────────────
 function exportBestPicksPDF(picks, date) {
   const doc = new jsPDF('p', 'mm', 'a4');
