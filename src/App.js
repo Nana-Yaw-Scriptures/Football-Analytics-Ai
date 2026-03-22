@@ -1,5 +1,4 @@
 import AdminPanel from './pages/AdminPanel';
-import React, { useState } from 'react';
 import HomePage from './pages/HomePage';
 import AnalysisPage from './pages/AnalysisPage';
 import PlayersPage from './pages/PlayersPage';
@@ -11,7 +10,7 @@ import MatchCenterPage from './pages/MatchCenterPage';
 import SeasonSimulatorPage from './pages/SeasonSimulatorPage';
 import PredictionHistoryPage from './pages/PredictionHistoryPage';
 import BestPicksPage from './pages/BestPicksPage';
-import React, { useState, useEffect } from 'react';  // add useEffect here
+import React, { useState, useEffect } from 'react';  // add useEffect import
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home');
