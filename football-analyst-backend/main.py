@@ -1294,6 +1294,43 @@ async def analyze_with_gemini(request: dict):
 
     return {"content": [{"type": "text", "text": text}]}
 
+@app.get("/injuries/{league}")
+def get_injuries(league: str):
+    try:
+        league_id = API_FOOTBALL_LEAGUE_IDS.get(league)
+        if not league_id:
+            raise HTTPException(status_code=400, detail=f"Unknown league: {league}")
+
+        resp = requests.get(
+            f"{API_BASE}/injuries",
+            headers=API_HEADERS,
+            params={"league": league_id, "season": SEASON},
+            timeout=10,
+        )
+        data = resp.json().get("response", [])
+
+        injuries = []
+        for entry in data:
+            player = entry.get("player", {})
+            team   = entry.get("team", {})
+            fix    = entry.get("fixture", {})
+            injuries.append({
+                "player":       player.get("name", ""),
+                "playerPhoto":  player.get("photo", ""),
+                "team":         team.get("name", ""),
+                "teamLogo":     team.get("logo", ""),
+                "type":         player.get("type", ""),
+                "reason":       player.get("reason", ""),
+                "returnDate":   fix.get("date", "")[:10] if fix.get("date") else "Unknown",
+                "fixtureId":    fix.get("id"),
+            })
+
+        return injuries
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn

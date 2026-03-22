@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import PlayerProfileCard from '../components/PlayerProfileCard';
 import NavBar from '../components/NavBar';
+import InjuryTracker from '../components/InjuryTracker';
 
 const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:8000";
 
@@ -638,6 +639,7 @@ export default function PlayersPage({ onNavigate }) {
   const [compared,    setCompared]    = useState([]);
   const [showCompare, setShowCompare] = useState(false);
   const [minMins,     setMinMins]     = useState(0);
+    const [activeTab, setActiveTab] = useState('players'); // 'players' | 'injuries'
   const searchRef = useRef(null);
 
   useEffect(() => {
@@ -712,10 +714,36 @@ export default function PlayersPage({ onNavigate }) {
         <div className="absolute inset-0 opacity-[0.018]" style={{backgroundImage:'linear-gradient(rgba(255,255,255,0.5) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.5) 1px,transparent 1px)',backgroundSize:'60px 60px'}}/>
       </div>
 
-      <NavBar currentPage="players" onNavigate={onNavigate}/>
-
+         <NavBar currentPage="players" onNavigate={onNavigate}/>
+ 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-5 md:px-8 py-8">
-
+ 
+        {/* ══ TAB SWITCHER ══ */}
+        <div className="flex gap-2 mb-8">
+          {[
+            { id: 'players',  label: 'Players',  icon: '👤' },
+            { id: 'injuries', label: 'Injuries', icon: '🏥' },
+          ].map(tab => (
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all border"
+              style={{
+                background:   activeTab === tab.id ? 'rgba(34,211,238,0.12)' : 'rgba(255,255,255,0.03)',
+                borderColor:  activeTab === tab.id ? 'rgba(34,211,238,0.35)' : 'rgba(255,255,255,0.08)',
+                color:        activeTab === tab.id ? '#22d3ee' : '#64748b',
+              }}>
+              <span>{tab.icon}</span>
+              {tab.label}
+            </button>
+          ))}
+        </div>
+ 
+        {/* ══ INJURIES TAB ══ */}
+        {activeTab === 'injuries' && <InjuryTracker />}
+ 
+        {/* ══ PLAYERS TAB ══ */}
+        {activeTab === 'players' && <>
+ 
+              
         {/* ══ PAGE HEADER ══ */}
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-3">
@@ -1178,6 +1206,7 @@ export default function PlayersPage({ onNavigate }) {
             </div>
           </div>
         )}
+        </>}
       </div>
 
       {/* ══ PLAYER PROFILE MODAL ══ */}
