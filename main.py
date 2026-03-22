@@ -1312,45 +1312,37 @@ def get_injuries(league: str):
         resp = requests.get(
             f"{API_BASE}/injuries",
             headers=API_HEADERS,
-            params={"league": league_id, "season": SEASON, "date": None},
+            params={"league": league_id, "season": SEASON},
             timeout=10,
         )
-        # Use current round fixtures to get active injuries
-        fix_resp = requests.get(
-            f"{API_BASE}/fixtures",
-            headers=API_HEADERS,
-            params={"league": league_id, "season": SEASON, "next": 10},
-            timeout=10,
-        )
-        next_fixtures = [f["fixture"]["id"] for f in fix_resp.json().get("response", [])]
-
         data = resp.json().get("response", [])
 
-        # Deduplicate — keep only latest entry per player
+        # Deduplicate by player ID — keep the entry with the latest return date
         seen = {}
         for entry in data:
             player = entry.get("player", {})
-            fix    = entry.get("fixture", {})
             team   = entry.get("team", {})
+            fix    = entry.get("fixture", {})
             pid    = player.get("id") or player.get("name", "")
-            fix_id = fix.get("id")
+            date   = fix.get("date", "") or ""
 
-            # Only include if fixture is upcoming
-            if fix_id not in next_fixtures:
-                continue
+            if pid not in seen or date > seen[pid]["returnDate"]:
+                seen[pid] = {
+                    "player":      player.get("name", ""),
+                    "playerPhoto": player.get("photo", ""),
+                    "team":        team.get("name", ""),
+                    "teamLogo":    team.get("logo", ""),
+                    "type":        player.get("reason", "") or player.get("type", ""),
+                    "reason":      player.get("type", ""),
+                    "returnDate":  date[:10] if date else "Unknown",
+                }
 
-            seen[pid] = {
-                "player":      player.get("name", ""),
-                "playerPhoto": player.get("photo", ""),
-                "team":        team.get("name", ""),
-                "teamLogo":    team.get("logo", ""),
-                "type":        player.get("reason", "") or player.get("type", ""),
-                "reason":      player.get("type", ""),
-                "returnDate":  fix.get("date", "")[:10] if fix.get("date") else "Unknown",
-                "fixtureId":   fix_id,
-            }
+        # Filter out players whose last recorded return date is in the past
+        from datetime import date as dt
+        today = str(dt.today())
+        current = [v for v in seen.values() if v["returnDate"] >= today or v["returnDate"] == "Unknown"]
 
-        return list(seen.values())
+        return sorted(current, key=lambda x: x["team"])
 
     except HTTPException:
         raise
