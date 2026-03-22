@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 
 _cache      = {}
 _cache_lock = threading.Lock()
+_is_running = False   # Prevent multiple simultaneous runs
 CACHE_TTL   = 21600   # 6 hours
 
 MIN_CONFIDENCE = 55   # Only show predictions where top prob >= 55%
@@ -173,6 +174,7 @@ def _generate_picks(models: dict) -> dict:
 
 
 def get_best_picks(models: dict, force_refresh: bool = False) -> dict:
+    global _is_running
     with _cache_lock:
         now          = time.time()
         cached       = _cache.get('picks')
@@ -185,7 +187,25 @@ def get_best_picks(models: dict, force_refresh: bool = False) -> dict:
                 'cached':       True,
             }
 
+        if _is_running:
+            print('[BestPicks] Already running — skipping duplicate.')
+            if cached:
+                return {
+                    'picks':        cached,
+                    'generated_at': datetime.fromtimestamp(generated_at, tz=timezone.utc).isoformat(),
+                    'cached':       True,
+                    'regenerating': True,
+                }
+            return {
+                'picks':        {},
+                'generated_at': datetime.fromtimestamp(now, tz=timezone.utc).isoformat(),
+                'cached':       False,
+                'regenerating': True,
+            }
+
         def _bg():
+            global _is_running
+            _is_running = True
             try:
                 picks = _generate_picks(models)
                 with _cache_lock:
@@ -194,6 +214,8 @@ def get_best_picks(models: dict, force_refresh: bool = False) -> dict:
                 print('[BestPicks] Cache updated successfully.')
             except Exception as e:
                 print(f'[BestPicks] Background generation error: {e}')
+            finally:
+                _is_running = False
 
         thread = threading.Thread(target=_bg, daemon=True)
         thread.start()
