@@ -1302,7 +1302,7 @@ def get_best_picks_endpoint(refresh: bool = False):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/injuries/{league}") 
+@app.get("/injuries/{league}")
 def get_injuries(league: str):
     try:
         league_id = API_FOOTBALL_LEAGUE_IDS.get(league)
@@ -1312,29 +1312,45 @@ def get_injuries(league: str):
         resp = requests.get(
             f"{API_BASE}/injuries",
             headers=API_HEADERS,
-            params={"league": league_id, "season": SEASON},
+            params={"league": league_id, "season": SEASON, "date": None},
             timeout=10,
         )
+        # Use current round fixtures to get active injuries
+        fix_resp = requests.get(
+            f"{API_BASE}/fixtures",
+            headers=API_HEADERS,
+            params={"league": league_id, "season": SEASON, "next": 10},
+            timeout=10,
+        )
+        next_fixtures = [f["fixture"]["id"] for f in fix_resp.json().get("response", [])]
+
         data = resp.json().get("response", [])
 
-        injuries = []
+        # Deduplicate — keep only latest entry per player
+        seen = {}
         for entry in data:
             player = entry.get("player", {})
-            team   = entry.get("team", {})
             fix    = entry.get("fixture", {})
-            injuries.append({
-                "player":       player.get("name", ""),
-                "playerPhoto":  player.get("photo", ""),
-                "team":         team.get("name", ""),
-                "teamLogo":     team.get("logo", ""),
-                "type":         player.get("reason", "") or player.get("type", ""),
-                "reason":       player.get("type", ""),
-                
-                "returnDate":   fix.get("date", "")[:10] if fix.get("date") else "Unknown",
-                "fixtureId":    fix.get("id"),
-            })
+            team   = entry.get("team", {})
+            pid    = player.get("id") or player.get("name", "")
+            fix_id = fix.get("id")
 
-        return injuries
+            # Only include if fixture is upcoming
+            if fix_id not in next_fixtures:
+                continue
+
+            seen[pid] = {
+                "player":      player.get("name", ""),
+                "playerPhoto": player.get("photo", ""),
+                "team":        team.get("name", ""),
+                "teamLogo":    team.get("logo", ""),
+                "type":        player.get("reason", "") or player.get("type", ""),
+                "reason":      player.get("type", ""),
+                "returnDate":  fix.get("date", "")[:10] if fix.get("date") else "Unknown",
+                "fixtureId":   fix_id,
+            }
+
+        return list(seen.values())
 
     except HTTPException:
         raise
