@@ -1358,6 +1358,27 @@ def get_injuries(league: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+        @app.on_event("startup")
+def load_models():
+    model_dir = "trained_models"
+    if os.path.exists(model_dir):
+        for f in os.listdir(model_dir):
+            if f.endswith(".pkl"):
+                name = f.replace(".pkl", "")
+                models[name] = joblib.load(os.path.join(model_dir, f))
+                print(f"Loaded model: {name}")
+    
+    # Pre-warm best picks cache in background
+    import threading
+    def warm_cache():
+        try:
+            from services.best_picks_service import get_best_picks
+            get_best_picks(models, force_refresh=True)
+            print("Best picks cache warmed on startup")
+        except Exception as e:
+            print(f"Cache warm error: {e}")
+    threading.Thread(target=warm_cache, daemon=True).start()
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
