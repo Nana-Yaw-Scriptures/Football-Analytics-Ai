@@ -334,24 +334,28 @@ export default function BestPicksPage({ onNavigate }) {
                               <span className="font-bold text-slate-400">Pred: {pick.score}</span>
                             </div>
                           </div>
-                          <div className="flex-shrink-0 text-right">
-                            {idx === 0 && (
-                              <div className="flex items-center justify-end gap-1 mb-2 px-3 py-1 rounded-full"
-                                style={{ background: `${lg.color}15`, border: `1px solid ${lg.color}35`, color: lg.color, display: 'inline-flex' }}>
-                                <TrophyIcon className="w-3.5 h-3.5"/>
-                                <span className="text-xs font-black">Top Pick</span>
-                              </div>
-                            )}
-                            <div className="flex items-center gap-2 justify-end mb-1.5">
-                              <span className="text-sm font-black px-3 py-1 rounded-full"
-                                style={{ background: conf.bg, border: `1px solid ${conf.border}`, color: conf.color, whiteSpace: 'nowrap' }}>
+                          <div className="flex-shrink-0 text-right min-w-[120px]">
+                            {/* Confidence % — always on top */}
+                            <div className="text-2xl font-black mb-1" style={{ color: conf.color, fontFamily: 'monospace' }}>
+                              {pick.topProb}%
+                            </div>
+                            {/* Confidence label */}
+                            <div className="flex justify-end mb-1">
+                              <span className="text-xs font-black px-3 py-1 rounded-full"
+                                style={{ background: conf.bg, border: `1px solid ${conf.border}`, color: conf.color }}>
                                 {conf.label}
                               </span>
-                              <span className="text-2xl font-black" style={{ color: conf.color, fontFamily: 'monospace' }}>
-                                {pick.topProb}%
-                              </span>
                             </div>
-                            <div className="flex items-center gap-1 text-xs">
+                            {/* Top Pick badge — only for #1 */}
+                            {idx === 0 && (
+                              <div className="flex justify-end mb-1">
+                                <span className="flex items-center gap-1 text-xs font-black px-2 py-0.5 rounded-full"
+                                  style={{ background: `${lg.color}15`, border: `1px solid ${lg.color}35`, color: lg.color }}>
+                                  <TrophyIcon className="w-3 h-3"/>Top Pick
+                                </span>
+                              </div>
+                            )}
+                            <div className="flex items-center gap-1 text-xs justify-end">
                               <span className="text-cyan-400 font-bold w-6 text-right">{pick.homeWin}%</span>
                               <div className="flex h-1.5 w-20 rounded-full overflow-hidden bg-white/5">
                                 <div className="h-full bg-cyan-500 rounded-l-full" style={{ width: `${pick.homeWin}%` }}/>
