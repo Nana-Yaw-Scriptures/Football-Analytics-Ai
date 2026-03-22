@@ -90,13 +90,13 @@ function exportBestPicksPDF(picks, date) {
       doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(...BG);doc.text(String(idx+1),25,y+19.5,{align:'center'});
       // Home team
       doc.setFont('helvetica','bold');doc.setFontSize(10);
-      doc.setTextColor(pick.isHomeWin?...[255,255,255]:...[100,116,139]);
+      if(pick.isHomeWin){doc.setTextColor(255,255,255);}else{doc.setTextColor(100,116,139);}
       doc.text((pick.homeTeam||'').replace(/ FC$| AFC$/i,'').substring(0,22),35,y+12);
       // vs
       doc.setFontSize(7);doc.setTextColor(...S500);doc.text('vs',35,y+18);
       // Away team
       doc.setFont('helvetica','bold');doc.setFontSize(10);
-      doc.setTextColor(!pick.isHomeWin?...[255,255,255]:...[100,116,139]);
+      if(!pick.isHomeWin){doc.setTextColor(255,255,255);}else{doc.setTextColor(100,116,139);}
       doc.text((pick.awayTeam||'').replace(/ FC$| AFC$/i,'').substring(0,22),35,y+26);
       // Date center
       doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(...S500);
