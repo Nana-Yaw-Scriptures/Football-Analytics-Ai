@@ -152,7 +152,7 @@ export default function BestPicksPage({ onNavigate }) {
 
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(135deg,#060a14 0%,#080c18 50%,#06090f 100%)' }}>
-      <NavBar currentPage="picks" onNavigate={onNavigate}/>
+      <NavBar currentPage="bestpicks" onNavigate={onNavigate}/>
       <div className="max-w-6xl mx-auto px-4 pt-8 pb-24">
 
         {/* Hero */}

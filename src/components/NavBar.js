@@ -35,7 +35,7 @@ const NAV_LINKS = [
   { id:'league',    label:'Leagues',   icon:GlobeIcon,    accent:'#60a5fa', dropdown:true },
   { id:'simulator', label:'Sim',       icon:PlayIcon,     accent:'#f59e0b' },
   { id:'history',   label:'History',   icon:HistoryIcon,  accent:'#c084fc' },
-  { id:'picks', label:'Picks', icon:ZapIcon, accent:'#22d3ee' }
+{ id:'bestpicks', label:'Picks', icon:ZapIcon, accent:'#22d3ee' },
 ];
 
 const LEAGUES = [
