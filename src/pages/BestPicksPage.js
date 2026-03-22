@@ -78,25 +78,43 @@ function exportBestPicksPDF(picks, date) {
     doc.setFontSize(7);doc.setTextColor(...S500);doc.text(`${lgPicks.length} picks`,w-15,y+7,{align:'right'});
     y+=16;
     lgPicks.forEach((pick,idx)=>{
-      if(y+32>280){addPage();y=15;}
+      if(y+38>280){addPage();y=15;}
       const cf=CONFIDENCE_LABEL(pick.topProb);
       const cfA=cf.color==='#10b981'?EMERALD:cf.color==='#22d3ee'?CYAN:cf.color==='#f59e0b'?AMBER:[239,68,68];
-      doc.setFillColor(...CARD);doc.roundedRect(15,y,w-30,28,2,2,'F');
-      doc.setFillColor(...lcA);doc.circle(22,y+14,5,'F');
-      doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(...BG);doc.text(String(idx+1),22,y+16.5,{align:'center'});
-      doc.setFontSize(9);doc.setTextColor(...WHITE);doc.text(pick.homeTeam.replace(/ FC$| AFC$/i,''),32,y+10);
-      doc.setFontSize(7);doc.setTextColor(...S400);doc.text('vs',32,y+16);
-      doc.setFontSize(9);doc.setTextColor(...WHITE);doc.text(pick.awayTeam.replace(/ FC$| AFC$/i,''),32,y+22);
-      doc.setFontSize(7);doc.setTextColor(...S500);
-      const d=pick.date?new Date(pick.date).toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'—';
-      doc.text(d,w/2,y+14,{align:'center'});
-      doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(...cfA);doc.text(pick.winner||'—',w-60,y+10,{align:'right'});
-      doc.setFontSize(7);doc.setTextColor(...S400);doc.text(`Score: ${pick.score}`,w-60,y+16,{align:'right'});
-      const bx=w-55,by=y+20,bw=40,bh=3;
-      doc.setFillColor(...S700);doc.roundedRect(bx,by,bw,bh,1,1,'F');
-      doc.setFillColor(...cfA);doc.roundedRect(bx,by,bw*(pick.topProb/100),bh,1,1,'F');
-      doc.setFontSize(6);doc.setTextColor(...cfA);doc.text(`${pick.topProb}%`,w-15,y+22,{align:'right'});
-      y+=32;
+      // Card background
+      doc.setFillColor(...CARD);doc.roundedRect(15,y,w-30,34,2,2,'F');
+      // Left accent bar
+      doc.setFillColor(...lcA);doc.rect(15,y,2,34,'F');
+      // Rank badge
+      doc.setFillColor(...lcA);doc.circle(25,y+17,6,'F');
+      doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(...BG);doc.text(String(idx+1),25,y+19.5,{align:'center'});
+      // Home team
+      doc.setFont('helvetica','bold');doc.setFontSize(10);
+      doc.setTextColor(pick.isHomeWin?...[255,255,255]:...[100,116,139]);
+      doc.text((pick.homeTeam||'').replace(/ FC$| AFC$/i,'').substring(0,22),35,y+12);
+      // vs
+      doc.setFontSize(7);doc.setTextColor(...S500);doc.text('vs',35,y+18);
+      // Away team
+      doc.setFont('helvetica','bold');doc.setFontSize(10);
+      doc.setTextColor(!pick.isHomeWin?...[255,255,255]:...[100,116,139]);
+      doc.text((pick.awayTeam||'').replace(/ FC$| AFC$/i,'').substring(0,22),35,y+26);
+      // Date center
+      doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(...S500);
+      const d=pick.date?new Date(pick.date).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}):'—';
+      doc.text(d,w/2,y+32,{align:'center'});
+      // Winner name
+      doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(...cfA);
+      doc.text((pick.winner||'').substring(0,18),w-17,y+10,{align:'right'});
+      // Confidence label
+      doc.setFontSize(8);doc.setTextColor(...cfA);
+      doc.text(`${cf.label} · ${pick.topProb}%`,w-17,y+20,{align:'right'});
+      // Score
+      doc.setFontSize(7);doc.setTextColor(...S400);doc.text(`Pred: ${pick.score}`,w-17,y+30,{align:'right'});
+      // Confidence bar
+      const bx=w-62,by2=y+24,bw=44,bh=3;
+      doc.setFillColor(...S700);doc.roundedRect(bx,by2,bw,bh,1,1,'F');
+      doc.setFillColor(...cfA);doc.roundedRect(bx,by2,bw*(pick.topProb/100),bh,1,1,'F');
+      y+=38;
     });
     y+=6;
   });
@@ -152,7 +170,7 @@ export default function BestPicksPage({ onNavigate }) {
 
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(135deg,#060a14 0%,#080c18 50%,#06090f 100%)' }}>
-      <NavBar currentPage="bestpicks" onNavigate={onNavigate}/>
+      <NavBar currentPage="picks" onNavigate={onNavigate}/>
       <div className="max-w-6xl mx-auto px-4 pt-8 pb-24">
 
         {/* Hero */}
@@ -289,15 +307,9 @@ export default function BestPicksPage({ onNavigate }) {
                       }}>
                       <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl"
                         style={{ background: idx === 0 ? `linear-gradient(180deg,${lg.color},${lg.color}60)` : 'rgba(255,255,255,0.06)' }}/>
-                      {idx === 0 && (
-                        <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-black"
-                          style={{ background: `${lg.color}15`, border: `1px solid ${lg.color}30`, color: lg.color }}>
-                          <TrophyIcon className="w-3 h-3"/> Top Pick
-                        </div>
-                      )}
                       <div className="ml-1 px-5 py-4">
                         <div className="flex items-center gap-4">
-                          <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 text-sm font-black"
+                          <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 text-sm font-black"
                             style={{ background: idx === 0 ? `${lg.color}20` : 'rgba(255,255,255,0.05)', color: idx === 0 ? lg.color : '#64748b' }}>
                             {idx + 1}
                           </div>
@@ -323,12 +335,19 @@ export default function BestPicksPage({ onNavigate }) {
                             </div>
                           </div>
                           <div className="flex-shrink-0 text-right">
+                            {idx === 0 && (
+                              <div className="flex items-center justify-end gap-1 mb-2 px-3 py-1 rounded-full"
+                                style={{ background: `${lg.color}15`, border: `1px solid ${lg.color}35`, color: lg.color, display: 'inline-flex' }}>
+                                <TrophyIcon className="w-3.5 h-3.5"/>
+                                <span className="text-xs font-black">Top Pick</span>
+                              </div>
+                            )}
                             <div className="flex items-center gap-2 justify-end mb-1.5">
-                              <span className="text-xs font-bold px-2 py-0.5 rounded-full"
-                                style={{ background: conf.bg, border: `1px solid ${conf.border}`, color: conf.color }}>
+                              <span className="text-sm font-black px-3 py-1 rounded-full"
+                                style={{ background: conf.bg, border: `1px solid ${conf.border}`, color: conf.color, whiteSpace: 'nowrap' }}>
                                 {conf.label}
                               </span>
-                              <span className="text-xl font-black" style={{ color: conf.color, fontFamily: 'monospace' }}>
+                              <span className="text-2xl font-black" style={{ color: conf.color, fontFamily: 'monospace' }}>
                                 {pick.topProb}%
                               </span>
                             </div>
