@@ -1309,46 +1309,48 @@ def get_injuries(league: str):
         if not league_id:
             raise HTTPException(status_code=400, detail=f"Unknown league: {league}")
 
-        resp = requests.get(
-            f"{API_BASE}/injuries",
+        # Get next fixtures for all teams in the league
+        fix_resp = requests.get(
+            f"{API_BASE}/fixtures",
             headers=API_HEADERS,
-            params={"league": league_id, "season": SEASON},
+            params={"league": league_id, "season": SEASON, "next": 20},
             timeout=10,
         )
-        data = resp.json().get("response", [])
+        fixtures = fix_resp.json().get("response", [])
+        fixture_ids = [f["fixture"]["id"] for f in fixtures]
 
-        # Deduplicate by player ID — keep the entry with the latest return date
+        # Get injuries for each upcoming fixture
         seen = {}
-        for entry in data:
-            player = entry.get("player", {})
-            team   = entry.get("team", {})
-            fix    = entry.get("fixture", {})
-            pid    = player.get("id") or player.get("name", "")
-            date   = fix.get("date", "") or ""
+        for fid in fixture_ids[:10]:  # limit to 10 fixtures
+            inj_resp = requests.get(
+                f"{API_BASE}/injuries",
+                headers=API_HEADERS,
+                params={"fixture": fid},
+                timeout=8,
+            )
+            for entry in inj_resp.json().get("response", []):
+                player = entry.get("player", {})
+                team   = entry.get("team", {})
+                fix    = entry.get("fixture", {})
+                pid    = player.get("id") or player.get("name", "")
+                if pid not in seen:
+                    seen[pid] = {
+                        "player":      player.get("name", ""),
+                        "playerPhoto": player.get("photo", ""),
+                        "team":        team.get("name", ""),
+                        "teamLogo":    team.get("logo", ""),
+                        "type":        player.get("reason", "") or player.get("type", ""),
+                        "reason":      player.get("type", ""),
+                        "returnDate":  fix.get("date", "")[:10] if fix.get("date") else "Unknown",
+                    }
 
-            if pid not in seen or date > seen[pid]["returnDate"]:
-                seen[pid] = {
-                    "player":      player.get("name", ""),
-                    "playerPhoto": player.get("photo", ""),
-                    "team":        team.get("name", ""),
-                    "teamLogo":    team.get("logo", ""),
-                    "type":        player.get("reason", "") or player.get("type", ""),
-                    "reason":      player.get("type", ""),
-                    "returnDate":  date[:10] if date else "Unknown",
-                }
-
-        # Filter out players whose last recorded return date is in the past
-        from datetime import date as dt
-        today = str(dt.today())
-        current = [v for v in seen.values() if v["returnDate"] >= today or v["returnDate"] == "Unknown"]
-
-        return sorted(current, key=lambda x: x["team"])
+        return sorted(seen.values(), key=lambda x: x["team"])
 
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
+    
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
