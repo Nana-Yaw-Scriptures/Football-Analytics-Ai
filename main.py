@@ -1327,8 +1327,9 @@ def get_injuries(league: str):
                 "playerPhoto":  player.get("photo", ""),
                 "team":         team.get("name", ""),
                 "teamLogo":     team.get("logo", ""),
-                "type":         player.get("type", ""),
-                "reason":       player.get("reason", ""),
+                "type":         player.get("reason", "") or player.get("type", ""),
+                "reason":       player.get("type", ""),
+                
                 "returnDate":   fix.get("date", "")[:10] if fix.get("date") else "Unknown",
                 "fixtureId":    fix.get("id"),
             })
