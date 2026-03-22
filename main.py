@@ -1357,8 +1357,7 @@ def get_injuries(league: str):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-        @app.on_event("startup")
+@app.on_event("startup")
 def load_models():
     model_dir = "trained_models"
     if os.path.exists(model_dir):

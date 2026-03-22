@@ -11,7 +11,7 @@ import MatchCenterPage from './pages/MatchCenterPage';
 import SeasonSimulatorPage from './pages/SeasonSimulatorPage';
 import PredictionHistoryPage from './pages/PredictionHistoryPage';
 import BestPicksPage from './pages/BestPicksPage';
-
+import React, { useState, useEffect } from 'react';  // add useEffect here
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home');
@@ -31,6 +31,14 @@ function App() {
     }
     window.scrollTo(0, 0);
   };
+
+  // Keep backend alive
+useEffect(() => {
+  const ping = () => fetch(`${process.env.REACT_APP_API_URL}/health`).catch(()=>{});
+  ping();
+  const interval = setInterval(ping, 600000); // every 10 mins
+  return () => clearInterval(interval);
+}, []);
 
   return (
     <>
