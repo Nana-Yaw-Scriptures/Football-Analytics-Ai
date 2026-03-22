@@ -157,9 +157,21 @@ export default function BestPicksPage({ onNavigate }) {
     setLoading(false);
   }, []);
 
-  useEffect(() => { loadPicks(); }, [loadPicks]);
+  useEffect(() => {
+  loadPicks();
+  // Auto-check every 30s if no picks yet
+  const interval = setInterval(() => {
+    if (totalPicks === 0) loadPicks();
+  }, 30000);
+  return () => clearInterval(interval);
+}, []);
 
-  const handleRefresh = () => loadPicks(true);
+  const handleRefresh = async () => {
+  // Fire refresh in background, don't wait
+  fetch(`${API_BASE}/best-picks?refresh=true`).catch(() => {});
+  // Just reload current cached data immediately
+  await loadPicks();
+};
 
   const totalPicks    = Object.values(picks).flat().length;
   const avgConf       = totalPicks > 0 ? Math.round(Object.values(picks).flat().reduce((s, p) => s + p.topProb, 0) / totalPicks) : 0;
