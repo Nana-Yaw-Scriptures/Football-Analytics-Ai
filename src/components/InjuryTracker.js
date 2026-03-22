@@ -88,8 +88,15 @@ const InjuryCard = ({ injury }) => {
           <div className="flex-shrink-0 text-right">
             <div className="flex items-center gap-1 justify-end mb-1" style={{ color: sev.color }}>
               <CalendarIcon className="w-3 h-3"/>
-              <span className="text-xs font-bold">{injury.returnDate || 'Unknown'}</span>
-            </div>
+                            <span className="text-xs font-bold">
+                {injury.returnDate && injury.returnDate !== 'Unknown' 
+                    ? `Returns ${new Date(injury.returnDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}` 
+                    : 'Return Unknown'}
+                </span>
+                {injury.games_missed > 1 && (
+  <span className="text-[10px] text-slate-600">{injury.games_missed} games missed</span>
+)}
+          </div>
             <span className="text-[10px] text-slate-600 uppercase tracking-wide">Return</span>
           </div>
         </div>

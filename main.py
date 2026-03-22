@@ -1309,48 +1309,55 @@ def get_injuries(league: str):
         if not league_id:
             raise HTTPException(status_code=400, detail=f"Unknown league: {league}")
 
-        # Get next fixtures for all teams in the league
-        fix_resp = requests.get(
-            f"{API_BASE}/fixtures",
+        # Get all injuries for the season
+        resp = requests.get(
+            f"{API_BASE}/injuries",
             headers=API_HEADERS,
-            params={"league": league_id, "season": SEASON, "next": 20},
-            timeout=10,
+            params={"league": league_id, "season": SEASON},
+            timeout=15,
         )
-        fixtures = fix_resp.json().get("response", [])
-        fixture_ids = [f["fixture"]["id"] for f in fixtures]
+        data = resp.json().get("response", [])
 
-        # Get injuries for each upcoming fixture
+        from datetime import date as dt
+        today = str(dt.today())
+
+        # GROUP BY player ID, keep MAX(return_date) — like SQL DISTINCT
         seen = {}
-        for fid in fixture_ids[:10]:  # limit to 10 fixtures
-            inj_resp = requests.get(
-                f"{API_BASE}/injuries",
-                headers=API_HEADERS,
-                params={"fixture": fid},
-                timeout=8,
-            )
-            for entry in inj_resp.json().get("response", []):
-                player = entry.get("player", {})
-                team   = entry.get("team", {})
-                fix    = entry.get("fixture", {})
-                pid    = player.get("id") or player.get("name", "")
-                if pid not in seen:
-                    seen[pid] = {
-                        "player":      player.get("name", ""),
-                        "playerPhoto": player.get("photo", ""),
-                        "team":        team.get("name", ""),
-                        "teamLogo":    team.get("logo", ""),
-                        "type":        player.get("reason", "") or player.get("type", ""),
-                        "reason":      player.get("type", ""),
-                        "returnDate":  fix.get("date", "")[:10] if fix.get("date") else "Unknown",
-                    }
+        for entry in data:
+            player = entry.get("player", {})
+            team   = entry.get("team", {})
+            fix    = entry.get("fixture", {})
+            pid    = player.get("id") or player.get("name", "")
+            date   = (fix.get("date", "") or "")[:10]
 
-        return sorted(seen.values(), key=lambda x: x["team"])
+            # Only keep the latest date per player
+            if pid not in seen or date > seen[pid]["returnDate"]:
+                seen[pid] = {
+                    "player":      player.get("name", ""),
+                    "playerPhoto": player.get("photo", ""),
+                    "team":        team.get("name", ""),
+                    "teamLogo":    team.get("logo", ""),
+                    "type":        player.get("reason", "") or player.get("type", ""),
+                    "reason":      player.get("type", ""),
+                    "returnDate":  date or "Unknown",
+                    "games_missed": 0,  # will count below
+                }
+            # Count total appearances in injury list (= games missed)
+            seen[pid]["games_missed"] = seen[pid].get("games_missed", 0) + 1
+
+        # Filter: only show players whose latest return date is today or future
+        current = [
+            v for v in seen.values()
+            if v["returnDate"] == "Unknown" or v["returnDate"] >= today
+        ]
+
+        return sorted(current, key=lambda x: (x["team"], x["returnDate"]))
 
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
