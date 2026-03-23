@@ -7,7 +7,7 @@ import requests
 import json
 import os
 import time
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -32,17 +32,15 @@ LEAGUE_IDS = {
 
 # ── Add INTERNATIONAL_IDS ──────────────────────────
 INTERNATIONAL_IDS = {
-    "UEFA Nations League":          5,
-    "World Cup Qualifiers - UEFA":  9,
-    "World Cup Qualifiers - CAF":   29,
+    "International Friendly":          10,
+    "UEFA Nations League":             5,
+    "World Cup Qualifiers - UEFA":     9,
+    "World Cup Qualifiers - CAF":      29,
     "World Cup Qualifiers - CONMEBOL": 35,
     "World Cup Qualifiers - CONCACAF": 30,
-    "World Cup Qualifiers - AFC":   36,
-    "World Cup Qualifiers - OFC":   37,
-    "AFCON":                        6,
-    "Copa America":                 9,
-    "Euros":                        4,
-    "International Friendly":       10,
+    "World Cup Qualifiers - AFC":      36,
+    "AFCON":                           6,
+    "Copa America":                    26,
 }
 
 
@@ -66,18 +64,18 @@ def get_international_fixtures(date=None, upcoming=False):
 
     all_fixtures = []
 
+    all_fixtures = []
+
     for league_name, league_id in INTERNATIONAL_IDS.items():
         try:
             if upcoming:
                 params = {
                     "league": league_id,
-                    "season": SEASON,
-                    "next": 5,
+                    "next": 10,
                 }
             else:
                 params = {
                     "league": league_id,
-                    "season": SEASON,
                     "date": date,
                 }
 

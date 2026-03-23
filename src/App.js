@@ -19,6 +19,7 @@ function App() {
 });
   const [selectedLeague, setSelectedLeague] = useState(null);
   const [navParams, setNavParams] = useState({});
+  
 
   const handleNavigation = (page, params = null) => {
   setCurrentPage(page);
