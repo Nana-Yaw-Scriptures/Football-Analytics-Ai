@@ -1378,6 +1378,24 @@ def load_models():
             print(f"Cache warm error: {e}")
     threading.Thread(target=warm_cache, daemon=True).start()
 
+# Add these endpoints to main.py before the /best-picks endpoint
+
+@app.get("/live/international")
+def get_international_today(date: str = None):
+    try:
+        from services.live_scores_service import get_international_fixtures
+        return get_international_fixtures(date=date)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/live/international/upcoming")
+def get_international_upcoming():
+    try:
+        from services.live_scores_service import get_international_fixtures
+        return get_international_fixtures(upcoming=True)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

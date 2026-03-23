@@ -30,6 +30,111 @@ LEAGUE_IDS = {
         "Champions League": 2,  
 }
 
+# ── Add INTERNATIONAL_IDS ──────────────────────────
+INTERNATIONAL_IDS = {
+    "UEFA Nations League":          5,
+    "World Cup Qualifiers - UEFA":  9,
+    "World Cup Qualifiers - CAF":   29,
+    "World Cup Qualifiers - CONMEBOL": 35,
+    "World Cup Qualifiers - CONCACAF": 30,
+    "World Cup Qualifiers - AFC":   36,
+    "World Cup Qualifiers - OFC":   37,
+    "AFCON":                        6,
+    "Copa America":                 9,
+    "Euros":                        4,
+    "International Friendly":       10,
+}
+
+
+# ── Add this function at the bottom of live_scores_service.py ────────
+def get_international_fixtures(date=None, upcoming=False):
+    """Fetch international fixtures for a given date or upcoming."""
+    from datetime import datetime, timezone
+
+    if upcoming:
+        cache_name = "intl_upcoming"
+        cached = _read_cache(cache_name, max_age_seconds=600)
+        if cached is not None:
+            return cached
+    else:
+        if not date:
+            date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        cache_name = f"intl_{date}"
+        cached = _read_cache(cache_name, max_age_seconds=120)
+        if cached is not None:
+            return cached
+
+    all_fixtures = []
+
+    for league_name, league_id in INTERNATIONAL_IDS.items():
+        try:
+            if upcoming:
+                params = {
+                    "league": league_id,
+                    "season": SEASON,
+                    "next": 5,
+                }
+            else:
+                params = {
+                    "league": league_id,
+                    "season": SEASON,
+                    "date": date,
+                }
+
+            data = _get("fixtures", params)
+
+            for fix in data.get("response", []):
+                fixture    = fix.get("fixture", {})
+                teams      = fix.get("teams", {})
+                goals      = fix.get("goals", {})
+                score      = fix.get("score", {})
+                league_info= fix.get("league", {})
+                status     = fixture.get("status", {})
+                status_short = status.get("short", "NS")
+                elapsed    = status.get("elapsed")
+
+                all_fixtures.append({
+                    "id":         fixture.get("id"),
+                    "date":       fixture.get("date"),
+                    "timestamp":  fixture.get("timestamp"),
+                    "referee":    fixture.get("referee"),
+                    "venue":      fixture.get("venue", {}).get("name"),
+                    "league":     league_name,
+                    "leagueLogo": league_info.get("logo"),
+                    "round":      league_info.get("round", ""),
+                    "status":     status_short,
+                    "elapsed":    elapsed,
+                    "statusLong": status.get("long", ""),
+                    "homeTeam":   teams.get("home", {}).get("name", ""),
+                    "homeLogo":   teams.get("home", {}).get("logo", ""),
+                    "homeId":     teams.get("home", {}).get("id"),
+                    "awayTeam":   teams.get("away", {}).get("name", ""),
+                    "awayLogo":   teams.get("away", {}).get("logo", ""),
+                    "awayId":     teams.get("away", {}).get("id"),
+                    "homeGoals":  goals.get("home"),
+                    "awayGoals":  goals.get("away"),
+                    "htHome":     score.get("halftime", {}).get("home"),
+                    "htAway":     score.get("halftime", {}).get("away"),
+                    "isInternational": True,
+                })
+        except Exception as e:
+            print(f"[LiveScores] International fetch error for {league_name}: {e}")
+            continue
+
+    # Sort: live first, then upcoming, then finished
+    status_order = {
+        "1H": 0, "2H": 0, "HT": 0, "ET": 0, "P": 0,
+        "NS": 1, "TBD": 1,
+        "FT": 2, "AET": 2, "PEN": 2,
+        "PST": 3, "CANC": 3,
+    }
+    all_fixtures.sort(key=lambda f: (
+        status_order.get(f["status"], 2),
+        f.get("timestamp", 0)
+    ))
+
+    _write_cache(cache_name, all_fixtures)
+    return all_fixtures
 SEASON = 2025  # API-Football uses the start year of the season (2024 = 2024-25 season)
 
 

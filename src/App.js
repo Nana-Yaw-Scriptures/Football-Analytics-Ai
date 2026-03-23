@@ -13,12 +13,16 @@ import BestPicksPage from './pages/BestPicksPage';
 import React, { useState, useEffect } from 'react';  // add useEffect import
 
 function App() {
-  const [currentPage, setCurrentPage] = useState('home');
+  const [currentPage, setCurrentPage] = useState(() => {
+  const hash = window.location.hash.replace('#/', '');
+  return hash || 'home';
+});
   const [selectedLeague, setSelectedLeague] = useState(null);
   const [navParams, setNavParams] = useState({});
 
   const handleNavigation = (page, params = null) => {
-    setCurrentPage(page);
+  setCurrentPage(page);
+  window.location.hash = `/${page}`;
     if (typeof params === 'string') {
       setSelectedLeague(params);
       setNavParams({});

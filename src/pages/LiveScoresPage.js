@@ -46,6 +46,16 @@ const LEAGUE_COLOR = {
   'Serie A':'#059669','Ligue 1':'#2563eb','Primeira Liga':'#10b981',
   'Champions League':'#1d4ed8',
 };
+const INTL_LEAGUES = [
+  { name: 'All International',          key: '' },
+  { name: 'UEFA Nations League',         key: 'UEFA Nations League',          logo: 'https://media.api-sports.io/football/leagues/5.png'  },
+  { name: 'World Cup Qualifiers - UEFA', key: 'World Cup Qualifiers - UEFA',  logo: 'https://media.api-sports.io/football/leagues/9.png'  },
+  { name: 'World Cup Qualifiers - CAF',  key: 'World Cup Qualifiers - CAF',   logo: 'https://media.api-sports.io/football/leagues/29.png' },
+  { name: 'World Cup Qualifiers - CONMEBOL', key: 'World Cup Qualifiers - CONMEBOL', logo: 'https://media.api-sports.io/football/leagues/35.png' },
+  { name: 'AFCON',                       key: 'AFCON',                        logo: 'https://media.api-sports.io/football/leagues/6.png'  },
+  { name: 'Copa America',                key: 'Copa America',                 logo: 'https://media.api-sports.io/football/leagues/9.png'  },
+  { name: 'International Friendly',      key: 'International Friendly',       logo: 'https://media.api-sports.io/football/leagues/10.png' },
+];
 const STATUS_CONFIG = {
   '1H': {label:'LIVE',    color:'#ef4444',pulse:true, bg:'rgba(239,68,68,0.12)', border:'rgba(239,68,68,0.25)'},
   '2H': {label:'LIVE',    color:'#ef4444',pulse:true, bg:'rgba(239,68,68,0.12)', border:'rgba(239,68,68,0.25)'},
@@ -160,6 +170,10 @@ function LiveScoresPage({ onNavigate }) {
   const [hoveredFixture,   setHoveredFixture]   = useState(null);
   const prevScoresRef  = useRef({});
   const refreshTimerRef= useRef(null);
+  const [mainTab,          setMainTab]          = useState('leagues');    // 'leagues' | 'international'
+  const [intlFixtures,     setIntlFixtures]     = useState([]);
+  const [intlLoading,      setIntlLoading]      = useState(false);
+  const [filterIntl,       setFilterIntl]       = useState('');
 
   const getDateStr = (offset = 0) => {
     const d = new Date(); d.setDate(d.getDate() + offset);
@@ -216,6 +230,25 @@ function LiveScoresPage({ onNavigate }) {
     refreshTimerRef.current = setInterval(() => fetchData(false), 120000);
     return () => clearInterval(refreshTimerRef.current);
   }, [fetchData]);
+
+  const fetchInternational = useCallback(async () => {
+    setIntlLoading(true);
+    try {
+      const dateStr = getDateStr(dateOffset);
+      const url = activeView === 'upcoming'
+        ? `${API_BASE}/live/international/upcoming`
+        : `${API_BASE}/live/international?date=${dateStr}`;
+      const resp = await fetch(url).then(r => r.json());
+      setIntlFixtures(Array.isArray(resp) ? resp : []);
+    } catch {
+      setIntlFixtures([]);
+    }
+    setIntlLoading(false);
+  }, [dateOffset, activeView]);
+ 
+  useEffect(() => {
+    if (mainTab === 'international') fetchInternational();
+  }, [mainTab, fetchInternational]);
 
   // Fetch ML predictions for visible fixtures (up to 8 at a time)
   useEffect(() => {
@@ -298,6 +331,25 @@ function LiveScoresPage({ onNavigate }) {
           </div>
         </div>
 
+          {/* ── MAIN TAB SWITCHER ── */}
+        <div className="flex gap-2 mb-5 rounded-2xl p-1.5 border border-white/[0.06]" style={{background:'rgba(10,14,26,0.6)'}}>
+          {[
+            { id: 'leagues',       label: '🏆 Leagues',       color: '#22d3ee' },
+            { id: 'international', label: '🌍 International',  color: '#10b981' },
+          ].map(tab => (
+            <button key={tab.id} onClick={() => setMainTab(tab.id)}
+              className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all border"
+              style={{
+                background:   mainTab === tab.id ? `${tab.color}15` : 'transparent',
+                borderColor:  mainTab === tab.id ? `${tab.color}35` : 'transparent',
+                color:        mainTab === tab.id ? tab.color : '#64748b',
+              }}>
+              {tab.label}
+            </button>
+          ))}
+        </div>
+          {mainTab === 'leagues' && <>
+          
         {/* ── GOALS TICKER ── */}
         {goalsToday.length > 0 && (
           <div className="mb-5 rounded-2xl border overflow-hidden" style={{background:'rgba(245,158,11,0.06)',borderColor:'rgba(245,158,11,0.2)'}}>
@@ -563,6 +615,112 @@ function LiveScoresPage({ onNavigate }) {
               {searchQuery && <button onClick={()=>setSearchQuery('')} className="px-5 py-2.5 rounded-xl text-sm font-bold border" style={{background:'rgba(34,211,238,0.08)',borderColor:'rgba(34,211,238,0.2)',color:'#22d3ee'}}>Clear Search</button>}
               {activeView==='live'&&todayFixtures.length>0 && <button onClick={()=>setActiveView('today')} className="px-5 py-2.5 rounded-xl text-sm font-bold border" style={{background:'rgba(34,211,238,0.08)',borderColor:'rgba(34,211,238,0.2)',color:'#22d3ee'}}>Today ({todayFixtures.length})</button>}
             </div>
+          </div>
+        )}
+          </>}
+        
+        {/* ── INTERNATIONAL TAB ── */}
+        {mainTab === 'international' && (
+          <div>
+            {/* International league filter */}
+            <div className="flex items-center gap-1.5 mb-5 overflow-x-auto pb-1">
+              {INTL_LEAGUES.map(l => (
+                <button key={l.key} onClick={() => setFilterIntl(l.key)}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-semibold whitespace-nowrap transition-all flex-shrink-0 border"
+                  style={{
+                    background:  filterIntl === l.key ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.03)',
+                    borderColor: filterIntl === l.key ? 'rgba(16,185,129,0.35)' : 'rgba(255,255,255,0.06)',
+                    color:       filterIntl === l.key ? '#10b981' : '#64748b',
+                  }}>
+                  {l.logo && <img src={l.logo} alt="" className="w-4 h-4 object-contain flex-shrink-0" onError={e=>e.target.style.display='none'}/>}
+                  {l.name === 'All International' ? 'All' : l.name.replace('World Cup Qualifiers - ', 'WCQ ')}
+                </button>
+              ))}
+            </div>
+ 
+            {intlLoading && (
+              <div className="text-center py-20">
+                <div className="w-12 h-12 mx-auto mb-4 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin"/>
+                <p className="text-slate-400">Loading international fixtures…</p>
+              </div>
+            )}
+ 
+            {!intlLoading && (() => {
+              const filtered = intlFixtures.filter(f => !filterIntl || f.league === filterIntl);
+              const grouped = {};
+              filtered.forEach(f => { const k = f.league || 'Other'; if (!grouped[k]) grouped[k] = []; grouped[k].push(f); });
+ 
+              if (Object.keys(grouped).length === 0) return (
+                <div className="text-center py-20 rounded-2xl border border-white/8" style={{background:'rgba(17,24,39,0.5)'}}>
+                  <div className="text-4xl mb-4">🌍</div>
+                  <p className="text-white font-bold text-lg mb-2">No International Fixtures</p>
+                  <p className="text-slate-500 text-sm">No international games scheduled for this date.</p>
+                </div>
+              );
+ 
+              return (
+                <div className="space-y-6">
+                  {Object.entries(grouped).map(([league, leagueFixtures]) => (
+                    <div key={league}>
+                      <div className="flex items-center gap-3 mb-3">
+                        {leagueFixtures[0]?.leagueLogo && <img src={leagueFixtures[0].leagueLogo} alt="" className="w-6 h-6 object-contain"/>}
+                        <h2 className="text-white font-black text-sm">{league}</h2>
+                        <div className="flex-1 h-px" style={{background:'linear-gradient(90deg,rgba(16,185,129,0.3),transparent)'}}/>
+                        <span className="text-[11px] font-black text-emerald-400">{leagueFixtures.length}</span>
+                      </div>
+                      <div className="space-y-1.5">
+                        {leagueFixtures.map((fix, idx) => {
+                          const live     = isLive(fix.status);
+                          const finished = isFinished(fix.status);
+                          const upcoming = isUpcomingS(fix.status);
+                          const homeWon  = finished && fix.homeGoals > fix.awayGoals;
+                          const awayWon  = finished && fix.awayGoals > fix.homeGoals;
+                          return (
+                            <div key={fix.id||idx}
+                              onClick={() => fix.id && onNavigate('match', {fixtureId: fix.id})}
+                              className="relative rounded-2xl border transition-all cursor-pointer overflow-hidden"
+                              style={{background: live ? 'linear-gradient(135deg,rgba(239,68,68,0.06),rgba(5,8,16,0.9))' : 'rgba(10,14,26,0.7)', borderColor: live ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.06)'}}>
+                              {live && <div className="absolute left-0 top-0 bottom-0 w-0.5 rounded-l-2xl" style={{background:'linear-gradient(180deg,#ef4444,#f97316)'}}/>}
+                              <div className="flex items-center gap-3 px-4 py-3.5">
+                                <div className="w-20 flex-shrink-0">
+                                  {upcoming ? (
+                                    <div className="text-center">
+                                      <span className="text-[13px] font-black text-cyan-400 block" style={{fontFamily:'JetBrains Mono'}}>{fix.date ? new Date(fix.date).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true}) : ''}</span>
+                                      <span className="text-[11px] text-slate-600 block">{fix.date ? new Date(fix.date).toLocaleDateString('en-GB',{day:'numeric',month:'short'}) : ''}</span>
+                                    </div>
+                                  ) : (
+                                    <div className="flex justify-center"><StatusBadge status={fix.status} elapsed={fix.elapsed}/></div>
+                                  )}
+                                </div>
+                                <div className="flex-1 flex items-center gap-2.5 justify-end min-w-0">
+                                  <span className={`text-sm font-bold text-right truncate ${homeWon ? 'text-white' : finished ? 'text-slate-500' : 'text-white'}`}>{fix.homeTeam}</span>
+                                  {fix.homeLogo && <img src={fix.homeLogo} alt="" className="w-8 h-8 object-contain flex-shrink-0 rounded-lg p-0.5" style={{background:'rgba(255,255,255,0.04)'}} onError={e=>e.target.style.display='none'}/>}
+                                </div>
+                                <div className="w-24 flex-shrink-0 text-center">
+                                  {upcoming ? (
+                                    <span className="text-base font-black text-slate-600">vs</span>
+                                  ) : (
+                                    <div className="px-3 py-1.5 rounded-xl" style={{background: live ? 'rgba(239,68,68,0.12)' : 'rgba(255,255,255,0.04)', border: live ? '1px solid rgba(239,68,68,0.2)' : '1px solid rgba(255,255,255,0.06)'}}>
+                                      <span className="text-lg font-black text-white" style={{fontFamily:'JetBrains Mono'}}>{fix.homeGoals??0} - {fix.awayGoals??0}</span>
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="flex-1 flex items-center gap-2.5 min-w-0">
+                                  {fix.awayLogo && <img src={fix.awayLogo} alt="" className="w-8 h-8 object-contain flex-shrink-0 rounded-lg p-0.5" style={{background:'rgba(255,255,255,0.04)'}} onError={e=>e.target.style.display='none'}/>}
+                                  <span className={`text-sm font-bold truncate ${awayWon ? 'text-white' : finished ? 'text-slate-500' : 'text-white'}`}>{fix.awayTeam}</span>
+                                </div>
+                                <ChevronRightIcon className="w-4 h-4 flex-shrink-0" style={{color:'rgba(100,116,139,0.4)'}}/>
+                              </div>
+                              {live && <div className="flex h-0.5"><div style={{width:'50%',background:'#ef4444'}}/><div style={{width:'50%',background:'#f97316'}}/></div>}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
           </div>
         )}
       </div>
