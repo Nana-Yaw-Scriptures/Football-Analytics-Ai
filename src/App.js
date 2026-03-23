@@ -10,7 +10,8 @@ import MatchCenterPage from './pages/MatchCenterPage';
 import SeasonSimulatorPage from './pages/SeasonSimulatorPage';
 import PredictionHistoryPage from './pages/PredictionHistoryPage';
 import BestPicksPage from './pages/BestPicksPage';
-import React, { useState, useEffect } from 'react';  // add useEffect import
+import React, { useState, useEffect } from 'react';  // useEffect import
+import VideoLabPage from './pages/VideoLabPage';
 
 function App() {
   const [currentPage, setCurrentPage] = useState(() => {
@@ -58,6 +59,7 @@ useEffect(() => {
       {currentPage === 'simulator' && <SeasonSimulatorPage onNavigate={handleNavigation} />}
       {currentPage === 'history' && <PredictionHistoryPage onNavigate={handleNavigation} />}
       {currentPage === 'bestpicks' && <BestPicksPage onNavigate={handleNavigation} />}
+      {currentPage === 'videolab' && <VideoLabPage onNavigate={handleNavigation} />}
     </>
   );
 }

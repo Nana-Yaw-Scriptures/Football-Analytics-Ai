@@ -23,6 +23,8 @@ const MenuIcon     = p => <I {...p} d={<><line x1="4" y1="8" x2="20" y2="8"/><li
 const XIcon        = p => <I {...p} d={<><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>}/>;
 const SettingsIcon = p => <I {...p} d={<><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></>}/>;
 const ZapIcon = p => <I {...p} d={<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>}/>;
+const VideoIcon = p => <I {...p} d={<><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></>}/>;
+
 /* ══════════════════════════════════════
    CONFIG
 ══════════════════════════════════════ */
@@ -35,7 +37,8 @@ const NAV_LINKS = [
   { id:'league',    label:'Leagues',   icon:GlobeIcon,    accent:'#60a5fa', dropdown:true },
   { id:'simulator', label:'Sim',       icon:PlayIcon,     accent:'#f59e0b' },
   { id:'history',   label:'History',   icon:HistoryIcon,  accent:'#c084fc' },
-{ id:'bestpicks', label:'Picks', icon:ZapIcon, accent:'#22d3ee' },
+  { id:'bestpicks', label:'Picks', icon:ZapIcon, accent:'#22d3ee' },
+  { id:'videolab', label:'Video Lab', icon:VideoIcon, accent:'#10b981' },
 ];
 
 const LEAGUES = [
