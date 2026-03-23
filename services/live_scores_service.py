@@ -68,19 +68,21 @@ def get_international_fixtures(date=None, upcoming=False):
 
     for league_name, league_id in INTERNATIONAL_IDS.items():
         try:
+            season = 2026 if league_id == 10 else 2025
             if upcoming:
                 params = {
                     "league": league_id,
+                    "season": season,
                     "next": 10,
                 }
             else:
                 params = {
                     "league": league_id,
+                    "season": season,
                     "date": date,
                 }
 
             data = _get("fixtures", params)
-
             for fix in data.get("response", []):
                 fixture    = fix.get("fixture", {})
                 teams      = fix.get("teams", {})
