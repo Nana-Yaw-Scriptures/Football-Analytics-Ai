@@ -2636,7 +2636,7 @@ function AnalyticsPage({ onNavigate }) {
     return (
       <div className="theme-page min-h-screen bg-[#0a0e1a] flex items-center justify-center" style={{ fontFamily: "'Outfit', sans-serif" }}>
         <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-        <AppLoader title="Loading Player Data" sub="Fetching stats across 7 leagues…" color="#22d3ee"/>
+        <AppLoader title="Loading Statistical Data" sub="Fetching stats across 7 leagues…" color="#22d3ee"/>
       </div>
     );
   }
