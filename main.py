@@ -1302,61 +1302,53 @@ def get_best_picks_endpoint(refresh: bool = False):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# Replace the existing /injuries/{league} endpoint in main.py with this:
+
 @app.get("/injuries/{league}")
 def get_injuries(league: str):
     try:
-        league_id = API_FOOTBALL_LEAGUE_IDS.get(league)
-        if not league_id:
-            raise HTTPException(status_code=400, detail=f"Unknown league: {league}")
-
-        # Get all injuries for the season
-        resp = requests.get(
-            f"{API_BASE}/injuries",
-            headers=API_HEADERS,
-            params={"league": league_id, "season": SEASON},
-            timeout=15,
-        )
-        data = resp.json().get("response", [])
-
-        from datetime import date as dt
-        today = str(dt.today())
-
-        # GROUP BY player ID, keep MAX(return_date) — like SQL DISTINCT
-        seen = {}
-        for entry in data:
-            player = entry.get("player", {})
-            team   = entry.get("team", {})
-            fix    = entry.get("fixture", {})
-            pid    = player.get("id") or player.get("name", "")
-            date   = (fix.get("date", "") or "")[:10]
-
-            # Only keep the latest date per player
-            if pid not in seen or date > seen[pid]["returnDate"]:
-                seen[pid] = {
-                    "player":      player.get("name", ""),
-                    "playerPhoto": player.get("photo", ""),
-                    "team":        team.get("name", ""),
-                    "teamLogo":    team.get("logo", ""),
-                    "type":        player.get("reason", "") or player.get("type", ""),
-                    "reason":      player.get("type", ""),
-                    "returnDate":  date or "Unknown",
-                    "games_missed": 0,  # will count below
-                }
-            # Count total appearances in injury list (= games missed)
-            seen[pid]["games_missed"] = seen[pid].get("games_missed", 0) + 1
-
-        # Filter: only show players whose latest return date is today or future
-        current = [
-            v for v in seen.values()
-            if v["returnDate"] == "Unknown" or v["returnDate"] >= today
-        ]
-
-        return sorted(current, key=lambda x: (x["team"], x["returnDate"]))
-
-    except HTTPException:
-        raise
+        from services.injury_scraper import get_injuries_scraped
+        data = get_injuries_scraped(league)
+        return data
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        # Fallback to API-Football if scraper fails
+        try:
+            league_id = API_FOOTBALL_LEAGUE_IDS.get(league)
+            if not league_id:
+                raise HTTPException(status_code=400, detail=f"Unknown league: {league}")
+
+            resp = requests.get(
+                f"{API_BASE}/injuries",
+                headers=API_HEADERS,
+                params={"league": league_id, "season": SEASON},
+                timeout=15,
+            )
+            data = resp.json().get("response", [])
+            from datetime import date as dt
+            today = str(dt.today())
+            seen = {}
+            for entry in data:
+                player = entry.get("player", {})
+                team   = entry.get("team", {})
+                fix    = entry.get("fixture", {})
+                pid    = player.get("id") or player.get("name", "")
+                date   = (fix.get("date", "") or "")[:10]
+                if pid not in seen or date > seen[pid]["returnDate"]:
+                    seen[pid] = {
+                        "player":      player.get("name", ""),
+                        "playerPhoto": player.get("photo", ""),
+                        "team":        team.get("name", ""),
+                        "teamLogo":    team.get("logo", ""),
+                        "type":        player.get("reason", "") or player.get("type", ""),
+                        "reason":      player.get("type", ""),
+                        "returnDate":  date or "Unknown",
+                        "games_missed": 0,
+                    }
+            current = [v for v in seen.values() if v["returnDate"] >= today or v["returnDate"] == "Unknown"]
+            return sorted(current, key=lambda x: x["team"])
+        except Exception as e2:
+            raise HTTPException(status_code=500, detail=str(e2))
+        
 @app.on_event("startup")
 def load_models():
     model_dir = "trained_models"
