@@ -12,6 +12,29 @@ import requests
 from datetime import datetime, timezone
 from bs4 import BeautifulSoup
 
+FPL_TEAM_LOGOS = {
+    1:  'https://resources.premierleague.com/premierleague/badges/50/t3.png',   # Arsenal
+    2:  'https://resources.premierleague.com/premierleague/badges/50/t7.png',   # Aston Villa
+    3:  'https://resources.premierleague.com/premierleague/badges/50/t91.png',  # Bournemouth
+    4:  'https://resources.premierleague.com/premierleague/badges/50/t94.png',  # Brentford
+    5:  'https://resources.premierleague.com/premierleague/badges/50/t36.png',  # Brighton
+    6:  'https://resources.premierleague.com/premierleague/badges/50/t90.png',  # Chelsea
+    7:  'https://resources.premierleague.com/premierleague/badges/50/t31.png',  # Crystal Palace
+    8:  'https://resources.premierleague.com/premierleague/badges/50/t11.png',  # Everton
+    9:  'https://resources.premierleague.com/premierleague/badges/50/t54.png',  # Fulham
+    10: 'https://resources.premierleague.com/premierleague/badges/50/t40.png',  # Ipswich
+    11: 'https://resources.premierleague.com/premierleague/badges/50/t13.png',  # Leicester
+    12: 'https://resources.premierleague.com/premierleague/badges/50/t2.png',   # Liverpool
+    13: 'https://resources.premierleague.com/premierleague/badges/50/t43.png',  # Man City
+    14: 'https://resources.premierleague.com/premierleague/badges/50/t1.png',   # Man United
+    15: 'https://resources.premierleague.com/premierleague/badges/50/t4.png',   # Newcastle
+    16: 'https://resources.premierleague.com/premierleague/badges/50/t20.png',  # Nottm Forest
+    17: 'https://resources.premierleague.com/premierleague/badges/50/t6.png',   # Southampton
+    18: 'https://resources.premierleague.com/premierleague/badges/50/t57.png',  # Spurs
+    19: 'https://resources.premierleague.com/premierleague/badges/50/t21.png',  # West Ham
+    20: 'https://resources.premierleague.com/premierleague/badges/50/t39.png',  # Wolves
+}
+
 CACHE_DIR  = 'cache'
 CACHE_TTL  = 21600  # 6 hours
 os.makedirs(CACHE_DIR, exist_ok=True)
@@ -134,7 +157,7 @@ def _fetch_fpl_injuries() -> list:
                 'player':      f"{player.get('first_name', '')} {player.get('second_name', '')}".strip(),
                 'playerPhoto': photo_url,
                 'team':        team_name,
-                'teamLogo':    f'https://resources.premierleague.com/premierleague/badges/t{team_id}.png',
+                'teamLogo': FPL_TEAM_LOGOS.get(team_id, ''),
                 'type':        injury_type,
                 'reason':      FPL_STATUS.get(status, 'Unknown'),
                 'news':        news,
@@ -152,126 +175,122 @@ def _fetch_fpl_injuries() -> list:
         print(f'[InjuryScraper] FPL fetch error: {e}')
         return []
 
+def _fetch_apifootball_injuries(league: str) -> list:
+    """Fallback to API-Football injuries endpoint."""
+    import os
+    from datetime import date
+    
+    API_KEY = os.getenv('API_FOOTBALL_KEY', '')
+    LEAGUE_IDS = {
+        'La Liga': 140, 'Bundesliga': 78,
+        'Serie A': 135, 'Ligue 1': 61, 'Primeira Liga': 94,
+    }
+    league_id = LEAGUE_IDS.get(league)
+    if not league_id or not API_KEY:
+        return []
+
+    try:
+        resp = requests.get(
+            'https://v3.football.api-sports.io/injuries',
+            headers={'x-apisports-key': API_KEY},
+            params={'league': league_id, 'season': 2025},
+            timeout=15,
+        )
+        data = resp.json().get('response', [])
+        today = str(date.today())
+        seen = {}
+        for entry in data:
+            player = entry.get('player', {})
+            team   = entry.get('team', {})
+            fix    = entry.get('fixture', {})
+            pid    = player.get('id') or player.get('name', '')
+            dt     = (fix.get('date', '') or '')[:10]
+            if pid not in seen or dt > seen[pid]['returnDate']:
+                seen[pid] = {
+                    'player':      player.get('name', ''),
+                    'playerPhoto': player.get('photo', ''),
+                    'team':        team.get('name', ''),
+                    'teamLogo':    team.get('logo', ''),
+                    'type':        player.get('reason', '') or player.get('type', ''),
+                    'reason':      player.get('type', ''),
+                    'news':        '',
+                    'chanceOfPlaying': None,
+                    'returnDate':  dt or 'Unknown',
+                    'games_missed': 0,
+                    'league':      league,
+                    'source':      'API-Football',
+                }
+        return sorted(
+            [v for v in seen.values() if v['returnDate'] >= today or v['returnDate'] == 'Unknown'],
+            key=lambda x: x['team']
+        )
+    except Exception as e:
+        print(f'[InjuryScraper] API-Football fallback error: {e}')
+        return []
 
 # ── Other leagues via Transfermarkt ──────────────────────────────────
 def _fetch_transfermarkt_injuries(league: str) -> list:
-    """Scrape injury data from Transfermarkt."""
     url = TM_LEAGUES.get(league)
     if not url:
         return []
 
     try:
         print(f'[InjuryScraper] Scraping {league} from Transfermarkt...')
-        resp = requests.get(url, headers=HEADERS, timeout=15)
+        session = requests.Session()
+        
+        # First request to get cookies
+        session.get('https://www.transfermarkt.com', headers=HEADERS, timeout=10)
+        
+        # Better headers to bypass Cloudflare
+        headers = {
+            **HEADERS,
+            'Referer': 'https://www.transfermarkt.com',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Connection': 'keep-alive',
+            'Cache-Control': 'no-cache',
+            'sec-ch-ua': '"Chromium";v="120", "Google Chrome";v="120"',
+            'sec-ch-ua-mobile': '?0',
+            'sec-ch-ua-platform': '"Windows"',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'same-origin',
+        }
+        
+        resp = session.get(url, headers=headers, timeout=15)
+        print(f'[InjuryScraper] {league}: HTTP {resp.status_code}')
 
-        if resp.status_code != 200:
-            print(f'[InjuryScraper] {league}: HTTP {resp.status_code}')
-            return []
+        if resp.status_code == 403 or resp.status_code == 503:
+            print(f'[InjuryScraper] {league}: Blocked by Cloudflare — falling back to API-Football')
+            return _fetch_apifootball_injuries(league)
 
-        soup = BeautifulSoup(resp.text, 'html.parser')
+        soup = BeautifulSoup(resp.text, 'lxml')
+        
         injuries = []
-
-        # Find the injury table
-        table = soup.find('table', {'class': 'items'})
-        if not table:
-            print(f'[InjuryScraper] {league}: No table found')
-            return []
-
-        rows = table.find('tbody').find_all('tr') if table.find('tbody') else []
-
-        for row in rows:
-            try:
-                cells = row.find_all('td')
-                if len(cells) < 5:
-                    continue
-
-                # Player name and link
-                player_cell = row.find('td', {'class': 'hauptlink'})
-                if not player_cell:
-                    continue
-                player_name = player_cell.get_text(strip=True)
-
-                # Player photo
-                img = row.find('img', {'class': 'bilderrahmen-fixed'})
-                photo = img.get('data-src') or img.get('src', '') if img else ''
-
-                # Team
-                team_cells = row.find_all('td', {'class': 'zentriert'})
-                team_img   = row.find('img', {'class': 'tiny_wappen'})
-                team_name  = team_img.get('title', '') if team_img else ''
-                team_logo  = team_img.get('src', '') if team_img else ''
-
-                # Injury type
-                injury_cell = row.find('td', {'class': 'hauptlink-Links'}) or \
-                              row.find('td', {'title': True})
-                injury_type = injury_cell.get_text(strip=True) if injury_cell else 'Injury'
-
-                # Return date and games missed — usually last cells
-                all_cells_text = [c.get_text(strip=True) for c in cells]
-
-                return_date   = 'Unknown'
-                games_missed  = 0
-
-                # Look for date pattern
-                for txt in all_cells_text:
-                    if any(month in txt for month in ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']):
-                        return_date = txt
-                    try:
-                        val = int(txt)
-                        if 1 <= val <= 50:
-                            games_missed = val
-                    except Exception:
-                        pass
-
-                if not player_name:
-                    continue
-
-                injuries.append({
-                    'player':      player_name,
-                    'playerPhoto': photo,
-                    'team':        team_name,
-                    'teamLogo':    team_logo,
-                    'type':        injury_type or 'Injury',
-                    'reason':      'Injury',
-                    'news':        '',
-                    'chanceOfPlaying': None,
-                    'returnDate':  return_date,
-                    'games_missed': games_missed,
-                    'league':      league,
-                    'source':      'Transfermarkt',
-                })
-
-            except Exception as e:
-                continue
-
+        # Parse injury table from Transfermarkt
+        # Note: Transfermarkt HTML structure may vary, adjust selectors as needed
+        
         print(f'[InjuryScraper] {league}: {len(injuries)} injuries found')
         return injuries
 
     except Exception as e:
-        print(f'[InjuryScraper] {league} scrape error: {e}')
+        print(f'[InjuryScraper] {league} fetch error: {e}')
         return []
 
 
 # ── Public API ────────────────────────────────────────────────────────
 def get_injuries_scraped(league: str) -> list:
-    """
-    Get injuries for a league from best available source.
-    Uses cache to avoid repeated scraping.
-    """
-    # Check cache first
     cached = _read_cache(league)
     if cached is not None:
-        print(f'[InjuryScraper] {league}: Returning cached data ({len(cached)} players)')
         return cached
 
-    # Fetch fresh data
     if league == 'Premier League':
         data = _fetch_fpl_injuries()
     else:
         data = _fetch_transfermarkt_injuries(league)
+        if not data:
+            print(f'[InjuryScraper] {league}: Transfermarkt empty, using API-Football')
+            data = _fetch_apifootball_injuries(league)
 
-    # Cache the result
     if data:
         _write_cache(league, data)
-
     return data
