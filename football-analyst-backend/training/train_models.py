@@ -31,7 +31,7 @@ LEAGUES_TO_TRAIN = {
     "Bundesliga": "BL1",
     "Serie A": "SA",
     "Ligue 1": "FL1"
-}
+ }
 
 
 def estimate_momentum_from_matches(team_name, all_matches, is_home_team):
