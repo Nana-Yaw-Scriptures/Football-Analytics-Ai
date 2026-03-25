@@ -201,18 +201,21 @@ def _fetch_transfermarkt_injuries(league):
                     team_name = team_img.get('title', '') if team_img else ''
                     team_logo = team_img.get('src', '') if team_img else ''
 
-                    # Extract injury type from cells
+                  # Extract injury type — skip cells with position names
                     injury_type  = 'Injury'
-                    return_date  = 'Unknown'
-                    games_missed = 0
+                    POSITIONS = ['goalkeeper','defender','midfielder','forward','centre-back',
+                                'left-back','right-back','left winger','right winger',
+                                'attacking mid','defensive mid','striker','winger']
 
                     for cell in cells:
                         txt   = cell.get_text(strip=True)
                         lower = txt.lower()
-                        if injury_type == 'Injury' and any(kw in lower for kw in INJURY_KEYWORDS):
+                        # Skip if it looks like a position (common in suspension pages)
+                        if any(pos in lower for pos in POSITIONS):
+                            continue
+                        if any(kw in lower for kw in INJURY_KEYWORDS):
                             injury_type = txt
-                        if any(m in txt for m in ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']):
-                            return_date = txt
+                            break
                         try:
                             val = int(txt)
                             if 1 <= val <= 60:
