@@ -29,11 +29,20 @@ HEADERS = {
 }
 
 TM_LEAGUES = {
-    'La Liga':       'https://www.transfermarkt.com/laliga/verletzte/wettbewerb/ES1',
-    'Bundesliga':    'https://www.transfermarkt.com/bundesliga/verletzte/wettbewerb/L1',
-    'Serie A':       'https://www.transfermarkt.com/serie-a/verletzte/wettbewerb/IT1',
-    'Ligue 1':       'https://www.transfermarkt.com/ligue-1/verletzte/wettbewerb/FR1',
-    'Primeira Liga': 'https://www.transfermarkt.com/liga-nos/verletzte/wettbewerb/PO1',
+    'La Liga':       'https://www.transfermarkt.com/laliga/verletztespieler/wettbewerb/ES1',
+    'Bundesliga':    'https://www.transfermarkt.com/bundesliga/verletztespieler/wettbewerb/L1',
+    'Serie A':       'https://www.transfermarkt.com/serie-a/verletztespieler/wettbewerb/IT1',
+    'Ligue 1':       'https://www.transfermarkt.com/ligue-1/verletztespieler/wettbewerb/FR1',
+    'Primeira Liga': 'https://www.transfermarkt.com/liga-nos/verletztespieler/wettbewerb/PO1',
+}
+
+# Thefishy.net league table IDs (reliable free source)
+FISHY_LEAGUES = {
+    'La Liga':       '4',
+    'Bundesliga':    '32',
+    'Serie A':       '2',
+    'Ligue 1':       '16',
+    'Primeira Liga': '34',
 }
 
 API_FOOTBALL_IDS = {
@@ -357,6 +366,85 @@ def _fetch_transfermarkt_injuries(league: str) -> list:
         return []
 
 
+
+# ── TheFishy.net scraper (reliable free source) ───────────────────────
+def _fetch_fishy_injuries(league: str) -> list:
+    """Scrape from thefishy.net — clean structured injury data."""
+    table_id = FISHY_LEAGUES.get(league)
+    if not table_id:
+        return []
+
+    url = f'https://www.thefishy.net/football-injuries.php?table={table_id}'
+    try:
+        print(f'[InjuryScraper] {league}: Trying thefishy.net...')
+        resp = requests.get(url, headers={'User-Agent': HEADERS['User-Agent']}, timeout=15)
+        if resp.status_code != 200:
+            print(f'[InjuryScraper] {league}: thefishy HTTP {resp.status_code}')
+            return []
+
+        soup     = BeautifulSoup(resp.text, 'lxml')
+        injuries = []
+
+        # Find all injury rows
+        tables = soup.find_all('table')
+        for table in tables:
+            rows = table.find_all('tr')
+            for row in rows:
+                cells = row.find_all('td')
+                if len(cells) < 3:
+                    continue
+                texts = [c.get_text(strip=True) for c in cells]
+
+                # Skip header rows
+                if not texts[0] or texts[0].lower() in ('player', 'name', 'team'):
+                    continue
+
+                player_name  = texts[0] if len(texts) > 0 else ''
+                team_name    = texts[1] if len(texts) > 1 else ''
+                injury_info  = texts[2] if len(texts) > 2 else ''
+                return_date  = texts[3] if len(texts) > 3 else 'Unknown'
+
+                if not player_name or not team_name:
+                    continue
+
+                # Derive injury type
+                inj_lower = injury_info.lower()
+                if 'hamstring' in inj_lower:   injury_type = 'Hamstring Injury'
+                elif 'knee' in inj_lower:      injury_type = 'Knee Injury'
+                elif 'muscle' in inj_lower:    injury_type = 'Muscle Injury'
+                elif 'ankle' in inj_lower:     injury_type = 'Ankle Injury'
+                elif 'thigh' in inj_lower:     injury_type = 'Thigh Injury'
+                elif 'calf' in inj_lower:      injury_type = 'Calf Injury'
+                elif 'back' in inj_lower:      injury_type = 'Back Injury'
+                elif 'groin' in inj_lower:     injury_type = 'Groin Injury'
+                elif 'shoulder' in inj_lower:  injury_type = 'Shoulder Injury'
+                elif 'suspend' in inj_lower or 'red' in inj_lower or 'yellow' in inj_lower:
+                                               injury_type = 'Suspended'
+                elif 'illness' in inj_lower:   injury_type = 'Illness'
+                else:                          injury_type = injury_info or 'Injury'
+
+                injuries.append({
+                    'player':          player_name,
+                    'playerPhoto':     '',
+                    'team':            team_name,
+                    'teamLogo':        '',
+                    'type':            injury_type,
+                    'reason':          injury_info,
+                    'news':            injury_info,
+                    'chanceOfPlaying': None,
+                    'returnDate':      return_date if return_date else 'Unknown',
+                    'games_missed':    0,
+                    'league':          league,
+                    'source':          'TheFishy',
+                })
+
+        print(f'[InjuryScraper] {league}: thefishy found {len(injuries)} injuries')
+        return injuries
+
+    except Exception as e:
+        print(f'[InjuryScraper] {league}: thefishy error: {e}')
+        return []
+
 # ── Public API ────────────────────────────────────────────────────────
 def get_injuries_scraped(league: str) -> list:
     """Get injuries for a league. Cache → FPL/TM → API-Football fallback."""
@@ -370,9 +458,13 @@ def get_injuries_scraped(league: str) -> list:
     else:
         # Try Transfermarkt first
         data = _fetch_transfermarkt_injuries(league)
-        # If empty or blocked, fall back to API-Football
+        # If empty or blocked, try thefishy.net
         if not data:
-            print(f'[InjuryScraper] {league}: Transfermarkt empty — using API-Football')
+            print(f'[InjuryScraper] {league}: Transfermarkt empty — trying thefishy.net')
+            data = _fetch_fishy_injuries(league)
+        # Final fallback — API-Football
+        if not data:
+            print(f'[InjuryScraper] {league}: thefishy empty — using API-Football')
             data = _fetch_apifootball_injuries(league)
 
     if data:
