@@ -182,6 +182,7 @@ def _fetch_fpl_injuries() -> list:
             team_id   = player.get('team')
             team_info = teams.get(team_id, {})
             team_name = team_info.get('name', '')
+            team_code = team_info.get('code', '')
 
             injury_type = _injury_type_from_news(news, status)
             player_code = player.get('code', '')
@@ -191,7 +192,7 @@ def _fetch_fpl_injuries() -> list:
                 'player':          f"{player.get('first_name','')} {player.get('second_name','')}".strip(),
                 'playerPhoto':     photo_url,
                 'team':            team_name,
-                'teamLogo':        FPL_TEAM_LOGOS.get(team_id, ''),
+                'teamLogo':        f'https://resources.premierleague.com/premierleague/badges/50/t{team_code}.png' if team_code else '',
                 'type':            injury_type,
                 'reason':          FPL_STATUS.get(status, 'Unknown'),
                 'news':            news,
