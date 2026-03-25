@@ -279,93 +279,106 @@ def _fetch_apifootball_injuries(league: str) -> list:
 
 
 # ── Transfermarkt scraper ─────────────────────────────────────────────
+# ── Transfermarkt scraper ─────────────────────────────────────────────
 def _fetch_transfermarkt_injuries(league: str) -> list:
     url = TM_LEAGUES.get(league)
     if not url:
         return []
 
-    try:
-        print(f'[InjuryScraper] Scraping {league} from Transfermarkt...')
-        session = requests.Session()
-        session.get('https://www.transfermarkt.com', headers=HEADERS, timeout=10)
-        resp = session.get(url, headers=HEADERS, timeout=15)
+    injuries = []
 
-        print(f'[InjuryScraper] {league}: HTTP {resp.status_code}')
-        if resp.status_code in (403, 503, 429):
-            print(f'[InjuryScraper] {league}: Blocked — falling back to API-Football')
-            return []
+    # Fetch both injuries and suspensions
+    for page_url in [url, url.replace('verletztespieler', 'sperrenausfaelle')]:
+        try:
+            print(f'[InjuryScraper] Scraping {league} from {page_url}...')
+            session = requests.Session()
+            session.get('https://www.transfermarkt.com', headers=HEADERS, timeout=10)
+            resp = session.get(page_url, headers=HEADERS, timeout=15)
 
-        soup  = BeautifulSoup(resp.text, 'lxml')
-        table = soup.find('table', {'class': 'items'})
-        if not table:
-            print(f'[InjuryScraper] {league}: No table found — falling back')
-            return []
-
-        rows     = table.find('tbody').find_all('tr') if table.find('tbody') else []
-        injuries = []
-
-        for row in rows:
-            try:
-                cells = row.find_all('td')
-                if len(cells) < 5:
-                    continue
-
-                player_cell = row.find('td', {'class': 'hauptlink'})
-                if not player_cell:
-                    continue
-                player_name = player_cell.get_text(strip=True)
-                if not player_name:
-                    continue
-
-                img   = row.find('img', {'class': 'bilderrahmen-fixed'})
-                photo = (img.get('data-src') or img.get('src', '')) if img else ''
-
-                team_img  = row.find('img', {'class': 'tiny_wappen'})
-                team_name = team_img.get('title', '') if team_img else ''
-                team_logo = team_img.get('src', '') if team_img else ''
-
-                injury_cell = row.find('td', {'class': 'hauptlink-Links'}) or row.find('td', {'title': True})
-                injury_type = injury_cell.get_text(strip=True) if injury_cell else 'Injury'
-
-                all_text     = [c.get_text(strip=True) for c in cells]
-                return_date  = 'Unknown'
-                games_missed = 0
-
-                for txt in all_text:
-                    if any(m in txt for m in ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']):
-                        return_date = txt
-                    try:
-                        val = int(txt)
-                        if 1 <= val <= 60:
-                            games_missed = val
-                    except Exception:
-                        pass
-
-                injuries.append({
-                    'player':          player_name,
-                    'playerPhoto':     photo,
-                    'team':            team_name,
-                    'teamLogo':        team_logo,
-                    'type':            injury_type or 'Injury',
-                    'reason':          'Injury',
-                    'news':            '',
-                    'chanceOfPlaying': None,
-                    'returnDate':      return_date,
-                    'games_missed':    games_missed,
-                    'league':          league,
-                    'source':          'Transfermarkt',
-                })
-            except Exception:
+            print(f'[InjuryScraper] {league}: HTTP {resp.status_code}')
+            if resp.status_code in (403, 503, 429):
+                print(f'[InjuryScraper] {league}: Blocked')
                 continue
 
-        print(f'[InjuryScraper] {league}: Transfermarkt found {len(injuries)} injuries')
-        return injuries
+            soup  = BeautifulSoup(resp.text, 'lxml')
+            table = soup.find('table', {'class': 'items'})
+            if not table:
+                print(f'[InjuryScraper] {league}: No table found')
+                continue
 
-    except Exception as e:
-        print(f'[InjuryScraper] {league} scrape error: {e}')
-        return []
+            rows = table.find('tbody').find_all('tr') if table.find('tbody') else []
 
+            for row in rows:
+                try:
+                    cells = row.find_all('td')
+                    if len(cells) < 5:
+                        continue
 
+                    player_cell = row.find('td', {'class': 'hauptlink'})
+                    if not player_cell:
+                        continue
+                    player_name = player_cell.get_text(strip=True)
+                    if not player_name:
+                        continue
+
+                    img       = row.find('img', {'class': 'bilderrahmen-fixed'})
+                    photo     = (img.get('data-src') or img.get('src', '')) if img else ''
+                    team_img  = row.find('img', {'class': 'tiny_wappen'})
+                    team_name = team_img.get('title', '') if team_img else ''
+                    team_logo = team_img.get('src', '') if team_img else ''
+
+                    # Extract injury type from cell text
+                    injury_type = 'Injury'
+                    for cell in cells:
+                        cell_text  = cell.get_text(strip=True)
+                        cell_lower = cell_text.lower()
+                        if any(kw in cell_lower for kw in [
+                            'hamstring', 'knee', 'muscle', 'ankle', 'thigh', 'calf',
+                            'back', 'groin', 'shoulder', 'foot', 'hip', 'achilles',
+                            'ligament', 'fracture', 'illness', 'hernia', 'suspended',
+                            'cruciate', 'acl', 'tendon', 'strain', 'tear', 'red card',
+                            'yellow', 'suspension',
+                        ]):
+                            injury_type = cell_text
+                            break
+
+                    all_text     = [c.get_text(strip=True) for c in cells]
+                    return_date  = 'Unknown'
+                    games_missed = 0
+
+                    for txt in all_text:
+                        if any(m in txt for m in ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']):
+                            return_date = txt
+                        try:
+                            val = int(txt)
+                            if 1 <= val <= 60:
+                                games_missed = val
+                        except Exception:
+                            pass
+
+                    injuries.append({
+                        'player':          player_name,
+                        'playerPhoto':     photo,
+                        'team':            team_name,
+                        'teamLogo':        team_logo,
+                        'type':            injury_type or 'Injury',
+                        'reason':          'Injury',
+                        'news':            '',
+                        'chanceOfPlaying': None,
+                        'returnDate':      return_date,
+                        'games_missed':    games_missed,
+                        'league':          league,
+                        'source':          'Transfermarkt',
+                    })
+                except Exception:
+                    continue
+
+        except Exception as e:
+            print(f'[InjuryScraper] {league} scrape error: {e}')
+            continue
+
+    print(f'[InjuryScraper] {league}: Transfermarkt found {len(injuries)} total')
+    return injuries
 
 # ── TheFishy.net scraper (reliable free source) ───────────────────────
 def _fetch_fishy_injuries(league: str) -> list:
