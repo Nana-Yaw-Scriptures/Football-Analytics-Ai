@@ -1388,6 +1388,19 @@ def get_international_upcoming():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.on_event("startup")
+def load_models():
+    # ... existing code ...
+    
+    # Clear stale injury caches on startup
+    import glob
+    for f in glob.glob('cache/injuries_*.json'):
+        try:
+            os.remove(f)
+            print(f'Cleared stale cache: {f}')
+        except:
+            pass
+        
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
