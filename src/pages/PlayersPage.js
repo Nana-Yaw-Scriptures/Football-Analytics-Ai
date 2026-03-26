@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import PlayerProfileCard from '../components/PlayerProfileCard';
 import NavBar from '../components/NavBar';
-import InjuryTracker from '../components/InjuryTracker';
 
 const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:8000";
 
@@ -639,7 +638,7 @@ export default function PlayersPage({ onNavigate }) {
   const [compared,    setCompared]    = useState([]);
   const [showCompare, setShowCompare] = useState(false);
   const [minMins,     setMinMins]     = useState(0);
-    const [activeTab, setActiveTab] = useState('players'); // 'players' | 'injuries'
+  const [injuryMap, setInjuryMap] = useState({}); // { playerNameLower: { type, status, news, chance } }
   const searchRef = useRef(null);
 
   useEffect(() => {
@@ -648,6 +647,49 @@ export default function PlayersPage({ onNavigate }) {
       .then(d => { setPlayers(Array.isArray(d) ? d : []); setLoading(false); })
       .catch(() => setLoading(false));
   }, []);
+
+   // Pre-load injuries for all leagues in background
+  useEffect(() => {
+    const LEAGUES_LIST = ['Premier League', 'La Liga', 'Bundesliga', 'Serie A', 'Ligue 1', 'Primeira Liga'];
+    const map = {};
+    Promise.allSettled(
+      LEAGUES_LIST.map(lg =>
+        fetch(`${API_BASE}/injuries/${encodeURIComponent(lg)}`)
+          .then(r => r.json())
+          .then(data => {
+            if (Array.isArray(data)) {
+              data.forEach(inj => {
+                if (inj.player) {
+                  const key = inj.player.toLowerCase().trim();
+                  map[key] = {
+                    type:   inj.type   || 'Injury',
+                    status: inj.reason || 'Injured',
+                    news:   inj.news   || '',
+                    chance: inj.chanceOfPlaying,
+                  };
+             // Also index by last name for fuzzy matching
+                  const parts = inj.player.split(' ');
+                  if (parts.length > 1) {
+                    const lastName = parts[parts.length - 1].toLowerCase();
+                    if (!map[lastName]) map[lastName] = map[key];
+                  }
+                }
+              });
+            }
+          })
+          .catch(() => {})
+      )
+    ).then(() => setInjuryMap({ ...map }));
+  }, []);
+
+   // Helper: get player status from injury map
+  const getPlayerStatus = (player) => {
+    if (!player) return null;
+    const name     = (player.name || '').toLowerCase().trim();
+    const lastName = name.split(' ').pop();
+    // Try full name first, then last name
+    return injuryMap[name] || injuryMap[lastName] || null;
+  };
 
   const filtered = players
     .filter(p => {
@@ -717,31 +759,6 @@ export default function PlayersPage({ onNavigate }) {
          <NavBar currentPage="players" onNavigate={onNavigate}/>
  
       <div className="relative max-w-7xl mx-auto px-4 sm:px-5 md:px-8 py-8">
- 
-        {/* ══ TAB SWITCHER ══ */}
-        <div className="flex gap-2 mb-8">
-          {[
-            { id: 'players',  label: 'Players',  icon: '👤' },
-            { id: 'injuries', label: 'Injuries', icon: '🏥' },
-          ].map(tab => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all border"
-              style={{
-                background:   activeTab === tab.id ? 'rgba(34,211,238,0.12)' : 'rgba(255,255,255,0.03)',
-                borderColor:  activeTab === tab.id ? 'rgba(34,211,238,0.35)' : 'rgba(255,255,255,0.08)',
-                color:        activeTab === tab.id ? '#22d3ee' : '#64748b',
-              }}>
-              <span>{tab.icon}</span>
-              {tab.label}
-            </button>
-          ))}
-        </div>
- 
-        {/* ══ INJURIES TAB ══ */}
-        {activeTab === 'injuries' && <InjuryTracker />}
- 
-        {/* ══ PLAYERS TAB ══ */}
-        {activeTab === 'players' && <>
  
               
         {/* ══ PAGE HEADER ══ */}
@@ -1206,12 +1223,12 @@ export default function PlayersPage({ onNavigate }) {
             </div>
           </div>
         )}
-        </>}
+
       </div>
 
       {/* ══ PLAYER PROFILE MODAL ══ */}
-      {selected && <PlayerProfileCard player={selected} onClose={() => setSelected(null)}/>}
 
+   {selected && <PlayerProfileCard player={selected} onClose={() => setSelected(null)} injuryStatus={getPlayerStatus(selected)}/>}
       {/* ══ COMPARISON MODAL ══ */}
       {showCompare && compared.length===2 && (
         <CompareModal players={compared} onClose={() => setShowCompare(false)}/>
