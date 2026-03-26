@@ -246,7 +246,19 @@ def _fetch_transfermarkt_injuries(league):
 
     print(f'[InjuryScraper] {league}: Transfermarkt total {len(injuries)}')
     return injuries
+    soup  = BeautifulSoup(resp.text, 'lxml')
 
+# Debug — log all table classes found
+all_tables = soup.find_all('table')
+print(f'[InjuryScraper] {league}: Found {len(all_tables)} tables, classes: {[t.get("class") for t in all_tables[:5]]}')
+
+table = soup.find('table', {'class': 'items'})
+if not table:
+    # Try alternative selectors
+    table = soup.find('table', {'class': lambda c: c and 'items' in c}) or \
+            soup.find('table', id=lambda i: i and 'yw' in str(i)) or \
+            (all_tables[0] if all_tables else None)
+    print(f'[InjuryScraper] {league}: Used fallback table selector')
 
 # ── TheFishy.net fallback ─────────────────────────────────────────────
 def _fetch_fishy_injuries(league):
