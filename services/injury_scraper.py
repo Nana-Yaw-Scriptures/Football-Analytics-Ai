@@ -1,7 +1,7 @@
 """
 injury_scraper.py
 Sources:
-- FPL API (Premier League)
+- FPL API (Premier League — official, real-time)
 - Transfermarkt (other leagues, injuries + suspensions)
 - TheFishy.net (fallback)
 - API-Football (last resort)
@@ -48,13 +48,22 @@ TRANSFER_KEYWORDS = [
     'released', 'transferred',
 ]
 
-FPL_STATUS = {'a':'Available','d':'Doubtful','i':'Injured','s':'Suspended','u':'Unavailable','n':'Not Available'}
+FPL_STATUS = {
+    'a': 'Available', 'd': 'Doubtful', 'i': 'Injured',
+    's': 'Suspended', 'u': 'Unavailable', 'n': 'Not Available',
+}
 
 INJURY_KEYWORDS = [
-    'hamstring','knee','muscle','ankle','thigh','calf','back','groin',
-    'shoulder','foot','hip','achilles','ligament','fracture','illness',
-    'hernia','cruciate','acl','tendon','strain','tear','red card',
-    'yellow','suspension','suspended',
+    'hamstring', 'knee', 'muscle', 'ankle', 'thigh', 'calf', 'back', 'groin',
+    'shoulder', 'foot', 'hip', 'achilles', 'ligament', 'fracture', 'illness',
+    'hernia', 'cruciate', 'acl', 'tendon', 'strain', 'tear', 'red card',
+    'yellow', 'suspension', 'suspended',
+]
+
+POSITIONS = [
+    'goalkeeper', 'defender', 'midfielder', 'forward', 'centre-back',
+    'left-back', 'right-back', 'left winger', 'right winger',
+    'attacking mid', 'defensive mid', 'striker', 'winger',
 ]
 
 
@@ -82,53 +91,60 @@ def _write_cache(league, data):
 
 # ── Helpers ───────────────────────────────────────────────────────────
 def _is_transfer(news):
-    if not news: return False
+    if not news:
+        return False
     return any(kw.lower() in news.lower() for kw in TRANSFER_KEYWORDS)
 
 def _injury_type_from_news(news, status):
     if status == 's': return 'Suspended'
     n = news.lower()
-    if 'hamstring' in n: return 'Hamstring Injury'
-    if 'knee'      in n or 'cruciate' in n or 'acl' in n: return 'Knee Injury'
-    if 'muscle'    in n: return 'Muscle Injury'
-    if 'ankle'     in n: return 'Ankle Injury'
-    if 'calf'      in n: return 'Calf Injury'
-    if 'thigh'     in n: return 'Thigh Injury'
-    if 'groin'     in n: return 'Groin Injury'
-    if 'back'      in n: return 'Back Injury'
-    if 'shoulder'  in n: return 'Shoulder Injury'
-    if 'foot'      in n: return 'Foot Injury'
-    if 'hip'       in n: return 'Hip Injury'
-    if 'achilles'  in n: return 'Achilles Injury'
-    if 'hernia'    in n: return 'Hernia'
-    if 'illness'   in n: return 'Illness'
-    if 'knock'     in n or 'dead leg' in n or 'fitness' in n: return 'Doubtful'
-    if status == 'd': return 'Doubtful'
+    if 'hamstring' in n:                          return 'Hamstring Injury'
+    if 'knee' in n or 'cruciate' in n or 'acl' in n: return 'Knee Injury'
+    if 'muscle'    in n:                          return 'Muscle Injury'
+    if 'ankle'     in n:                          return 'Ankle Injury'
+    if 'calf'      in n:                          return 'Calf Injury'
+    if 'thigh'     in n:                          return 'Thigh Injury'
+    if 'groin'     in n:                          return 'Groin Injury'
+    if 'back'      in n:                          return 'Back Injury'
+    if 'shoulder'  in n:                          return 'Shoulder Injury'
+    if 'foot'      in n:                          return 'Foot Injury'
+    if 'hip'       in n:                          return 'Hip Injury'
+    if 'achilles'  in n:                          return 'Achilles Injury'
+    if 'hernia'    in n:                          return 'Hernia'
+    if 'illness'   in n:                          return 'Illness'
+    if 'knock' in n or 'dead leg' in n or 'fitness' in n: return 'Doubtful'
+    if status == 'd':                             return 'Doubtful'
     return 'Injured'
 
 
-# ── FPL (Premier League) ──────────────────────────────────────────────
+# ── Premier League — FPL API ──────────────────────────────────────────
 def _fetch_fpl_injuries():
     try:
         print('[InjuryScraper] Fetching Premier League from FPL API...')
-        resp  = requests.get('https://fantasy.premierleague.com/api/bootstrap-static/', timeout=15, headers={'User-Agent': 'Mozilla/5.0'})
+        resp  = requests.get(
+            'https://fantasy.premierleague.com/api/bootstrap-static/',
+            timeout=15, headers={'User-Agent': 'Mozilla/5.0'}
+        )
         data  = resp.json()
         teams = {t['id']: t for t in data.get('teams', [])}
         injuries = []
 
         for player in data.get('elements', []):
             status = player.get('status', 'a')
-            if status == 'a': continue
+            if status == 'a':
+                continue
             news   = player.get('news', '') or ''
             chance = player.get('chance_of_playing_next_round')
 
-            if _is_transfer(news): continue
-            if status == 'u' and not news: continue
+            if _is_transfer(news):
+                continue
+            if status == 'u' and not news:
+                continue
 
-            team_id   = player.get('team')
-            team_info = teams.get(team_id, {})
-            team_name = team_info.get('name', '')
-            team_code = team_info.get('code', '')
+            team_id     = player.get('team')
+            team_info   = teams.get(team_id, {})
+            team_name   = team_info.get('name', '')
+            team_code   = team_info.get('code', '')
             player_code = player.get('code', '')
 
             injuries.append({
@@ -153,13 +169,14 @@ def _fetch_fpl_injuries():
         return []
 
 
-# ── Transfermarkt ─────────────────────────────────────────────────────
+# ── Transfermarkt (other leagues) ─────────────────────────────────────
 def _fetch_transfermarkt_injuries(league):
     base_url = TM_LEAGUES.get(league)
     if not base_url:
         return []
 
     injuries = []
+    # Fetch injuries page then suspensions page
     urls = [base_url, base_url.replace('verletztespieler', 'sperrenausfaelle')]
 
     for page_url in urls:
@@ -201,21 +218,24 @@ def _fetch_transfermarkt_injuries(league):
                     team_name = team_img.get('title', '') if team_img else ''
                     team_logo = team_img.get('src', '') if team_img else ''
 
-                  # Extract injury type — skip cells with position names
+                    # Extract injury type — skip position name cells
                     injury_type  = 'Injury'
-                    POSITIONS = ['goalkeeper','defender','midfielder','forward','centre-back',
-                                'left-back','right-back','left winger','right winger',
-                                'attacking mid','defensive mid','striker','winger']
+                    return_date  = 'Unknown'
+                    games_missed = 0
 
                     for cell in cells:
                         txt   = cell.get_text(strip=True)
                         lower = txt.lower()
-                        # Skip if it looks like a position (common in suspension pages)
+                        # Skip position names (common on suspension pages)
                         if any(pos in lower for pos in POSITIONS):
                             continue
-                        if any(kw in lower for kw in INJURY_KEYWORDS):
+                        # Check for injury keywords
+                        if injury_type == 'Injury' and any(kw in lower for kw in INJURY_KEYWORDS):
                             injury_type = txt
-                            break
+                        # Check for return date
+                        if any(m in txt for m in ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']):
+                            return_date = txt
+                        # Check for games missed
                         try:
                             val = int(txt)
                             if 1 <= val <= 60:
@@ -223,13 +243,26 @@ def _fetch_transfermarkt_injuries(league):
                         except Exception:
                             pass
 
+                    # Clean up — strip position suffix if accidentally included
+                    for pos in ['Centre-Back','Left-Back','Right-Back','Goalkeeper','Midfielder',
+                                'Defender','Forward','Striker','Left Winger','Right Winger',
+                                'Attacking Midfield','Defensive Midfield','Central Midfield']:
+                        if injury_type.endswith(pos):
+                            cleaned = injury_type[:-len(pos)].strip()
+                            injury_type = cleaned if cleaned else ('Suspended' if 'sperren' in page_url else 'Injury')
+                            break
+
+                    # If still looks like a name not an injury, fix it
+                    if injury_type and not any(kw in injury_type.lower() for kw in INJURY_KEYWORDS):
+                        injury_type = 'Suspended' if 'sperren' in page_url else 'Injury'
+
                     injuries.append({
                         'player':          player_name,
                         'playerPhoto':     photo,
                         'team':            team_name,
                         'teamLogo':        team_logo,
                         'type':            injury_type,
-                        'reason':          'Injury' if 'susp' not in injury_type.lower() else 'Suspended',
+                        'reason':          'Suspended' if 'susp' in injury_type.lower() else 'Injured',
                         'news':            '',
                         'chanceOfPlaying': None,
                         'returnDate':      return_date,
@@ -246,19 +279,7 @@ def _fetch_transfermarkt_injuries(league):
 
     print(f'[InjuryScraper] {league}: Transfermarkt total {len(injuries)}')
     return injuries
-    soup  = BeautifulSoup(resp.text, 'lxml')
 
-# Debug — log all table classes found
-all_tables = soup.find_all('table')
-print(f'[InjuryScraper] {league}: Found {len(all_tables)} tables, classes: {[t.get("class") for t in all_tables[:5]]}')
-
-table = soup.find('table', {'class': 'items'})
-if not table:
-    # Try alternative selectors
-    table = soup.find('table', {'class': lambda c: c and 'items' in c}) or \
-            soup.find('table', id=lambda i: i and 'yw' in str(i)) or \
-            (all_tables[0] if all_tables else None)
-    print(f'[InjuryScraper] {league}: Used fallback table selector')
 
 # ── TheFishy.net fallback ─────────────────────────────────────────────
 def _fetch_fishy_injuries(league):
@@ -280,36 +301,46 @@ def _fetch_fishy_injuries(league):
         for table in soup.find_all('table'):
             for row in table.find_all('tr'):
                 cells = row.find_all('td')
-                if len(cells) < 3: continue
+                if len(cells) < 3:
+                    continue
                 texts = [c.get_text(strip=True) for c in cells]
-                if not texts[0] or texts[0].lower() in ('player','name','team'): continue
+                if not texts[0] or texts[0].lower() in ('player', 'name', 'team'):
+                    continue
 
                 player_name = texts[0]
                 team_name   = texts[1] if len(texts) > 1 else ''
                 injury_info = texts[2] if len(texts) > 2 else ''
                 return_date = texts[3] if len(texts) > 3 else 'Unknown'
-                if not player_name or not team_name: continue
+                if not player_name or not team_name:
+                    continue
 
                 inj = injury_info.lower()
-                if   'hamstring'  in inj: injury_type = 'Hamstring Injury'
-                elif 'knee'       in inj: injury_type = 'Knee Injury'
-                elif 'muscle'     in inj: injury_type = 'Muscle Injury'
-                elif 'ankle'      in inj: injury_type = 'Ankle Injury'
-                elif 'thigh'      in inj: injury_type = 'Thigh Injury'
-                elif 'calf'       in inj: injury_type = 'Calf Injury'
-                elif 'back'       in inj: injury_type = 'Back Injury'
-                elif 'groin'      in inj: injury_type = 'Groin Injury'
-                elif 'shoulder'   in inj: injury_type = 'Shoulder Injury'
-                elif 'suspend' in inj or 'red' in inj or 'yellow' in inj: injury_type = 'Suspended'
-                elif 'illness'    in inj: injury_type = 'Illness'
-                else:                     injury_type = injury_info or 'Injury'
+                if   'hamstring' in inj: injury_type = 'Hamstring Injury'
+                elif 'knee'      in inj: injury_type = 'Knee Injury'
+                elif 'muscle'    in inj: injury_type = 'Muscle Injury'
+                elif 'ankle'     in inj: injury_type = 'Ankle Injury'
+                elif 'thigh'     in inj: injury_type = 'Thigh Injury'
+                elif 'calf'      in inj: injury_type = 'Calf Injury'
+                elif 'back'      in inj: injury_type = 'Back Injury'
+                elif 'groin'     in inj: injury_type = 'Groin Injury'
+                elif 'shoulder'  in inj: injury_type = 'Shoulder Injury'
+                elif 'suspend' in inj or 'red card' in inj: injury_type = 'Suspended'
+                elif 'illness'   in inj: injury_type = 'Illness'
+                else:                    injury_type = injury_info or 'Injury'
 
                 injuries.append({
-                    'player': player_name, 'playerPhoto': '', 'team': team_name,
-                    'teamLogo': '', 'type': injury_type, 'reason': injury_info,
-                    'news': injury_info, 'chanceOfPlaying': None,
-                    'returnDate': return_date or 'Unknown', 'games_missed': 0,
-                    'league': league, 'source': 'TheFishy',
+                    'player':          player_name,
+                    'playerPhoto':     '',
+                    'team':            team_name,
+                    'teamLogo':        '',
+                    'type':            injury_type,
+                    'reason':          injury_info,
+                    'news':            injury_info,
+                    'chanceOfPlaying': None,
+                    'returnDate':      return_date or 'Unknown',
+                    'games_missed':    0,
+                    'league':          league,
+                    'source':          'TheFishy',
                 })
 
         print(f'[InjuryScraper] {league}: thefishy found {len(injuries)}')
@@ -319,7 +350,7 @@ def _fetch_fishy_injuries(league):
         return []
 
 
-# ── API-Football fallback ─────────────────────────────────────────────
+# ── API-Football last resort ──────────────────────────────────────────
 def _fetch_apifootball_injuries(league):
     api_key   = os.getenv('API_FOOTBALL_KEY', '')
     league_id = API_FOOTBALL_IDS.get(league)
@@ -344,12 +375,18 @@ def _fetch_apifootball_injuries(league):
             dt_str = (fix.get('date', '') or '')[:10]
             if pid not in seen or dt_str > seen[pid]['returnDate']:
                 seen[pid] = {
-                    'player': player.get('name', ''), 'playerPhoto': player.get('photo', ''),
-                    'team': team.get('name', ''), 'teamLogo': team.get('logo', ''),
-                    'type': player.get('reason', '') or player.get('type', '') or 'Injury',
-                    'reason': player.get('type', ''), 'news': '', 'chanceOfPlaying': None,
-                    'returnDate': dt_str or 'Unknown', 'games_missed': 0,
-                    'league': league, 'source': 'API-Football',
+                    'player':          player.get('name', ''),
+                    'playerPhoto':     player.get('photo', ''),
+                    'team':            team.get('name', ''),
+                    'teamLogo':        team.get('logo', ''),
+                    'type':            player.get('reason', '') or player.get('type', '') or 'Injury',
+                    'reason':          player.get('type', ''),
+                    'news':            '',
+                    'chanceOfPlaying': None,
+                    'returnDate':      dt_str or 'Unknown',
+                    'games_missed':    0,
+                    'league':          league,
+                    'source':          'API-Football',
                 }
         result = sorted(
             [v for v in seen.values() if v['returnDate'] >= today or v['returnDate'] == 'Unknown'],
