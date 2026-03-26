@@ -293,21 +293,39 @@ export default function PlayerProfileCard({ player, onClose, injuryStatus }) {
   const [tab, setTab] = useState('overview');
   const cardRef = useRef(null);
 
-  const downloadCard = async () => {
-    if (!cardRef.current) return;
-    const html2canvas = (await import('html2canvas')).default;
-    const canvas = await html2canvas(cardRef.current, {
-      backgroundColor: '#060a14',
-      scale: 2,
-      useCORS: true,
-      allowTaint: true,
-      logging: false,
-    });
-    const link = document.createElement('a');
-    link.download = `${(player.name || 'player').replace(/ /g, '_')}_profile.png`;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-  };
+ const downloadCard = async () => {
+  if (!cardRef.current) return;
+
+  // Hide buttons before capture
+  const btns = cardRef.current.querySelectorAll('[data-hide-download]');
+  btns.forEach(b => b.style.display = 'none');
+
+  // Add branding element
+  const brand = document.createElement('div');
+  brand.style.cssText = 'text-align:center;padding:12px 0 10px;font-family:Outfit,sans-serif;font-size:13px;font-weight:900;letter-spacing:0.15em;color:rgba(255,255,255,0.25);background:#060a14;text-transform:uppercase;';
+  brand.innerText = 'ScoringAI';
+  cardRef.current.appendChild(brand);
+
+  const html2canvas = (await import('html2canvas')).default;
+  const canvas = await html2canvas(cardRef.current, {
+    backgroundColor: '#060a14',
+    scale: 2,
+    useCORS: true,
+    allowTaint: true,
+    logging: false,
+    windowWidth: cardRef.current.scrollWidth,
+    windowHeight: cardRef.current.scrollHeight,
+  });
+
+  // Restore buttons and remove branding
+  btns.forEach(b => b.style.display = '');
+  cardRef.current.removeChild(brand);
+
+  const link = document.createElement('a');
+  link.download = `${(player.name || 'player').replace(/ /g, '_')}_ScoringAI.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+};
   if (!player) return null;
 
   const pos   = player.position || 'Attacker';
@@ -353,7 +371,7 @@ export default function PlayerProfileCard({ player, onClose, injuryStatus }) {
               {/* ── PLAYER STATUS BADGE ── */}
               <PlayerStatusBadge status={injuryStatus}/>
             </div>
-           <div className="flex items-center gap-2">
+           <div className="flex items-center gap-2" data-hide-download>
               <button onClick={downloadCard}
                 className="w-8 h-8 rounded-xl flex items-center justify-center border border-white/10 text-slate-400 hover:text-white transition-all"
                 style={{ background: 'rgba(255,255,255,0.06)' }}
@@ -396,7 +414,7 @@ export default function PlayerProfileCard({ player, onClose, injuryStatus }) {
                   {player.teamLogo && <img src={player.teamLogo} alt="" className="w-5 h-5 object-contain"/>}
                   <span className="text-base font-bold" style={{ color: posC.color }}>{player.team}</span>
                 </div>
-                <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center justify-center gap-2 flex-wrap flex-1">
                   <span className="text-[12px] font-black px-2.5 py-1 rounded-xl"
                     style={{ color: posC.color, background: posC.bg, border: `1px solid ${posC.border}` }}>{pos}</span>
                   {player.nationality && <span className="text-[12px] text-slate-300 font-semibold">{player.nationality}</span>}
