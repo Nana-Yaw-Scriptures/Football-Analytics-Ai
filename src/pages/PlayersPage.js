@@ -638,6 +638,7 @@ export default function PlayersPage({ onNavigate }) {
   const [compared,    setCompared]    = useState([]);
   const [showCompare, setShowCompare] = useState(false);
   const [minMins,     setMinMins]     = useState(0);
+  const [statusFilter, setStatusFilter] = useState([]); // 'Injured','Doubtful','Suspended'
   const [injuryMap, setInjuryMap] = useState({}); // { playerNameLower: { type, status, news, chance } }
   const searchRef = useRef(null);
 
@@ -694,11 +695,21 @@ export default function PlayersPage({ onNavigate }) {
   const filtered = players
     .filter(p => {
       const q = search.toLowerCase();
+      const inj = getPlayerStatus(p);
+      const injType = inj ? (inj.type||'').toLowerCase() : '';
+      const injReason = inj ? (inj.status||'').toLowerCase() : '';
+      const matchesStatus = statusFilter.length === 0 || statusFilter.some(f => {
+        if (f === 'Injured')   return inj && !injType.includes('doubt') && !injType.includes('suspen') && !injReason.includes('suspen');
+        if (f === 'Doubtful')  return inj && (injType.includes('doubt') || injReason.includes('doubt') || (inj.chance !== null && inj.chance !== undefined && inj.chance < 75));
+        if (f === 'Suspended') return inj && (injType.includes('suspen') || injReason.includes('suspen'));
+        return false;
+      });
       return (
         (!q || (p.name||'').toLowerCase().includes(q) || (p.team||'').toLowerCase().includes(q) || (p.nationality||'').toLowerCase().includes(q)) &&
         (league   === 'All' || p.league   === league) &&
         (position === 'All' || p.position === position) &&
-        (Number(p.minutes) || 0) >= minMins
+        (Number(p.minutes) || 0) >= minMins &&
+        matchesStatus
       );
     })
     .sort((a, b) => {
@@ -724,8 +735,7 @@ export default function PlayersPage({ onNavigate }) {
     });
   };
 
-  const hasFilters = league !== 'All' || position !== 'All' || minMins > 0;
-
+const hasFilters = league !== 'All' || position !== 'All' || minMins > 0 || statusFilter.length > 0;
   /* Loading screen */
   if (loading) return (
     <div className="min-h-screen bg-[#050810] flex items-center justify-center" style={{fontFamily:"'Outfit',sans-serif"}}>
@@ -983,7 +993,7 @@ export default function PlayersPage({ onNavigate }) {
             </div>
 
             {hasFilters && (
-              <button onClick={() => { setLeague('All'); setPosition('All'); setMinMins(0); setPage(1); }}
+              <button onClick={() => { setLeague('All'); setPosition('All'); setMinMins(0); setStatusFilter([]); setPage(1); }}
                 className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-white transition-all">
                 <XIcon className="w-3 h-3"/> Clear all filters
               </button>
@@ -992,7 +1002,7 @@ export default function PlayersPage({ onNavigate }) {
         )}
 
         {/* ══ SORT CHIPS ══ */}
-        <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-1">
+       <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-1">
           <span className="text-[11px] text-slate-600 font-bold uppercase tracking-widest flex-shrink-0">Sort:</span>
           {SORT_OPTS.map(s => (
             <button key={s.col} onClick={() => sort(s.col)}
@@ -1007,6 +1017,47 @@ export default function PlayersPage({ onNavigate }) {
               {sortCol===s.col && (sortDir==='desc' ? <ArrowDnIcon className="w-3 h-3"/> : <ArrowUpIcon className="w-3 h-3"/>)}
             </button>
           ))}
+        </div>
+
+          {/* ══ STATUS FILTER CHIPS ══ */}
+        <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-1">
+          <span className="text-[11px] text-slate-600 font-bold uppercase tracking-widest flex-shrink-0">Status:</span>
+          {[
+            { key: 'Injured',   color: '#ef4444', icon: '⬤' },
+            { key: 'Doubtful',  color: '#f59e0b', icon: '⬤' },
+            { key: 'Suspended', color: '#a855f7', icon: '⬤' },
+          ].map(s => {
+            const active = statusFilter.includes(s.key);
+            return (
+              <button key={s.key}
+                onClick={() => {
+                  setStatusFilter(prev =>
+                    prev.includes(s.key) ? prev.filter(f => f !== s.key) : [...prev, s.key]
+                  );
+                  setPage(1);
+                }}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all border flex-shrink-0"
+                style={{
+                  background:  active ? `${s.color}15` : 'rgba(255,255,255,0.03)',
+                  borderColor: active ? `${s.color}30` : 'rgba(255,255,255,0.07)',
+                  color:       active ? s.color : '#64748b',
+                }}>
+                <svg className="w-2 h-2" viewBox="0 0 8 8" fill={active ? s.color : '#64748b'}>
+                  <circle cx="4" cy="4" r="4"/>
+                </svg>
+                {s.key}
+                {active && (
+                  <span className="ml-1 text-[10px] opacity-60">✕</span>
+                )}
+              </button>
+            );
+          })}
+          {statusFilter.length > 0 && (
+            <button onClick={() => { setStatusFilter([]); setPage(1); }}
+              className="text-[11px] text-slate-600 hover:text-white transition-colors flex-shrink-0">
+              Clear
+            </button>
+          )}
         </div>
 
         {/* Count row */}
