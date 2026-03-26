@@ -293,18 +293,12 @@ export default function PlayerProfileCard({ player, onClose, injuryStatus }) {
   const [tab, setTab] = useState('overview');
   const cardRef = useRef(null);
 
- const downloadCard = async () => {
+const downloadCard = async () => {
   if (!cardRef.current) return;
 
   // Hide buttons before capture
   const btns = cardRef.current.querySelectorAll('[data-hide-download]');
   btns.forEach(b => b.style.display = 'none');
-
-  // Add branding element
-  const brand = document.createElement('div');
-  brand.style.cssText = 'text-align:center;padding:12px 0 10px;font-family:Outfit,sans-serif;font-size:13px;font-weight:900;letter-spacing:0.15em;color:rgba(255,255,255,0.25);background:#060a14;text-transform:uppercase;';
-  brand.innerText = 'ScoringAI';
-  cardRef.current.appendChild(brand);
 
   const html2canvas = (await import('html2canvas')).default;
   const canvas = await html2canvas(cardRef.current, {
@@ -313,16 +307,37 @@ export default function PlayerProfileCard({ player, onClose, injuryStatus }) {
     useCORS: true,
     allowTaint: true,
     logging: false,
-    windowWidth: cardRef.current.scrollWidth,
-    windowHeight: cardRef.current.scrollHeight,
   });
 
-  // Restore buttons and remove branding
+  // Restore buttons
   btns.forEach(b => b.style.display = '');
-  cardRef.current.removeChild(brand);
+
+  // Draw watermark directly onto canvas
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width;
+  const h = canvas.height;
+
+  // Diagonal center watermark
+  ctx.save();
+  ctx.translate(w / 2, h / 2);
+  ctx.rotate(-Math.PI / 6);
+  ctx.font = `900 ${w * 0.09}px Outfit, sans-serif`;
+  ctx.fillStyle = 'rgba(255,255,255,0.06)';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('ScorinaAI', 0, 0);
+  ctx.restore();
+
+  // Bottom branding
+  ctx.fillStyle = 'rgba(255,255,255,0.2)';
+  ctx.font = `700 ${w * 0.03}px Outfit, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  ctx.letterSpacing = '0.15em';
+  ctx.fillText('SCORINAAI', w / 2, h - 16);
 
   const link = document.createElement('a');
-  link.download = `${(player.name || 'player').replace(/ /g, '_')}_ScoringAI.png`;
+  link.download = `${(player.name || 'player').replace(/ /g, '_')}_ScorinaAI.png`;
   link.href = canvas.toDataURL('image/png');
   link.click();
 };
@@ -357,7 +372,7 @@ export default function PlayerProfileCard({ player, onClose, injuryStatus }) {
 
           {/* Top bar */}
           <div className="relative flex items-center justify-between px-5 pt-4 pb-2">
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center justify-center gap-2 flex-wrap flex-1 text-center">
               {player.league && (
                 <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-widest">{player.league}</span>
               )}
@@ -410,7 +425,7 @@ export default function PlayerProfileCard({ player, onClose, injuryStatus }) {
               </div>
               <div className="flex-1 min-w-0 pt-1">
                 <h2 className="text-2xl font-black text-white leading-tight mb-1">{player.name}</h2>
-                <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-center justify-center gap-2 flex-wrap">
                   {player.teamLogo && <img src={player.teamLogo} alt="" className="w-5 h-5 object-contain"/>}
                   <span className="text-base font-bold" style={{ color: posC.color }}>{player.team}</span>
                 </div>
