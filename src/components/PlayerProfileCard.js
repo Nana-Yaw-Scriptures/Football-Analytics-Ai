@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-
+import React, { useState, useEffect, useRef } from 'react';
 const I = ({ d, className = "w-4 h-4" }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{d}</svg>
 );
@@ -292,6 +291,23 @@ const Per90Section = ({ player, posGroup }) => {
 
 export default function PlayerProfileCard({ player, onClose, injuryStatus }) {
   const [tab, setTab] = useState('overview');
+  const cardRef = useRef(null);
+
+  const downloadCard = async () => {
+    if (!cardRef.current) return;
+    const html2canvas = (await import('html2canvas')).default;
+    const canvas = await html2canvas(cardRef.current, {
+      backgroundColor: '#060a14',
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      logging: false,
+    });
+    const link = document.createElement('a');
+    link.download = `${(player.name || 'player').replace(/ /g, '_')}_profile.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  };
   if (!player) return null;
 
   const pos   = player.position || 'Attacker';
@@ -308,8 +324,7 @@ export default function PlayerProfileCard({ player, onClose, injuryStatus }) {
       style={{ background: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(10px)' }}
       onClick={e => e.target === e.currentTarget && onClose()}>
 
-      <div className="w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl"
-        style={{
+      <div ref={cardRef} className="w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl"        style={{
           background: 'rgba(6,10,20,0.98)',
           border: '1px solid rgba(255,255,255,0.08)',
           maxHeight: '92vh', overflowY: 'auto',
@@ -338,11 +353,23 @@ export default function PlayerProfileCard({ player, onClose, injuryStatus }) {
               {/* ── PLAYER STATUS BADGE ── */}
               <PlayerStatusBadge status={injuryStatus}/>
             </div>
-            <button onClick={onClose}
-              className="w-8 h-8 rounded-xl flex items-center justify-center border border-white/10 text-slate-400 hover:text-white transition-all"
-              style={{ background: 'rgba(255,255,255,0.06)' }}>
-              <XIcon className="w-4 h-4"/>
-            </button>
+           <div className="flex items-center gap-2">
+              <button onClick={downloadCard}
+                className="w-8 h-8 rounded-xl flex items-center justify-center border border-white/10 text-slate-400 hover:text-white transition-all"
+                style={{ background: 'rgba(255,255,255,0.06)' }}
+                title="Download card">
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+              </button>
+              <button onClick={onClose}
+                className="w-8 h-8 rounded-xl flex items-center justify-center border border-white/10 text-slate-400 hover:text-white transition-all"
+                style={{ background: 'rgba(255,255,255,0.06)' }}>
+                <XIcon className="w-4 h-4"/>
+              </button>
+            </div>
           </div>
 
           {/* Player identity */}
