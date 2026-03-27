@@ -296,48 +296,63 @@ export default function PlayerProfileCard({ player, onClose, injuryStatus }) {
 const downloadCard = async () => {
   if (!cardRef.current) return;
 
-  // Hide buttons before capture
-  const btns = cardRef.current.querySelectorAll('[data-hide-download]');
-  btns.forEach(b => b.style.display = 'none');
+  const el = cardRef.current;
+
+  // Hide UI buttons
+  const hidden = el.querySelectorAll('[data-hide-download]');
+  hidden.forEach(h => { h.style.visibility = 'hidden'; });
+
+  // ── KEY FIX: remove scroll constraint so full card renders ──
+  const prevMaxHeight = el.style.maxHeight;
+  const prevOverflow  = el.style.overflowY;
+  el.style.maxHeight = 'none';
+  el.style.overflowY = 'visible';
 
   const html2canvas = (await import('html2canvas')).default;
-  const canvas = await html2canvas(cardRef.current, {
+  const canvas = await html2canvas(el, {
     backgroundColor: '#060a14',
     scale: 2,
     useCORS: true,
     allowTaint: true,
     logging: false,
+    width:  el.scrollWidth,
+    height: el.scrollHeight,
+    windowWidth:  el.scrollWidth,
+    windowHeight: el.scrollHeight,
   });
 
-  // Restore buttons
-  btns.forEach(b => b.style.display = '');
+  // Restore
+  el.style.maxHeight = prevMaxHeight;
+  el.style.overflowY = prevOverflow;
+  hidden.forEach(h => { h.style.visibility = ''; });
 
-  // Draw watermark directly onto canvas
   const ctx = canvas.getContext('2d');
-  const w = canvas.width;
-  const h = canvas.height;
+  const w = canvas.width, h = canvas.height;
 
-  // Diagonal center watermark
+  // Diagonal watermark
   ctx.save();
   ctx.translate(w / 2, h / 2);
-  ctx.rotate(-Math.PI / 6);
-  ctx.font = `900 ${w * 0.11}px Outfit, sans-serif`;
-  ctx.fillStyle = 'rgba(255,255,255,0.10)';
+  ctx.rotate(-Math.PI / 8);
+  ctx.font = `900 ${Math.round(w * 0.13)}px Arial, sans-serif`;
+  ctx.fillStyle = 'rgba(255,255,255,0.07)';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText('Scorina AI', 0, 0);
   ctx.restore();
 
-  // Bottom branding
-  ctx.fillStyle = 'rgba(255,255,255,0.35)';
-  ctx.font = `700 ${w * 0.035}px Outfit, sans-serif`;
+  // Bottom branding strip
+  ctx.fillStyle = 'rgba(6,10,20,0.95)';
+  ctx.fillRect(0, h - 52, w, 52);
+  ctx.fillStyle = 'rgba(34,211,238,0.6)';
+  ctx.fillRect(0, h - 52, w, 2);
+  ctx.font = `800 ${Math.round(w * 0.038)}px Arial, sans-serif`;
+  ctx.fillStyle = 'rgba(255,255,255,0.9)';
   ctx.textAlign = 'center';
-  ctx.textBaseline = 'bottom';
-  ctx.letterSpacing = '0.15em';
-  ctx.fillText('SCORINA AI', w / 2, h - 16);
+  ctx.textBaseline = 'middle';
+  ctx.fillText('Scorina AI', w / 2, h - 26);
 
   const link = document.createElement('a');
-  link.download = `${(player.name || 'player').replace(/ /g, '_')}_Scorina AI.png`;
+  link.download = `${(player.name||'player').replace(/ /g,'_')}_Scorina AI.png`;
   link.href = canvas.toDataURL('image/png');
   link.click();
 };
