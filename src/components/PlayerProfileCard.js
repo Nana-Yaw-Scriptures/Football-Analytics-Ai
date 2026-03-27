@@ -223,9 +223,9 @@ const StatRow = ({ label, value, color, suffix = '', decimal = false, duelsFmt =
     if (!isNaN(v) && v > 0) display = `${decimal ? v.toFixed(1) : Math.round(v)}${suffix}`;
   }
   return (
-    <div className="flex items-center justify-between py-2 border-b border-white/[0.04] last:border-0">
-      <span className="text-[13px] text-slate-400">{label}</span>
-      <span className="text-[13px] font-black" style={{ fontFamily: 'JetBrains Mono', color }}>{display}</span>
+    <div className="flex items-center justify-between py-2.5 border-b border-white/[0.04] last:border-0">
+      <span className="text-[15px] text-slate-400">{label}</span>
+      <span className="text-[15px] font-black" style={{ fontFamily: 'JetBrains Mono', color }}>{display}</span>
     </div>
   );
 };
@@ -322,30 +322,16 @@ export default function PlayerProfileCard({ player, onClose, injuryStatus }) {
     const ctx = canvas.getContext('2d');
     const w = canvas.width, h = canvas.height;
 
-    // ── Tiled diagonal watermark — visible opacity, full card coverage ──
+    // ── Single centered diagonal watermark ──
     ctx.save();
-    ctx.globalAlpha = 0.09;                          // raised from 0.045 — dark bg needs more
+    ctx.translate(w / 2, h * 0.42);               // 42% down — better visual center on tall cards
+    ctx.rotate(-Math.PI / 10);
+    ctx.font = `900 ${Math.round(w * 0.16)}px Arial, sans-serif`; // bigger — fills the card
     ctx.fillStyle = '#ffffff';
-    const fontSize = Math.round(w * 0.07);           // larger so each tile reads clearly
-    ctx.font = `900 ${fontSize}px Arial, sans-serif`;
+    ctx.globalAlpha = 0.07;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-
-    const angle = -Math.PI / 10;
-    const stepX = w * 0.6;                           // tighter horizontal pitch
-    const stepY = Math.round(fontSize * 3.2);        // row spacing scales with font size
-
-    for (let row = -1; row < h / stepY + 2; row++) {
-      for (let col = -1; col < w / stepX + 2; col++) {
-        // stagger every other row by half a column width
-        const xOffset = (row % 2 === 0) ? 0 : stepX / 2;
-        ctx.save();
-        ctx.translate(col * stepX + xOffset, row * stepY);
-        ctx.rotate(angle);
-        ctx.fillText('Scorina AI', 0, 0);
-        ctx.restore();
-      }
-    }
+    ctx.fillText('Scorina AI', 0, 0);
     ctx.restore();
 
     // ── Bottom branding strip ──
@@ -525,8 +511,8 @@ export default function PlayerProfileCard({ player, onClose, injuryStatus }) {
               {stats.sections.map((section, si) => (
                 <div key={si} className="rounded-2xl border border-white/[0.07] overflow-hidden" style={{ background: 'rgba(10,14,26,0.8)' }}>
                   <div className="px-4 py-3 border-b border-white/[0.06] flex items-center gap-2" style={{ background: `${section.color}07` }}>
-                    <section.icon className="w-3.5 h-3.5 flex-shrink-0" style={{ color: section.color }}/>
-                    <span className="text-[11px] font-black text-white uppercase tracking-widest">{section.title}</span>
+                    <section.icon className="w-4 h-4 flex-shrink-0" style={{ color: section.color }}/>
+                    <span className="text-[13px] font-black text-white uppercase tracking-widest">{section.title}</span>
                   </div>
                   <div className="px-4 pb-1">
                     {section.rows.map((row, ri) => (
@@ -538,8 +524,8 @@ export default function PlayerProfileCard({ player, onClose, injuryStatus }) {
               ))}
               <div className="rounded-2xl border border-white/[0.07] overflow-hidden" style={{ background: 'rgba(10,14,26,0.8)' }}>
                 <div className="px-4 py-3 border-b border-white/[0.06] flex items-center gap-2" style={{ background: 'rgba(234,179,8,0.05)' }}>
-                  <AwardIcon className="w-3.5 h-3.5 text-yellow-400"/>
-                  <span className="text-[11px] font-black text-white uppercase tracking-widest">Discipline</span>
+                  <AwardIcon className="w-4 h-4 text-yellow-400"/>
+                  <span className="text-[13px] font-black text-white uppercase tracking-widest">Discipline</span>
                 </div>
                 <div className="px-4 pb-1">
                   <StatRow label="Yellow Cards"   value={player.yellowCards}    color="#eab308"/>
@@ -600,7 +586,7 @@ export default function PlayerProfileCard({ player, onClose, injuryStatus }) {
           )}
           {tab === 'per90' && <Per90Section player={player} posGroup={pos}/>}
         </div>
-        <div className="h-4"/>
+        <div className="h-8"/>
       </div>
 
       <style>{`
