@@ -322,36 +322,20 @@ export default function PlayerProfileCard({ player, onClose, injuryStatus }) {
     const ctx = canvas.getContext('2d');
     const w = canvas.width, h = canvas.height;
 
-   // ── FIXED CENTERED WATERMARK ──
-ctx.save();
-
-const text = 'Scorina AI';
-
-// better scaling
-const fontSize = Math.round(w * 0.075);
-ctx.font = `900 ${fontSize}px Arial, sans-serif`;
-
-ctx.fillStyle = '#ffffff';
-ctx.globalAlpha = 0.09;
-
-// TRUE CENTER
-const centerX = w / 2;
-const centerY = h / 2;
-
-// move origin FIRST
-ctx.translate(centerX, centerY);
-
-// rotate AFTER translate
-ctx.rotate(-Math.PI / 10);
-
-// ensure perfect centering
-ctx.textAlign = 'center';
-ctx.textBaseline = 'middle';
-
-// optional: constrain width so it doesn't drift visually
-ctx.fillText(text, 0, 0, w * 0.8);
-
-ctx.restore();
+    // ── Single centered diagonal watermark ──
+    // canvas is already at scale:2 from html2canvas, so w/h are 2× the visual px.
+    // Keep font modest so the full text always fits after -18° rotation.
+    ctx.save();
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle    = '#ffffff';
+    ctx.globalAlpha  = 0.09;
+    // w*0.08 → for a 780px canvas = ~62px font; "Scorina AI" ~420px wide, safe after rotation
+    ctx.font = `900 ${Math.round(w * 0.08)}px Arial, sans-serif`;
+    ctx.translate(w / 2, h / 2);   // true center of the canvas
+    ctx.rotate(-Math.PI / 10);      // -18°
+    ctx.fillText('Scorina AI', 0, 0);
+    ctx.restore();
 
     // ── Bottom branding strip ──
     const stripH = 56;
@@ -406,7 +390,7 @@ ctx.restore();
 
           {/* Top bar */}
           <div className="relative flex items-center justify-center px-5 pt-4 pb-2">
-            <div className="flex flex-wrap justify-center items-center text-center w-full gap-2">
+            <div className="flex items-center justify-center gap-2 flex-wrap text-center">
               {player.league && (
                 <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-widest">{player.league}</span>
               )}
@@ -458,7 +442,7 @@ ctx.restore();
                 )}
               </div>
               {/* Text col — vertically centered relative to the photo */}
-              <div className="flex-1 min-w-0 flex flex-col items-center">
+              <div className="flex-1 min-w-0 flex flex-col items-center text-center justify-center">
                 <h2 className="text-2xl font-black text-white leading-tight mb-2 w-full text-center">{player.name}</h2>
                 <div className="flex items-center justify-center gap-2 flex-wrap w-full mb-2">
                   {player.teamLogo && <img src={player.teamLogo} alt="" className="w-5 h-5 object-contain"/>}
