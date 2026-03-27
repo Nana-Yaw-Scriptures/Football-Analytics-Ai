@@ -322,27 +322,18 @@ export default function PlayerProfileCard({ player, onClose, injuryStatus }) {
     const ctx = canvas.getContext('2d');
     const w = canvas.width, h = canvas.height;
 
-    // ── Single centered diagonal watermark — guaranteed to fit ──
+    // ── Single centered diagonal watermark ──
+    // canvas is already at scale:2 from html2canvas, so w/h are 2× the visual px.
+    // Keep font modest so the full text always fits after -18° rotation.
     ctx.save();
-    ctx.textAlign = 'center';
+    ctx.textAlign    = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillStyle = '#ffffff';
-    ctx.globalAlpha = 0.08;
-
-    // Start at a target size then scale down until the rotated text fits the canvas
-    let fontSize = Math.round(w * 0.13);
-    ctx.font = `900 ${fontSize}px Arial, sans-serif`;
-    const measured = ctx.measureText('Scorina AI').width;
-    // rotated text projected width must fit within canvas: textWidth * cos(angle) ≤ w
-    const angle = Math.PI / 10;
-    const maxTextWidth = (w * 0.88) / Math.cos(angle);
-    if (measured > maxTextWidth) {
-      fontSize = Math.round(fontSize * (maxTextWidth / measured));
-      ctx.font = `900 ${fontSize}px Arial, sans-serif`;
-    }
-
-    ctx.translate(w / 2, h * 0.42);
-    ctx.rotate(-angle);
+    ctx.fillStyle    = '#ffffff';
+    ctx.globalAlpha  = 0.09;
+    // w*0.08 → for a 780px canvas = ~62px font; "Scorina AI" ~420px wide, safe after rotation
+    ctx.font = `900 ${Math.round(w * 0.08)}px Arial, sans-serif`;
+    ctx.translate(w / 2, h / 2);   // true center of the canvas
+    ctx.rotate(-Math.PI / 10);      // -18°
     ctx.fillText('Scorina AI', 0, 0);
     ctx.restore();
 
@@ -434,7 +425,8 @@ export default function PlayerProfileCard({ player, onClose, injuryStatus }) {
           {/* Player identity */}
           <div className="relative px-5 pb-6 pt-2">
             <div className="flex items-start gap-4">
-              <div className="relative flex-shrink-0">
+              {/* Photo col — extra bottom padding so rating badge doesn't bleed into text */}
+              <div className="relative flex-shrink-0 mb-3">
                 {player.photo
                   ? <img src={player.photo} alt="" className="w-20 h-20 rounded-2xl object-cover border-2 shadow-2xl"
                       style={{ borderColor: `${posC.color}50`, boxShadow: `0 0 30px ${posC.color}30` }}/>
@@ -443,13 +435,14 @@ export default function PlayerProfileCard({ player, onClose, injuryStatus }) {
                       <span className="text-3xl font-black" style={{ color: posC.color }}>{(player.name || '?')[0]}</span>
                     </div>}
                 {rating > 0 && (
-                  <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-xl flex items-center justify-center font-black text-white text-sm shadow-lg border-2 border-[#060a14]"
+                  <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 min-w-[36px] h-7 px-2 rounded-xl flex items-center justify-center font-black text-white text-sm shadow-lg border-2 border-[#060a14]"
                     style={{ background: `linear-gradient(135deg,${ratingFrom},${ratingTo})`, fontFamily: 'JetBrains Mono' }}>
                     {rating.toFixed(1)}
                   </div>
                 )}
               </div>
-              <div className="flex-1 min-w-0 pt-1 flex flex-col items-center text-center">
+              {/* Text col — vertically centered relative to the photo */}
+              <div className="flex-1 min-w-0 flex flex-col items-center text-center justify-center">
                 <h2 className="text-2xl font-black text-white leading-tight mb-2 w-full text-center">{player.name}</h2>
                 <div className="flex items-center justify-center gap-2 flex-wrap w-full mb-2">
                   {player.teamLogo && <img src={player.teamLogo} alt="" className="w-5 h-5 object-contain"/>}
@@ -464,7 +457,6 @@ export default function PlayerProfileCard({ player, onClose, injuryStatus }) {
                 {injuryStatus?.news && (
                   <p className="text-[11px] text-slate-500 mb-2 leading-relaxed line-clamp-2 text-center">{injuryStatus.news}</p>
                 )}
-                {/* height/weight — centered with units */}
                 {(player.height || player.weight) && (
                   <div className="flex items-center justify-center gap-3">
                     {player.height && (
