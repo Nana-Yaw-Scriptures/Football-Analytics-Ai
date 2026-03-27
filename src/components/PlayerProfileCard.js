@@ -321,23 +321,23 @@ const downloadCard = async () => {
   ctx.save();
   ctx.translate(w / 2, h / 2);
   ctx.rotate(-Math.PI / 6);
-  ctx.font = `900 ${w * 0.09}px Outfit, sans-serif`;
-  ctx.fillStyle = 'rgba(255,255,255,0.06)';
+  ctx.font = `900 ${w * 0.11}px Outfit, sans-serif`;
+  ctx.fillStyle = 'rgba(255,255,255,0.10)';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText('ScorinaAI', 0, 0);
+  ctx.fillText('Scorina AI', 0, 0);
   ctx.restore();
 
   // Bottom branding
-  ctx.fillStyle = 'rgba(255,255,255,0.2)';
-  ctx.font = `700 ${w * 0.03}px Outfit, sans-serif`;
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.font = `700 ${w * 0.035}px Outfit, sans-serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'bottom';
   ctx.letterSpacing = '0.15em';
-  ctx.fillText('SCORINAAI', w / 2, h - 16);
+  ctx.fillText('SCORINA AI', w / 2, h - 16);
 
   const link = document.createElement('a');
-  link.download = `${(player.name || 'player').replace(/ /g, '_')}_ScorinaAI.png`;
+  link.download = `${(player.name || 'player').replace(/ /g, '_')}_Scorina AI.png`;
   link.href = canvas.toDataURL('image/png');
   link.click();
 };

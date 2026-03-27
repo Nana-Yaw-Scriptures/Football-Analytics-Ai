@@ -687,9 +687,10 @@ export default function PlayersPage({ onNavigate }) {
   const getPlayerStatus = (player) => {
     if (!player) return null;
     const name     = (player.name || '').toLowerCase().trim();
-    const lastName = name.split(' ').pop();
-    // Try full name first, then last name
-    return injuryMap[name] || injuryMap[lastName] || null;
+        // Only use last name fallback if it's longer than 4 chars to avoid false matches
+      const lastName = name.split(' ').pop();
+      const lastNameMatch = lastName.length > 4 ? injuryMap[lastName] : null;
+      return injuryMap[name] || lastNameMatch || null;
   };
 
   const filtered = players
