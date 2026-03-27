@@ -683,8 +683,8 @@ export default function HomePage({ onNavigate }) {
             {/* Brand */}
             <div className="col-span-2 md:col-span-1">
               <div className="flex items-baseline gap-1 mb-4">
-                <span className="text-2xl font-black text-white tracking-tight">Script</span>
-                <div className="hp-iq-badge hp-iq-badge--sm"><span>IQ</span></div>
+                <span className="text-2xl font-black text-white tracking-tight">Scorina</span>
+                <div className="hp-iq-badge hp-iq-badge--sm"><span>AI</span></div>
               </div>
               <p className="text-slate-600 text-sm leading-relaxed">
                 AI-powered football analytics across Europe's top 7 leagues. Predict smarter.
