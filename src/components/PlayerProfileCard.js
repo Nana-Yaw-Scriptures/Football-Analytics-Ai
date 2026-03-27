@@ -303,6 +303,11 @@ export default function PlayerProfileCard({ player, onClose, injuryStatus }) {
     el.style.overflowY  = 'visible';
 
     const html2canvas = (await import('html2canvas')).default;
+
+    // ── Scroll card to top before capture so hero is always at y=0 ──
+    el.scrollTop = 0;
+    await new Promise(r => setTimeout(r, 60)); // let scroll settle
+
     const canvas = await html2canvas(el, {
       backgroundColor: '#060a14',
       scale: 2,
@@ -313,6 +318,8 @@ export default function PlayerProfileCard({ player, onClose, injuryStatus }) {
       height:       el.scrollHeight,
       windowWidth:  el.offsetWidth,
       windowHeight: el.scrollHeight,
+      scrollX: 0,
+      scrollY: 0,
     });
 
     el.style.maxHeight = prevMaxHeight;
@@ -332,15 +339,30 @@ export default function PlayerProfileCard({ player, onClose, injuryStatus }) {
     // Copy original card onto new canvas
     nc.drawImage(canvas, 0, 0);
 
-    // ── Watermark — shifted left of center ──
+    // ── Watermark — measure first, then draw, guaranteed no clipping ──
     nc.save();
-    nc.textAlign    = 'center';
     nc.textBaseline = 'middle';
+    nc.textAlign    = 'left';
     nc.fillStyle    = '#ffffff';
     nc.globalAlpha  = 0.09;
-    nc.font = `900 ${Math.round(w * 0.08)}px Arial, sans-serif`;
-    nc.translate(w * 0.35, h / 2);  // 35% from left instead of 50% — shifted left
-    nc.rotate(-Math.PI / 10);
+
+    const ANGLE      = -Math.PI / 10;            // -18°
+    const MAX_W      = w * 0.55;                 // watermark must fit within 55% of canvas width
+    let   wmFont     = Math.round(w * 0.08);
+    nc.font = `900 ${wmFont}px Arial, sans-serif`;
+    let   textW      = nc.measureText('Scorina AI').width;
+    // Scale down if needed so text fits MAX_W
+    if (textW > MAX_W) {
+      wmFont = Math.round(wmFont * MAX_W / textW);
+      nc.font = `900 ${wmFont}px Arial, sans-serif`;
+      textW  = nc.measureText('Scorina AI').width;
+    }
+
+    // Position: left-of-center, vertically middle
+    const wmX = w * 0.08;                        // start 8% from left edge
+    const wmY = h / 2;
+    nc.translate(wmX, wmY);
+    nc.rotate(ANGLE);
     nc.fillText('Scorina AI', 0, 0);
     nc.restore();
 
