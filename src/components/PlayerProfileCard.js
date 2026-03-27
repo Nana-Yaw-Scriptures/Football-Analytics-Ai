@@ -27,15 +27,7 @@ const POS_CONFIG = {
 
 // ── Player Status Badge ───────────────────────────────────────────────
 const PlayerStatusBadge = ({ status }) => {
-  if (!status) {
-    return (
-      <span className="flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full"
-        style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.25)', color: '#10b981' }}>
-        <CheckCircle className="w-3 h-3"/>
-        Available
-      </span>
-    );
-  }
+  if (!status) return null;
 
   const type   = (status.type   || '').toLowerCase();
   const reason = (status.status || '').toLowerCase();
@@ -295,18 +287,15 @@ export default function PlayerProfileCard({ player, onClose, injuryStatus }) {
 
 const downloadCard = async () => {
   if (!cardRef.current) return;
-
   const el = cardRef.current;
 
-  // Hide UI buttons
   const hidden = el.querySelectorAll('[data-hide-download]');
   hidden.forEach(h => { h.style.visibility = 'hidden'; });
 
-  // ── KEY FIX: remove scroll constraint so full card renders ──
   const prevMaxHeight = el.style.maxHeight;
   const prevOverflow  = el.style.overflowY;
-  el.style.maxHeight = 'none';
-  el.style.overflowY = 'visible';
+  el.style.maxHeight  = 'none';
+  el.style.overflowY  = 'visible';
 
   const html2canvas = (await import('html2canvas')).default;
   const canvas = await html2canvas(el, {
@@ -315,13 +304,12 @@ const downloadCard = async () => {
     useCORS: true,
     allowTaint: true,
     logging: false,
-    width:  el.scrollWidth,
-    height: el.scrollHeight,
-    windowWidth:  el.scrollWidth,
+    width:        el.offsetWidth,
+    height:       el.scrollHeight,
+    windowWidth:  el.offsetWidth,
     windowHeight: el.scrollHeight,
   });
 
-  // Restore
   el.style.maxHeight = prevMaxHeight;
   el.style.overflowY = prevOverflow;
   hidden.forEach(h => { h.style.visibility = ''; });
@@ -329,30 +317,39 @@ const downloadCard = async () => {
   const ctx = canvas.getContext('2d');
   const w = canvas.width, h = canvas.height;
 
-  // Diagonal watermark
+  // ── Tiled subtle watermark ──
   ctx.save();
-  ctx.translate(w / 2, h / 2);
-  ctx.rotate(-Math.PI / 8);
-  ctx.font = `900 ${Math.round(w * 0.13)}px Arial, sans-serif`;
-  ctx.fillStyle = 'rgba(255,255,255,0.07)';
+  ctx.font = `900 ${Math.round(w * 0.06)}px Arial, sans-serif`;
+  ctx.fillStyle = 'rgba(255,255,255,0.055)';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText('Scorina AI', 0, 0);
+  // Draw 3 rows of watermarks
+  const rows = [[h*0.3], [h*0.55], [h*0.78]];
+  rows.forEach(([y]) => {
+    ctx.save();
+    ctx.translate(w/2, y);
+    ctx.rotate(-Math.PI / 10);
+    ctx.fillText('ScoringAI', 0, 0);
+    ctx.restore();
+  });
   ctx.restore();
 
-  // Bottom branding strip
-  ctx.fillStyle = 'rgba(6,10,20,0.95)';
-  ctx.fillRect(0, h - 52, w, 52);
-  ctx.fillStyle = 'rgba(34,211,238,0.6)';
-  ctx.fillRect(0, h - 52, w, 2);
-  ctx.font = `800 ${Math.round(w * 0.038)}px Arial, sans-serif`;
-  ctx.fillStyle = 'rgba(255,255,255,0.9)';
+  // ── Bottom branding strip ──
+  const stripH = 56;
+  ctx.fillStyle = 'rgba(4,8,18,0.97)';
+  ctx.fillRect(0, h - stripH, w, stripH);
+  // Cyan top border
+  ctx.fillStyle = '#22d3ee';
+  ctx.fillRect(0, h - stripH, w, 2);
+  // ScoringAI text
+  ctx.font = `800 ${Math.round(w * 0.042)}px Arial, sans-serif`;
+  ctx.fillStyle = 'rgba(255,255,255,0.92)';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText('Scorina AI', w / 2, h - 26);
+  ctx.fillText('ScoringAI', w / 2, h - stripH/2);
 
   const link = document.createElement('a');
-  link.download = `${(player.name||'player').replace(/ /g,'_')}_Scorina AI.png`;
+  link.download = `${(player.name||'player').replace(/ /g,'_')}_ScoringAI.png`;
   link.href = canvas.toDataURL('image/png');
   link.click();
 };
