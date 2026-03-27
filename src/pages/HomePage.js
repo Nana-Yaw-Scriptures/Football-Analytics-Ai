@@ -284,11 +284,11 @@ export default function HomePage({ onNavigate }) {
               <div className="mb-6" style={{ animation: visible ? 'hpFadeUp 0.5s 0.1s ease-out both' : 'none' }}>
                 <div className="flex items-baseline gap-1 mb-1">
                   <h1 className="text-7xl sm:text-8xl lg:text-9xl font-black tracking-tight leading-none text-white">
-                    Script
+                    Scorina
                   </h1>
                   {/* IQ styled as a score badge */}
                   <div className="hp-iq-badge">
-                    <span>IQ</span>
+                    <span>Ai</span>
                   </div>
                 </div>
                 <p className="text-lg sm:text-xl font-semibold mt-3 leading-tight"
