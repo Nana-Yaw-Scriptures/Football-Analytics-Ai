@@ -434,7 +434,7 @@ def get_upcoming_fixtures(league=None, days=7):
         data = _get("fixtures", {
             "league": league_id,
             "season": SEASON,
-            "next": 10,  # Next 10 fixtures per league
+            "next": 6,  # Reduced from 10 — saves API credits, per-league window only needs ~5
         })
 
         for fix in data.get("response", []):

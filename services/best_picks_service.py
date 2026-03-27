@@ -11,13 +11,14 @@ import threading
 from datetime import datetime, timezone, timedelta
 
 CACHE_FILE  = os.path.join('cache', 'best_picks_cache.json')
-CACHE_TTL   = 172800   # 48 hours
+CACHE_TTL   = 259200   # 72 hours — picks are weekly, no need to regenerate more often
 _mem_cache  = {}
 _cache_lock = threading.Lock()
 _is_running = False
 
-MIN_CONFIDENCE = 55
-MAX_PICKS      = 15
+MIN_CONFIDENCE  = 55
+MAX_PICKS       = 15
+MAX_PER_LEAGUE  = 3   # Cap per league — no point predicting 10 when we show top 15 total
 
 LEAGUES = [
     'Premier League',
@@ -130,18 +131,32 @@ def _generate_picks(models: dict) -> dict:
             f['league'] = mapped_league
             valid_fixtures.append(f)
 
-    # Smart gameweek window — only predict next 3 days from earliest fixture
-    dates = sorted([f.get('date', '') for f in valid_fixtures if f.get('date')])
-    if dates:
-        earliest = datetime.fromisoformat(dates[0].replace('Z', '+00:00'))
+    # Per-league gameweek window — 3 days from each league's earliest fixture.
+    # A global cutoff caused EPL fixtures to be dropped when La Liga had midweek games.
+    # Credit-saving: also cap at MAX_PER_LEAGUE fixtures per league before predicting.
+    from collections import defaultdict
+    by_league_raw = defaultdict(list)
+    for f in valid_fixtures:
+        by_league_raw[f.get('league', '')].append(f)
+
+    windowed = []
+    for lg_name, lg_fixtures in by_league_raw.items():
+        lg_dates = sorted([f.get('date', '') for f in lg_fixtures if f.get('date')])
+        if not lg_dates:
+            continue
+        earliest = datetime.fromisoformat(lg_dates[0].replace('Z', '+00:00'))
         cutoff   = earliest + timedelta(days=3)
-        valid_fixtures = [
-            f for f in valid_fixtures
+        in_window = [
+            f for f in lg_fixtures
             if f.get('date') and datetime.fromisoformat(
                 f['date'].replace('Z', '+00:00')
             ) <= cutoff
         ]
-        print(f'[BestPicks] Gameweek: {earliest.date()} to {cutoff.date()} ({len(valid_fixtures)} fixtures)')
+        # Credit saver: only take top MAX_PER_LEAGUE fixtures per league
+        windowed.extend(in_window[:MAX_PER_LEAGUE + 2])  # +2 buffer in case some get filtered
+        print(f'[BestPicks] {lg_name}: window {earliest.date()}→{cutoff.date()}, {len(in_window)} fixtures, taking {len(in_window[:MAX_PER_LEAGUE+2])}')
+
+    valid_fixtures = windowed
 
     total = len(valid_fixtures)
     if total == 0:
@@ -170,9 +185,11 @@ def _generate_picks(models: dict) -> dict:
             home_crest = str(_get_val(result, 'home_crest', '') or fix.get('homeLogo', ''))
             away_crest = str(_get_val(result, 'away_crest', '') or fix.get('awayLogo', ''))
 
-            top_prob = float(max(home_win, away_win))
-            is_home  = bool(home_win >= away_win)
-            top_pct  = int(round(top_prob * 100))
+            # Include draw in confidence — previously draws were ignored entirely
+            top_prob  = float(max(home_win, away_win, draw))
+            is_draw   = draw > home_win and draw > away_win
+            is_home   = bool(not is_draw and home_win >= away_win)
+            top_pct   = int(round(top_prob * 100))
 
             if top_pct < MIN_CONFIDENCE:
                 print(f'[BestPicks] {i+1}/{total} SKIP {home} vs {away} -> {top_pct}%')
@@ -192,9 +209,10 @@ def _generate_picks(models: dict) -> dict:
                 'homeWin':    int(round(home_win * 100)),
                 'draw':       int(round(draw * 100)),
                 'awayWin':    int(round(away_win * 100)),
-                'winner':     str(_clean_name(home_raw) if is_home else _clean_name(away_raw)),
-                'winnerLogo': str(fix.get('homeLogo', '') if is_home else fix.get('awayLogo', '')),
+                'winner':     'Draw' if is_draw else str(_clean_name(home_raw) if is_home else _clean_name(away_raw)),
+                'winnerLogo': '' if is_draw else str(fix.get('homeLogo', '') if is_home else fix.get('awayLogo', '')),
                 'isHomeWin':  bool(is_home),
+                'isDraw':     bool(is_draw),
                 'score':      pred_score,
                 'confidence': conf_level,
             })
@@ -211,9 +229,12 @@ def _generate_picks(models: dict) -> dict:
     by_league = {lg: [] for lg in LEAGUES}
     for pick in top_picks:
         lg = pick.get('league', '')
-        if lg in by_league:
+        if lg in by_league and len(by_league[lg]) < MAX_PER_LEAGUE:
             by_league[lg].append(pick)
 
+    total_final = sum(len(v) for v in by_league.values())
+    print(f'[BestPicks] By league: { {k: len(v) for k, v in by_league.items() if v} }')
+    print(f'[BestPicks] Total final picks: {total_final}')
     return by_league
 
 

@@ -18,7 +18,7 @@ const CalendarIcon = p => <I {...p} d={<><rect x="3" y="4" width="18" height="18
 
 const LEAGUES = [
   { name: 'Premier League',  short: 'EPL',        color: '#22d3ee', logo: 'https://media.api-sports.io/football/leagues/39.png'  },
-  { name: 'La Liga',         short: 'La Liga',    color: '#f59e0b', logo: 'https://media.api-sports.io/football/leagues/140.png' },
+  { name: 'La Liga',         short: 'La Liga',    color: '#dc2626', logo: 'https://media.api-sports.io/football/leagues/140.png' },
   { name: 'Bundesliga',      short: 'BL',         color: '#ef4444', logo: 'https://media.api-sports.io/football/leagues/78.png'  },
   { name: 'Serie A',         short: 'Serie A',    color: '#a855f7', logo: 'https://media.api-sports.io/football/leagues/135.png' },
   { name: 'Ligue 1',         short: 'Ligue 1',    color: '#10b981', logo: 'https://media.api-sports.io/football/leagues/61.png'  },
@@ -48,7 +48,7 @@ function exportBestPicksPDF(picks, date) {
   doc.setFillColor(...CYAN);doc.rect(0,0,w,2,'F');
   doc.setFillColor(...CARD);doc.rect(0,2,w,38,'F');
   doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(...CYAN);
-  doc.text('FOOTBALL ANALYST AI',15,14);
+  doc.text('SCORINA AI',15,14);
   doc.setFontSize(7);doc.setTextColor(...S500);
   doc.text('Powered by Poisson v2.1 + ML Model',15,20);
   doc.text(new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'}),w-15,14,{align:'right'});
@@ -122,7 +122,7 @@ function exportBestPicksPDF(picks, date) {
   for(let i=1;i<=pages;i++){
     doc.setPage(i);doc.setFillColor(...CARD);doc.rect(0,285,w,12,'F');
     doc.setFontSize(7);doc.setTextColor(...S600);
-    doc.text('Football Analyst AI — Best Picks Report',15,291);
+    doc.text('Scorina AI — Best Picks Report',15,291);
     doc.text(`Page ${i} of ${pages}`,w-15,291,{align:'right'});
   }
   doc.save(`BestPicks_${date}.pdf`);
@@ -158,20 +158,22 @@ export default function BestPicksPage({ onNavigate }) {
   }, []);
 
   useEffect(() => {
-  loadPicks();
-  // Auto-check every 30s if no picks yet
-  const interval = setInterval(() => {
-    if (totalPicks === 0) loadPicks();
-  }, 30000);
-  return () => clearInterval(interval);
-}, []);
+    loadPicks();
+    // Auto-check every 30s — use ref to avoid stale closure on totalPicks
+    const interval = setInterval(() => {
+      setPicks(prev => {
+        const count = Object.values(prev).flat().length;
+        if (count === 0) loadPicks();
+        return prev;
+      });
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [loadPicks]);
 
   const handleRefresh = async () => {
-  // Fire refresh in background, don't wait
-  fetch(`${API_BASE}/best-picks?refresh=true`).catch(() => {});
-  // Just reload current cached data immediately
-  await loadPicks();
-};
+    if (regenerating) return; // already running — don't fire duplicate
+    await loadPicks(true);
+  };
 
   const totalPicks    = Object.values(picks).flat().length;
   const avgConf       = totalPicks > 0 ? Math.round(Object.values(picks).flat().reduce((s, p) => s + p.topProb, 0) / totalPicks) : 0;
@@ -182,7 +184,7 @@ export default function BestPicksPage({ onNavigate }) {
 
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(135deg,#060a14 0%,#080c18 50%,#06090f 100%)' }}>
-      <NavBar currentPage="picks" onNavigate={onNavigate}/>
+      <NavBar currentPage="bestpicks" onNavigate={onNavigate}/>
       <div className="max-w-6xl mx-auto px-4 pt-8 pb-24">
 
         {/* Hero */}
@@ -329,19 +331,19 @@ export default function BestPicksPage({ onNavigate }) {
                             <div className="flex items-center gap-3 mb-1">
                               <div className="flex items-center gap-2 flex-1 min-w-0">
                                 {pick.homeCrest && <img src={pick.homeCrest} alt="" className="w-7 h-7 object-contain flex-shrink-0" onError={e=>e.target.style.display='none'}/>}
-                                <span className={`font-bold text-sm truncate ${pick.isHomeWin ? 'text-white' : 'text-slate-400'}`}>{cleanName(pick.homeTeam)}</span>
-                                {pick.isHomeWin && <ZapIcon className="w-3.5 h-3.5 flex-shrink-0" style={{ color: lg.color }}/>}
+                                <span className={`font-bold text-sm truncate ${pick.isDraw ? 'text-amber-400' : pick.isHomeWin ? 'text-white' : 'text-slate-400'}`}>{cleanName(pick.homeTeam)}</span>
+                                {pick.isHomeWin && !pick.isDraw && <ZapIcon className="w-3.5 h-3.5 flex-shrink-0" style={{ color: lg.color }}/>}
                               </div>
-                              <span className="text-slate-600 text-xs font-bold flex-shrink-0">vs</span>
+                              <span className="text-slate-600 text-xs font-bold flex-shrink-0">{pick.isDraw ? '≈' : 'vs'}</span>
                               <div className="flex items-center gap-2 flex-1 min-w-0 flex-row-reverse">
                                 {pick.awayCrest && <img src={pick.awayCrest} alt="" className="w-7 h-7 object-contain flex-shrink-0" onError={e=>e.target.style.display='none'}/>}
-                                <span className={`font-bold text-sm truncate text-right ${!pick.isHomeWin ? 'text-white' : 'text-slate-400'}`}>{cleanName(pick.awayTeam)}</span>
-                                {!pick.isHomeWin && <ZapIcon className="w-3.5 h-3.5 flex-shrink-0" style={{ color: lg.color }}/>}
+                                <span className={`font-bold text-sm truncate text-right ${pick.isDraw ? 'text-amber-400' : !pick.isHomeWin ? 'text-white' : 'text-slate-400'}`}>{cleanName(pick.awayTeam)}</span>
+                                {!pick.isHomeWin && !pick.isDraw && <ZapIcon className="w-3.5 h-3.5 flex-shrink-0" style={{ color: lg.color }}/>}
                               </div>
                             </div>
                             <div className="flex items-center gap-3 text-xs text-slate-500">
                               <CalendarIcon className="w-3 h-3"/>
-                              <span>{pick.date ? new Date(pick.date).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}</span>
+                              <span>{pick.date ? new Date(pick.date).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true }) : '—'}</span>
                               <span className="text-slate-700">·</span>
                               <span className="font-bold text-slate-400">Pred: {pick.score}</span>
                             </div>
