@@ -295,7 +295,7 @@ export default function PlayerProfileCard({ player, onClose, injuryStatus }) {
     const el = cardRef.current;
 
     const hidden = el.querySelectorAll('[data-hide-download]');
-    hidden.forEach(h => { h.style.visibility = 'hidden'; });
+    hidden.forEach(h => { h.style.display = 'none'; });
 
     const prevMaxHeight = el.style.maxHeight;
     const prevOverflow  = el.style.overflowY;
@@ -317,27 +317,27 @@ export default function PlayerProfileCard({ player, onClose, injuryStatus }) {
 
     el.style.maxHeight = prevMaxHeight;
     el.style.overflowY = prevOverflow;
-    hidden.forEach(h => { h.style.visibility = ''; });
+    hidden.forEach(h => { h.style.display = ''; });
 
     const ctx = canvas.getContext('2d');
     const w = canvas.width, h = canvas.height;
 
-    // ── Tiled diagonal watermark — no clipping, full card coverage ──
+    // ── Tiled diagonal watermark — visible opacity, full card coverage ──
     ctx.save();
-    ctx.globalAlpha = 0.045;
-    ctx.fillStyle = 'rgba(255,255,255,1)';
-    const fontSize = Math.round(w * 0.055); // smaller than before to fit more tiles
+    ctx.globalAlpha = 0.09;                          // raised from 0.045 — dark bg needs more
+    ctx.fillStyle = '#ffffff';
+    const fontSize = Math.round(w * 0.07);           // larger so each tile reads clearly
     ctx.font = `900 ${fontSize}px Arial, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
     const angle = -Math.PI / 10;
-    const stepX = w * 0.65;      // horizontal spacing between tiles
-    const stepY = h * 0.15;      // vertical spacing — tighter for tall cards
+    const stepX = w * 0.6;                           // tighter horizontal pitch
+    const stepY = Math.round(fontSize * 3.2);        // row spacing scales with font size
 
     for (let row = -1; row < h / stepY + 2; row++) {
       for (let col = -1; col < w / stepX + 2; col++) {
-        // offset every other row for a staggered brick-like pattern
+        // stagger every other row by half a column width
         const xOffset = (row % 2 === 0) ? 0 : stepX / 2;
         ctx.save();
         ctx.translate(col * stepX + xOffset, row * stepY);
@@ -355,7 +355,7 @@ export default function PlayerProfileCard({ player, onClose, injuryStatus }) {
     // Cyan top border on strip
     ctx.fillStyle = '#22d3ee';
     ctx.fillRect(0, h - stripH, w, 2);
-    // Scorina AI brand text
+    // ScoringAI brand text
     ctx.font = `800 ${Math.round(w * 0.042)}px Arial, sans-serif`;
     ctx.fillStyle = 'rgba(255,255,255,0.92)';
     ctx.textAlign = 'center';
@@ -364,7 +364,7 @@ export default function PlayerProfileCard({ player, onClose, injuryStatus }) {
     ctx.fillText('Scorina AI', w / 2, h - stripH / 2);
 
     const link = document.createElement('a');
-    link.download = `${(player.name || 'player').replace(/ /g, '_')}_Scorina_AI.png`;
+    link.download = `${(player.name || 'player').replace(/ /g, '_')}_ScorinaAI.png`;
     link.href = canvas.toDataURL('image/png');
     link.click();
   };
@@ -400,8 +400,8 @@ export default function PlayerProfileCard({ player, onClose, injuryStatus }) {
           <div className="absolute top-0 right-0 w-48 h-48 rounded-full blur-[80px]" style={{ background: `${posC.color}15` }}/>
 
           {/* Top bar */}
-          <div className="relative flex items-center justify-between px-5 pt-4 pb-2">
-            <div className="flex items-center justify-center gap-2 flex-wrap flex-1 text-center">
+          <div className="relative flex items-center justify-center px-5 pt-4 pb-2">
+            <div className="flex items-center justify-center gap-2 flex-wrap text-center">
               {player.league && (
                 <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-widest">{player.league}</span>
               )}
@@ -414,7 +414,7 @@ export default function PlayerProfileCard({ player, onClose, injuryStatus }) {
               )}
               <PlayerStatusBadge status={injuryStatus}/>
             </div>
-            <div className="flex items-center gap-2" data-hide-download>
+            <div className="flex items-center gap-2 absolute right-5 top-4" data-hide-download>
               <button onClick={downloadCard}
                 className="w-8 h-8 rounded-xl flex items-center justify-center border border-white/10 text-slate-400 hover:text-white transition-all"
                 style={{ background: 'rgba(255,255,255,0.06)' }}
@@ -451,24 +451,24 @@ export default function PlayerProfileCard({ player, onClose, injuryStatus }) {
                   </div>
                 )}
               </div>
-              <div className="flex-1 min-w-0 pt-1">
-                <h2 className="text-2xl font-black text-white leading-tight mb-1">{player.name}</h2>
-                <div className="flex items-center justify-center gap-2 flex-wrap">
+              <div className="flex-1 min-w-0 pt-1 flex flex-col items-center text-center">
+                <h2 className="text-2xl font-black text-white leading-tight mb-1 w-full text-center">{player.name}</h2>
+                <div className="flex items-center justify-center gap-2 flex-wrap w-full">
                   {player.teamLogo && <img src={player.teamLogo} alt="" className="w-5 h-5 object-contain"/>}
                   <span className="text-base font-bold" style={{ color: posC.color }}>{player.team}</span>
                 </div>
-                <div className="flex items-center justify-center gap-2 flex-wrap flex-1">
+                <div className="flex items-center justify-center gap-2 flex-wrap w-full mt-1">
                   <span className="text-[12px] font-black px-2.5 py-1 rounded-xl"
                     style={{ color: posC.color, background: posC.bg, border: `1px solid ${posC.border}` }}>{pos}</span>
                   {player.nationality && <span className="text-[12px] text-slate-300 font-semibold">{player.nationality}</span>}
                   {player.age > 0 && <span className="text-[12px] text-slate-500">{player.age}y</span>}
                 </div>
                 {injuryStatus?.news && (
-                  <p className="text-[11px] text-slate-500 mt-2 leading-relaxed line-clamp-2">{injuryStatus.news}</p>
+                  <p className="text-[11px] text-slate-500 mt-2 leading-relaxed line-clamp-2 text-center">{injuryStatus.news}</p>
                 )}
-                {/* ── FIX 1: height/weight now show units (cm / kg) ── */}
+                {/* height/weight — centered with units */}
                 {(player.height || player.weight) && (
-                  <div className="flex items-center gap-3 mt-2">
+                  <div className="flex items-center justify-center gap-3 mt-2">
                     {player.height && (
                       <span className="text-[11px] text-slate-600">
                         {player.height}{!String(player.height).includes('cm') ? ' cm' : ''}
