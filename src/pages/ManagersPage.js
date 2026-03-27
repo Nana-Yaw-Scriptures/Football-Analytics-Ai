@@ -39,9 +39,10 @@ const LEAGUE_META = {
   'Bundesliga':     { color:'#d97706', img:'https://media.api-sports.io/football/leagues/78.png'  },
   'Serie A':        { color:'#059669', img:'https://media.api-sports.io/football/leagues/135.png' },
   'Ligue 1':        { color:'#2563eb', img:'https://media.api-sports.io/football/leagues/61.png'  },
+  'Primeira Liga':  { color:'#10b981', img:'https://media.api-sports.io/football/leagues/94.png'  },
 };
-const LEAGUES = ['All', 'Premier League', 'La Liga', 'Bundesliga', 'Serie A', 'Ligue 1'];
-const ORDER   = ['Premier League', 'La Liga', 'Bundesliga', 'Serie A', 'Ligue 1'];
+const LEAGUES = ['All', 'Premier League', 'La Liga', 'Bundesliga', 'Serie A', 'Ligue 1', 'Primeira Liga'];
+const ORDER   = ['Premier League', 'La Liga', 'Bundesliga', 'Serie A', 'Ligue 1', 'Primeira Liga'];
 
 /* ══════════════════════════════════════
    HARDCODED DATA
@@ -432,6 +433,7 @@ const CompareModal = ({ a, b, onClose }) => {
    MANAGER CARD
 ══════════════════════════════════════ */
 function Card({ m, lm, expanded, onToggle, compareMode, compareSelected, onCompareToggle }) {
+  const [imgErr, setImgErr] = React.useState(false);
   const dna       = m.dna;
   const accent    = lm?.color || '#22d3ee';
   const since     = m.since ? new Date().getFullYear() - parseInt(m.since) : 0;
@@ -460,23 +462,20 @@ function Card({ m, lm, expanded, onToggle, compareMode, compareSelected, onCompa
 
           {/* Manager photo or team logo */}
           <div className="relative flex-shrink-0">
-            {m.photo ? (
+            {m.photo && !imgErr ? (
               <img src={m.photo} alt={m.name}
                 className="w-14 h-14 rounded-2xl object-cover border-2"
                 style={{ borderColor:`${accent}35`, boxShadow:`0 0 16px ${accent}20` }}
-                onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }}/>
-            ) : null}
-            <div className="w-14 h-14 rounded-2xl border-2 items-center justify-center p-1.5"
-              style={{
-                borderColor:`${accent}30`,
-                background:`${accent}08`,
-                display: m.photo ? 'none' : 'flex',
-              }}>
-              {m.teamLogo
-                ? <img src={m.teamLogo} alt={m.team} className="w-10 h-10 object-contain"
-                    onError={e => { e.target.style.display='none'; e.target.parentNode.querySelector('.initials').style.display='flex'; }}/>
-                : <span className="initials font-black text-base" style={{ color:accent }}>{initials}</span>}
-            </div>
+                onError={() => setImgErr(true)}/>
+            ) : (
+              <div className="w-14 h-14 rounded-2xl border-2 flex items-center justify-center p-1.5"
+                style={{ borderColor:`${accent}30`, background:`${accent}08` }}>
+                {m.teamLogo
+                  ? <img src={m.teamLogo} alt={m.team} className="w-10 h-10 object-contain"
+                      onError={e => { e.target.style.display='none'; }}/>
+                  : <span className="font-black text-base" style={{ color:accent }}>{initials}</span>}
+              </div>
+            )}
             {/* Compare checkbox */}
             {compareMode && (
               <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center border-2"
@@ -512,9 +511,13 @@ function Card({ m, lm, expanded, onToggle, compareMode, compareSelected, onCompa
             style={{ color:pressColor, background:`${pressColor}12`, border:`1px solid ${pressColor}25` }}>
             Press {press}
           </span>
-          {m.trophies > 10 && (
+          {m.trophies > 0 && (
             <span className="text-[10px] font-black px-2 py-0.5 rounded-md border"
-              style={{ color:'#fbbf24', background:'rgba(251,191,36,0.12)', border:'1px solid rgba(251,191,36,0.25)' }}>
+              style={{
+                color: m.trophies > 10 ? '#fbbf24' : m.trophies > 4 ? '#94a3b8' : '#64748b',
+                background: m.trophies > 10 ? 'rgba(251,191,36,0.12)' : 'rgba(148,163,184,0.08)',
+                border: m.trophies > 10 ? '1px solid rgba(251,191,36,0.25)' : '1px solid rgba(148,163,184,0.15)',
+              }}>
               🏆 {m.trophies}
             </span>
           )}
@@ -700,7 +703,7 @@ export default function ManagersPage({ onNavigate }) {
 
     const since = m.contractStart
       ? new Date(m.contractStart).getFullYear().toString()
-      : '2024';
+      : (new Date().getFullYear() - 1).toString(); // fallback: assume started last year
 
     return { ...m, dna, trophies, formation, since };
   }), [managers]);
@@ -929,7 +932,7 @@ export default function ManagersPage({ onNavigate }) {
               <FilterIcon className="w-3 h-3 text-slate-600"/>
               <span className="text-[10px] text-slate-600 uppercase tracking-widest font-bold">Style:</span>
             </div>
-            {archetypes.slice(0, 10).map(a => (
+            {archetypes.map(a => (
               <button key={a} onClick={() => setArchetypeFilter(a)}
                 className="px-3 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap transition-all border flex-shrink-0"
                 style={{
@@ -969,15 +972,13 @@ export default function ManagersPage({ onNavigate }) {
                 </div>
               ))}
             </div>
-            {compareA && compareB && compareA.dna && compareB.dna && (
+            {compareA && compareB && (
               <button onClick={() => setShowCompare(true)}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm border transition-all flex-shrink-0"
                 style={{ background:'rgba(168,85,247,0.2)', borderColor:'rgba(168,85,247,0.4)', color:'#a855f7' }}>
-                <SwordsIcon className="w-3.5 h-3.5"/>Compare DNA
+                <SwordsIcon className="w-3.5 h-3.5"/>
+                {compareA.dna && compareB.dna ? 'Compare DNA' : 'Compare'}
               </button>
-            )}
-            {compareA && compareB && (!compareA.dna || !compareB.dna) && (
-              <span className="text-[11px] text-slate-500">One manager has no DNA data yet</span>
             )}
           </div>
         )}
