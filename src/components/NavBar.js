@@ -158,10 +158,10 @@ export default function NavBar({ currentPage, onNavigate, children }) {
             <button className="nb-logo" onClick={() => go('home')}>
               <div className="nb-logo-mark">
                 {!logoErr
-                  ? <img src="/scriptiq_logo.svg" alt="ScriptIQ" className="nb-logo-img" onError={() => setLogoErr(true)}/>
+                  ? <img src="/scriptiq_logo.svg" alt="Scorina" className="nb-logo-img" onError={() => setLogoErr(true)}/>
                   : <BrainIcon className="w-3.5 h-3.5 text-white"/>}
               </div>
-              <span className="nb-wordmark">ScriptIQ</span>
+              <span className="nb-wordmark">Scorina</span>
               <span className="nb-wordmark-dot" style={{ background: activeAccent, boxShadow: `0 0 8px ${activeAccent}` }}/>
             </button>
 

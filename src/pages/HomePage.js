@@ -657,7 +657,7 @@ export default function HomePage({ onNavigate }) {
             <button onClick={() => onNavigate('analysis')}
               className="hp-cta-btn-primary group">
               <ZapIcon className="w-4 h-4"/>
-              Launch ScriptIQ
+              Launch Scorina
               <ArrowRightIcon className="w-4 h-4 group-hover:translate-x-1 transition-transform"/>
             </button>
             <button onClick={() => onNavigate('live')}
@@ -712,9 +712,9 @@ export default function HomePage({ onNavigate }) {
           </div>
 
           <div className="border-t border-white/[0.05] pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <p className="text-slate-700 text-xs">© 2026 ScriptIQ. All rights reserved.</p>
+            <p className="text-slate-700 text-xs">© {new Date().getFullYear()} Scorina Ai. All rights reserved.</p>
             <p className="text-[11px] text-slate-700 tracking-[0.1em]">
-              Built by <span className="text-slate-500 font-black">Script</span><span className="font-black" style={{ color:'#22d3ee' }}>IQ</span>
+              Built by <span className="text-slate-500 font-black">Scorina</span><span className="font-black" style={{ color:'#22d3ee' }}> AI</span>
             </p>
           </div>
         </div>

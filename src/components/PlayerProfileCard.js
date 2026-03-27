@@ -342,7 +342,7 @@ export default function PlayerProfileCard({ player, onClose, injuryStatus }) {
         ctx.save();
         ctx.translate(col * stepX + xOffset, row * stepY);
         ctx.rotate(angle);
-        ctx.fillText('ScoringAI', 0, 0);
+        ctx.fillText('Scorina AI', 0, 0);
         ctx.restore();
       }
     }
@@ -355,16 +355,16 @@ export default function PlayerProfileCard({ player, onClose, injuryStatus }) {
     // Cyan top border on strip
     ctx.fillStyle = '#22d3ee';
     ctx.fillRect(0, h - stripH, w, 2);
-    // ScoringAI brand text
+    // Scorina AI brand text
     ctx.font = `800 ${Math.round(w * 0.042)}px Arial, sans-serif`;
     ctx.fillStyle = 'rgba(255,255,255,0.92)';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.globalAlpha = 1;
-    ctx.fillText('ScoringAI', w / 2, h - stripH / 2);
+    ctx.fillText('Scorina AI', w / 2, h - stripH / 2);
 
     const link = document.createElement('a');
-    link.download = `${(player.name || 'player').replace(/ /g, '_')}_ScoringAI.png`;
+    link.download = `${(player.name || 'player').replace(/ /g, '_')}_Scorina_AI.png`;
     link.href = canvas.toDataURL('image/png');
     link.click();
   };
