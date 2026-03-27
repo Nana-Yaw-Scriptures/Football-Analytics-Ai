@@ -238,11 +238,25 @@ def _generate_picks(models: dict) -> dict:
     return by_league
 
 
+REGEN_COOLDOWN = 21600  # 6 hours — max 4 force refreshes per day to protect API credits
+
+
 def get_best_picks(models: dict, force_refresh: bool = False) -> dict:
     global _is_running
 
     with _cache_lock:
         now = time.time()
+
+        # Throttle force_refresh — if last gen was <6h ago, downgrade to cache
+        _throttled = False
+        if force_refresh:
+            last_gen = _mem_cache.get('generated_at', 0) or 0
+            if now - last_gen < REGEN_COOLDOWN:
+                hours_ago = round((now - last_gen) / 3600, 1)
+                mins_left  = int((REGEN_COOLDOWN - (now - last_gen)) / 60)
+                print(f'[BestPicks] Force refresh throttled — last gen {hours_ago}h ago ({mins_left}m until next allowed).')
+                force_refresh = False
+                _throttled    = True
 
         # 1. In-memory cache (fastest)
         if _mem_cache and not force_refresh:
@@ -252,6 +266,7 @@ def get_best_picks(models: dict, force_refresh: bool = False) -> dict:
                     'picks':        _mem_cache['picks'],
                     'generated_at': datetime.fromtimestamp(generated_at, tz=timezone.utc).isoformat(),
                     'cached':       True,
+                    'throttled':    _throttled,
                 }
 
         # 2. Disk cache (survives restarts)

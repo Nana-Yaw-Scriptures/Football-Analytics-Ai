@@ -134,6 +134,7 @@ export default function BestPicksPage({ onNavigate }) {
   const [error, setError]         = useState('');
   const [generated, setGenerated] = useState('');
   const [regenerating, setRegenerating] = useState(false);
+  const [throttled,    setThrottled]    = useState(false);
   const [activeLeague, setActiveLeague] = useState('all');
 
   const today    = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
@@ -148,6 +149,7 @@ export default function BestPicksPage({ onNavigate }) {
       const data = await resp.json();
       setPicks(data.picks || {});
       setRegenerating(data.regenerating || false);
+      setThrottled(data.throttled || false);
       if (data.generated_at) {
         setGenerated(new Date(data.generated_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }));
       }
@@ -234,12 +236,18 @@ export default function BestPicksPage({ onNavigate }) {
               </div>
             )}
             <div className="flex flex-wrap gap-3">
-              <button onClick={handleRefresh} disabled={loading}
+              <button onClick={handleRefresh} disabled={loading || regenerating}
                 className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all"
-                style={{ background: 'rgba(34,211,238,0.1)', border: '1px solid rgba(34,211,238,0.25)', color: '#22d3ee' }}>
+                style={{ background: 'rgba(34,211,238,0.1)', border: '1px solid rgba(34,211,238,0.25)', color: '#22d3ee', opacity: (loading || regenerating) ? 0.5 : 1 }}>
                 <RefreshIcon className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`}/>
-                {loading ? 'Loading…' : 'Refresh Picks'}
+                {loading ? 'Loading…' : regenerating ? 'Updating…' : 'Refresh Picks'}
               </button>
+              {throttled && (
+                <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold"
+                  style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', color: '#f59e0b' }}>
+                  ⏳ Refresh available in ~6h
+                </div>
+              )}
               {totalPicks > 0 && (
                 <button onClick={() => exportBestPicksPDF(picks, fileDate)}
                   className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all hover:opacity-90"
