@@ -322,39 +322,45 @@ export default function PlayerProfileCard({ player, onClose, injuryStatus }) {
     const ctx = canvas.getContext('2d');
     const w = canvas.width, h = canvas.height;
 
-    // ── Single centered diagonal watermark ──
-    // canvas is already at scale:2 from html2canvas, so w/h are 2× the visual px.
-    // Keep font modest so the full text always fits after -18° rotation.
-    ctx.save();
-    ctx.textAlign    = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle    = '#ffffff';
-    ctx.globalAlpha  = 0.09;
-    // w*0.08 → for a 780px canvas = ~62px font; "Scorina AI" ~420px wide, safe after rotation
-    ctx.font = `900 ${Math.round(w * 0.08)}px Arial, sans-serif`;
-    ctx.translate(w / 2, h / 2);   // true center of the canvas
-    ctx.rotate(-Math.PI / 10);      // -18°
-    ctx.fillText('Scorina AI', 0, 0);
-    ctx.restore();
+    // ── Expand canvas height to add branding strip without cropping content ──
+    const stripH = 64;
+    const newCanvas = document.createElement('canvas');
+    newCanvas.width  = w;
+    newCanvas.height = h + stripH;
+    const nc = newCanvas.getContext('2d');
 
-    // ── Bottom branding strip ──
-    const stripH = 56;
-    ctx.fillStyle = 'rgba(4,8,18,0.97)';
-    ctx.fillRect(0, h - stripH, w, stripH);
-    // Cyan top border on strip
-    ctx.fillStyle = '#22d3ee';
-    ctx.fillRect(0, h - stripH, w, 2);
-    // ScoringAI brand text
-    ctx.font = `800 ${Math.round(w * 0.042)}px Arial, sans-serif`;
-    ctx.fillStyle = 'rgba(255,255,255,0.92)';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.globalAlpha = 1;
-    ctx.fillText('Scorina AI', w / 2, h - stripH / 2);
+    // Copy original card onto new canvas
+    nc.drawImage(canvas, 0, 0);
+
+    // ── Watermark — shifted left of center ──
+    nc.save();
+    nc.textAlign    = 'center';
+    nc.textBaseline = 'middle';
+    nc.fillStyle    = '#ffffff';
+    nc.globalAlpha  = 0.09;
+    nc.font = `900 ${Math.round(w * 0.08)}px Arial, sans-serif`;
+    nc.translate(w * 0.35, h / 2);  // 35% from left instead of 50% — shifted left
+    nc.rotate(-Math.PI / 10);
+    nc.fillText('Scorina AI', 0, 0);
+    nc.restore();
+
+    // ── Bottom branding strip on the expanded canvas ──
+    nc.fillStyle = 'rgba(4,8,18,0.97)';
+    nc.fillRect(0, h, w, stripH);
+    // Cyan top border
+    nc.fillStyle = '#22d3ee';
+    nc.fillRect(0, h, w, 2);
+    // Brand text
+    nc.font = `800 ${Math.round(w * 0.042)}px Arial, sans-serif`;
+    nc.fillStyle = 'rgba(255,255,255,0.92)';
+    nc.textAlign = 'center';
+    nc.textBaseline = 'middle';
+    nc.globalAlpha = 1;
+    nc.fillText('Scorina AI', w / 2, h + stripH / 2);
 
     const link = document.createElement('a');
     link.download = `${(player.name || 'player').replace(/ /g, '_')}_ScorinaAI.png`;
-    link.href = canvas.toDataURL('image/png');
+    link.href = newCanvas.toDataURL('image/png');
     link.click();
   };
 
