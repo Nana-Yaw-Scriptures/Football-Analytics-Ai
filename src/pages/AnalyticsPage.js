@@ -1659,12 +1659,27 @@ function augmentPlayer(p) {
 
   // Compute fresh pct if we have enough attempts; otherwise keep the API value.
   // dribblesAttempted confirmed as real field name from API debug log.
-  const dribbleSuccessPct =
-    rawDribAttempts >= 20
-      ? Math.round((rawDribSuccess / rawDribAttempts) * 100)
-      : rawDribAttempts > 0
-        ? null   // too few attempts → exclude from Best Dribblers leaderboard
-        : (Number(p.dribbleSuccessPct) || null);
+  // Tiered dribble confidence:
+  // ✅ 20+ attempts → fully verified
+  // ⚠️  5-19 attempts → low sample, include but flag
+  // ✗   1-4 attempts → exclude (too unreliable)
+  // ~   0 attempts   → API precomputed fallback, include but mark estimated
+  let dribbleSuccessPct = null;
+  let dribbleConfidence = null; // 'high' | 'low' | 'estimated'
+  if (rawDribAttempts >= 20) {
+    dribbleSuccessPct  = Math.round((rawDribSuccess / rawDribAttempts) * 100);
+    dribbleConfidence  = 'high';
+  } else if (rawDribAttempts >= 5) {
+    dribbleSuccessPct  = Math.round((rawDribSuccess / rawDribAttempts) * 100);
+    dribbleConfidence  = 'low';
+  } else if (rawDribAttempts > 0) {
+    dribbleSuccessPct  = null; // 1-4 attempts — exclude entirely
+    dribbleConfidence  = null;
+  } else {
+    const apiVal = Number(p.dribbleSuccessPct) || null;
+    dribbleSuccessPct = apiVal;
+    dribbleConfidence = apiVal ? 'estimated' : null;
+  }
 
   const goalsPerNinety         = p90(p.goals,        'goalsPerNinety');
   const assistsPerNinety       = p90(p.assists,       'assistsPerNinety');
@@ -1691,6 +1706,7 @@ function augmentPlayer(p) {
     aerialWon:         rawAerialWon,
     aerialLost:        rawAerialLost,
     dribbleSuccessPct: dribbleSuccessPct,
+    dribbleConfidence: dribbleConfidence,
     // Underscore helpers for role configs
     _tack90:           tacklesPerNinety,
     _inter90:          interceptionsPerNinety,
@@ -2575,7 +2591,7 @@ function AnalyticsPage({ onNavigate }) {
       rating:           { label: 'Best Rated',        key: 'rating',            iconType: 'trophy',   color: '#fbbf24', suffix: '',    position: null,                      minMins: 450  },
       passAccuracy:     { label: 'Pass Masters',      key: 'passAccuracy',      iconType: 'activity', color: '#38bdf8', suffix: '%',   position: null,                      minMins: 900  },
       tacklesTotal:     { label: 'Tackle Leaders',    key: 'tacklesTotal',      iconType: 'shield',   color: '#34d399', suffix: '',    position: ['Defender','Midfielder'], minMins: 450, useAug: true },
-      aerialWon:        { label: 'Duel Kings',       key: 'duelsWon',          iconType: 'zap',      color: '#fb923c', suffix: '',    position: null,                      minMins: 450, useAug: false, noZeroFilter: false },
+      duelsWon:         { label: 'Duel Kings',       key: 'duelsWon',          iconType: 'zap',      color: '#fb923c', suffix: '',    position: null,                      minMins: 450, useAug: false, noZeroFilter: false },
       dribbleSuccessPct:{ label: 'Best Dribblers',    key: 'dribbleSuccessPct', iconType: 'trending', color: '#e879f9', suffix: '%',   position: ['Attacker','Midfielder'], minMins: 450, useAug: true },
       discipline:       { label: 'Cleanest Players', key: 'yellowCards',       iconType: 'star',     color: '#a3e635', suffix: '',    position: null, lowerIsBetter: true, minMins: 900, noZeroFilter: true },
     };
@@ -3086,7 +3102,10 @@ function AnalyticsPage({ onNavigate }) {
 
             {/* ── Spotlight stat cards ── */}
             {(() => {
-              const q = allPlayers.filter(p => (p.minutes||0) >= 900 && (!filterLeague || p.league === filterLeague));
+              // Augment all qualified players so computed fields like goalsPerNinety are available
+              const q = allPlayers
+                .filter(p => (p.minutes||0) >= 900 && (!filterLeague || p.league === filterLeague))
+                .map(augmentPlayer);
               const top = (key, lower=false) => [...q]
                 .filter(p => lower ? true : (p[key]||0) > 0)
                 .sort((a,b) => lower ? (a[key]??999)-(b[key]??999) : (b[key]||0)-(a[key]||0))[0];
@@ -3137,7 +3156,7 @@ function AnalyticsPage({ onNavigate }) {
                     <div>
                       <h3 className="text-white font-black text-base">{topPerformers[topCategory].label}</h3>
                       <p className="text-[15px] text-slate-400">
-                        {filterLeague ? filterLeague : 'All 5 Leagues'} · Min. {topPerformers[topCategory].minMins} mins
+                        {filterLeague ? filterLeague : 'All 6 Leagues'} · Min. {topPerformers[topCategory].minMins} mins
                         {topPerformers[topCategory].position && ` · ${topPerformers[topCategory].position.join(' & ')}`}
                         {topPerformers[topCategory].lowerIsBetter && ' · Lower is better'}
                       </p>
@@ -3153,14 +3172,13 @@ function AnalyticsPage({ onNavigate }) {
                   {topPerformers[topCategory].players.slice(0,20).map((player, idx) => {
                     const val  = player[topPerformers[topCategory].key] ?? 0;
                     const cat  = topPerformers[topCategory];
-                    // For lowerIsBetter: rank 1 has lowest val → show smallest bar (discipline = fewer cards = shorter bar)
-                    // Use worst player (last) as the scale reference so #1 bar is proportionally smallest
+                    // For lowerIsBetter (e.g. Cleanest Players): invert bar so rank #1 (fewest cards) gets the LONGEST bar.
+                    // barPct = 100 - (val / worstVal * 100), floored at 4 so even the worst shows a sliver.
                     const worstVal = cat.lowerIsBetter
                       ? Math.max(...cat.players.map(p => p[cat.key] ?? 0), 1)
                       : 1;
-                    const bestVal = cat.lowerIsBetter ? 0 : (cat.players[0]?.[cat.key] || 1);
-                    const barPct  = cat.lowerIsBetter
-                      ? (worstVal > 0 ? Math.max(4, Math.round((val / worstVal) * 100)) : 4)
+                    const barPct = cat.lowerIsBetter
+                      ? Math.max(4, Math.round((1 - (val / worstVal)) * 100))
                       : Math.min(Math.round(((val || 0) / (cat.players[0]?.[cat.key] || 1)) * 100), 100);
                     const isTop3 = idx < 3;
                     const medalGrad = ['from-yellow-400 to-amber-500','from-slate-200 to-slate-400','from-amber-500 to-amber-700'];
@@ -3209,7 +3227,19 @@ function AnalyticsPage({ onNavigate }) {
                         {/* Stat + bar */}
                         <div className="w-28 flex-shrink-0">
                           <div className="flex items-center justify-end gap-1.5 mb-1">
+                            {/* Dribble confidence badge */}
+                            {topCategory === 'dribbleSuccessPct' && player.dribbleConfidence && player.dribbleConfidence !== 'high' && (
+                              <span className="text-[10px] font-black px-1 py-0.5 rounded flex-shrink-0"
+                                style={{
+                                  background: player.dribbleConfidence === 'low' ? 'rgba(245,158,11,0.15)' : 'rgba(100,116,139,0.15)',
+                                  color:      player.dribbleConfidence === 'low' ? '#f59e0b' : '#94a3b8',
+                                  border:     `1px solid ${player.dribbleConfidence === 'low' ? 'rgba(245,158,11,0.3)' : 'rgba(100,116,139,0.25)'}`,
+                                }}>
+                                {player.dribbleConfidence === 'low' ? '⚠ low' : '~ est'}
+                              </span>
+                            )}
                             <span className="font-black text-base" style={{ fontFamily:'JetBrains Mono', color: isTop3 ? cat.color : 'rgba(255,255,255,0.5)' }}>
+                              {topCategory === 'dribbleSuccessPct' && player.dribbleConfidence === 'estimated' ? '~' : ''}
                               {typeof val === 'number' && val%1!==0 ? val.toFixed(2) : val}
                             </span>
                             {cat.suffix && <span className="text-base text-slate-300 font-bold">{cat.suffix}</span>}
