@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+
 const I = ({ d, className = "w-4 h-4" }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{d}</svg>
 );
@@ -152,6 +153,9 @@ const getStatSections = (pos) => {
       { key: 'tacklesTotal', scale: 80, label: 'Tackles' },
     ],
   };
+  // ── FIX 2: Label changed from 'Shot Conv %' → 'Shot Acc %'
+  // shotAccuracy represents on-target accuracy (goals/shotsOnTarget), not total conversion.
+  // Using 'Shot Acc %' avoids the misleading implication that 78% of all shots were goals.
   return {
     hero: [
       { key: 'appearances', label: 'Apps',   color: '#22d3ee' },
@@ -161,25 +165,25 @@ const getStatSections = (pos) => {
     ],
     sections: [
       { title: 'Attacking', icon: ZapIcon, color: '#ef4444', rows: [
-        { key: 'goals',        label: 'Goals',       color: '#22d3ee' },
-        { key: 'xG',           label: 'xG',          color: '#10b981', decimal: true },
-        { key: 'shotsTotal',   label: 'Total Shots', color: '#f59e0b' },
-        { key: 'shotAccuracy', label: 'Shot Conv %', color: '#ef4444', suffix: '%' },
+        { key: 'goals',        label: 'Goals',        color: '#22d3ee' },
+        { key: 'xG',           label: 'xG',           color: '#10b981', decimal: true },
+        { key: 'shotsTotal',   label: 'Total Shots',  color: '#f59e0b' },
+        { key: 'shotAccuracy', label: 'Shot Acc %',   color: '#ef4444', suffix: '%' }, // ← FIXED label
       ]},
       { title: 'Creation', icon: TrendingIcon, color: '#f59e0b', rows: [
-        { key: 'assists',          label: 'Assists',   color: '#f59e0b' },
-        { key: 'xA',               label: 'xA',        color: '#f97316', decimal: true },
-        { key: 'keyPasses',        label: 'Key Passes',color: '#60a5fa' },
-        { key: 'dribbleSuccessPct',label: 'Dribble %', color: '#a855f7', suffix: '%' },
+        { key: 'assists',           label: 'Assists',    color: '#f59e0b' },
+        { key: 'xA',                label: 'xA',         color: '#f97316', decimal: true },
+        { key: 'keyPasses',         label: 'Key Passes', color: '#60a5fa' },
+        { key: 'dribbleSuccessPct', label: 'Dribble %',  color: '#a855f7', suffix: '%' },
       ]},
     ],
     radar: [
-      { key: 'rating',           scale: 10, label: 'Rating'   },
-      { key: 'goals',            scale: 30, label: 'Goals'    },
-      { key: 'xG',               scale: 25, label: 'xG'       },
-      { key: 'assists',          scale: 15, label: 'Assists'  },
-      { key: 'shotAccuracy',     scale: 40, label: 'Conv%'    },
-      { key: 'dribbleSuccessPct',scale: 80, label: 'Dribble%' },
+      { key: 'rating',            scale: 10, label: 'Rating'   },
+      { key: 'goals',             scale: 30, label: 'Goals'    },
+      { key: 'xG',                scale: 25, label: 'xG'       },
+      { key: 'assists',           scale: 15, label: 'Assists'  },
+      { key: 'shotAccuracy',      scale: 40, label: 'Shot Acc%'},
+      { key: 'dribbleSuccessPct', scale: 80, label: 'Dribble%' },
     ],
   };
 };
@@ -285,68 +289,86 @@ export default function PlayerProfileCard({ player, onClose, injuryStatus }) {
   const [tab, setTab] = useState('overview');
   const cardRef = useRef(null);
 
-const downloadCard = async () => {
-  if (!cardRef.current) return;
-  const el = cardRef.current;
+  // ── FIX 3: Tiled watermark that covers full card height without clipping ──
+  const downloadCard = async () => {
+    if (!cardRef.current) return;
+    const el = cardRef.current;
 
-  const hidden = el.querySelectorAll('[data-hide-download]');
-  hidden.forEach(h => { h.style.visibility = 'hidden'; });
+    const hidden = el.querySelectorAll('[data-hide-download]');
+    hidden.forEach(h => { h.style.visibility = 'hidden'; });
 
-  const prevMaxHeight = el.style.maxHeight;
-  const prevOverflow  = el.style.overflowY;
-  el.style.maxHeight  = 'none';
-  el.style.overflowY  = 'visible';
+    const prevMaxHeight = el.style.maxHeight;
+    const prevOverflow  = el.style.overflowY;
+    el.style.maxHeight  = 'none';
+    el.style.overflowY  = 'visible';
 
-  const html2canvas = (await import('html2canvas')).default;
-  const canvas = await html2canvas(el, {
-    backgroundColor: '#060a14',
-    scale: 2,
-    useCORS: true,
-    allowTaint: true,
-    logging: false,
-    width:        el.offsetWidth,
-    height:       el.scrollHeight,
-    windowWidth:  el.offsetWidth,
-    windowHeight: el.scrollHeight,
-  });
+    const html2canvas = (await import('html2canvas')).default;
+    const canvas = await html2canvas(el, {
+      backgroundColor: '#060a14',
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      logging: false,
+      width:        el.offsetWidth,
+      height:       el.scrollHeight,
+      windowWidth:  el.offsetWidth,
+      windowHeight: el.scrollHeight,
+    });
 
-  el.style.maxHeight = prevMaxHeight;
-  el.style.overflowY = prevOverflow;
-  hidden.forEach(h => { h.style.visibility = ''; });
+    el.style.maxHeight = prevMaxHeight;
+    el.style.overflowY = prevOverflow;
+    hidden.forEach(h => { h.style.visibility = ''; });
 
-  const ctx = canvas.getContext('2d');
-  const w = canvas.width, h = canvas.height;
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width, h = canvas.height;
 
-// ── Single centered watermark ──
-  ctx.save();
-  ctx.translate(w / 2, h / 2);
-  ctx.rotate(-Math.PI / 10);
-  ctx.font = `900 ${Math.round(w * 0.09)}px Arial, sans-serif`;
-  ctx.fillStyle = 'rgba(255,255,255,0.06)';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('ScoringAI', 0, 0);
-  ctx.restore();
+    // ── Tiled diagonal watermark — no clipping, full card coverage ──
+    ctx.save();
+    ctx.globalAlpha = 0.045;
+    ctx.fillStyle = 'rgba(255,255,255,1)';
+    const fontSize = Math.round(w * 0.055); // smaller than before to fit more tiles
+    ctx.font = `900 ${fontSize}px Arial, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
 
-  // ── Bottom branding strip ──
-  const stripH = 56;
-  ctx.fillStyle = 'rgba(4,8,18,0.97)';
-  ctx.fillRect(0, h - stripH, w, stripH);
-  // Cyan top border
-  ctx.fillStyle = '#22d3ee';
-  ctx.fillRect(0, h - stripH, w, 2);
-  // ScoringAI text
-  ctx.font = `800 ${Math.round(w * 0.042)}px Arial, sans-serif`;
-  ctx.fillStyle = 'rgba(255,255,255,0.92)';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('ScoringAI', w / 2, h - stripH/2);
+    const angle = -Math.PI / 10;
+    const stepX = w * 0.65;      // horizontal spacing between tiles
+    const stepY = h * 0.15;      // vertical spacing — tighter for tall cards
 
-  const link = document.createElement('a');
-  link.download = `${(player.name||'player').replace(/ /g,'_')}_ScoringAI.png`;
-  link.href = canvas.toDataURL('image/png');
-  link.click();
-};
+    for (let row = -1; row < h / stepY + 2; row++) {
+      for (let col = -1; col < w / stepX + 2; col++) {
+        // offset every other row for a staggered brick-like pattern
+        const xOffset = (row % 2 === 0) ? 0 : stepX / 2;
+        ctx.save();
+        ctx.translate(col * stepX + xOffset, row * stepY);
+        ctx.rotate(angle);
+        ctx.fillText('ScoringAI', 0, 0);
+        ctx.restore();
+      }
+    }
+    ctx.restore();
+
+    // ── Bottom branding strip ──
+    const stripH = 56;
+    ctx.fillStyle = 'rgba(4,8,18,0.97)';
+    ctx.fillRect(0, h - stripH, w, stripH);
+    // Cyan top border on strip
+    ctx.fillStyle = '#22d3ee';
+    ctx.fillRect(0, h - stripH, w, 2);
+    // ScoringAI brand text
+    ctx.font = `800 ${Math.round(w * 0.042)}px Arial, sans-serif`;
+    ctx.fillStyle = 'rgba(255,255,255,0.92)';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.globalAlpha = 1;
+    ctx.fillText('ScoringAI', w / 2, h - stripH / 2);
+
+    const link = document.createElement('a');
+    link.download = `${(player.name || 'player').replace(/ /g, '_')}_ScoringAI.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  };
+
   if (!player) return null;
 
   const pos   = player.position || 'Attacker';
@@ -363,7 +385,8 @@ const downloadCard = async () => {
       style={{ background: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(10px)' }}
       onClick={e => e.target === e.currentTarget && onClose()}>
 
-      <div ref={cardRef} className="w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl"        style={{
+      <div ref={cardRef} className="w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl"
+        style={{
           background: 'rgba(6,10,20,0.98)',
           border: '1px solid rgba(255,255,255,0.08)',
           maxHeight: '92vh', overflowY: 'auto',
@@ -389,10 +412,9 @@ const downloadCard = async () => {
                   Hot Form
                 </span>
               )}
-              {/* ── PLAYER STATUS BADGE ── */}
               <PlayerStatusBadge status={injuryStatus}/>
             </div>
-           <div className="flex items-center gap-2" data-hide-download>
+            <div className="flex items-center gap-2" data-hide-download>
               <button onClick={downloadCard}
                 className="w-8 h-8 rounded-xl flex items-center justify-center border border-white/10 text-slate-400 hover:text-white transition-all"
                 style={{ background: 'rgba(255,255,255,0.06)' }}
@@ -441,14 +463,22 @@ const downloadCard = async () => {
                   {player.nationality && <span className="text-[12px] text-slate-300 font-semibold">{player.nationality}</span>}
                   {player.age > 0 && <span className="text-[12px] text-slate-500">{player.age}y</span>}
                 </div>
-                {/* Injury news snippet */}
                 {injuryStatus?.news && (
                   <p className="text-[11px] text-slate-500 mt-2 leading-relaxed line-clamp-2">{injuryStatus.news}</p>
                 )}
+                {/* ── FIX 1: height/weight now show units (cm / kg) ── */}
                 {(player.height || player.weight) && (
                   <div className="flex items-center gap-3 mt-2">
-                    {player.height && <span className="text-[11px] text-slate-600">{player.height}</span>}
-                    {player.weight && <span className="text-[11px] text-slate-600">{player.weight}</span>}
+                    {player.height && (
+                      <span className="text-[11px] text-slate-600">
+                        {player.height}{!String(player.height).includes('cm') ? ' cm' : ''}
+                      </span>
+                    )}
+                    {player.weight && (
+                      <span className="text-[11px] text-slate-600">
+                        {player.weight}{!String(player.weight).includes('kg') ? ' kg' : ''}
+                      </span>
+                    )}
                   </div>
                 )}
               </div>
@@ -501,7 +531,7 @@ const downloadCard = async () => {
                   <div className="px-4 pb-1">
                     {section.rows.map((row, ri) => (
                       <StatRow key={ri} label={row.label} value={player[row.key]} color={row.color}
-                        suffix={row.suffix||''} decimal={!!row.decimal} duelsFmt={!!row.duelsFmt} player={player}/>
+                        suffix={row.suffix || ''} decimal={!!row.decimal} duelsFmt={!!row.duelsFmt} player={player}/>
                     ))}
                   </div>
                 </div>
