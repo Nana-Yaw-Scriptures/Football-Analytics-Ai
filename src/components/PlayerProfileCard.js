@@ -322,15 +322,27 @@ export default function PlayerProfileCard({ player, onClose, injuryStatus }) {
     const ctx = canvas.getContext('2d');
     const w = canvas.width, h = canvas.height;
 
-    // ── Single centered diagonal watermark ──
+    // ── Single centered diagonal watermark — guaranteed to fit ──
     ctx.save();
-    ctx.translate(w / 2, h * 0.42);               // 42% down — better visual center on tall cards
-    ctx.rotate(-Math.PI / 10);
-    ctx.font = `900 ${Math.round(w * 0.16)}px Arial, sans-serif`; // bigger — fills the card
-    ctx.fillStyle = '#ffffff';
-    ctx.globalAlpha = 0.07;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#ffffff';
+    ctx.globalAlpha = 0.08;
+
+    // Start at a target size then scale down until the rotated text fits the canvas
+    let fontSize = Math.round(w * 0.13);
+    ctx.font = `900 ${fontSize}px Arial, sans-serif`;
+    const measured = ctx.measureText('Scorina AI').width;
+    // rotated text projected width must fit within canvas: textWidth * cos(angle) ≤ w
+    const angle = Math.PI / 10;
+    const maxTextWidth = (w * 0.88) / Math.cos(angle);
+    if (measured > maxTextWidth) {
+      fontSize = Math.round(fontSize * (maxTextWidth / measured));
+      ctx.font = `900 ${fontSize}px Arial, sans-serif`;
+    }
+
+    ctx.translate(w / 2, h * 0.42);
+    ctx.rotate(-angle);
     ctx.fillText('Scorina AI', 0, 0);
     ctx.restore();
 
@@ -420,7 +432,7 @@ export default function PlayerProfileCard({ player, onClose, injuryStatus }) {
           </div>
 
           {/* Player identity */}
-          <div className="relative px-5 pb-5">
+          <div className="relative px-5 pb-6 pt-2">
             <div className="flex items-start gap-4">
               <div className="relative flex-shrink-0">
                 {player.photo
@@ -438,23 +450,23 @@ export default function PlayerProfileCard({ player, onClose, injuryStatus }) {
                 )}
               </div>
               <div className="flex-1 min-w-0 pt-1 flex flex-col items-center text-center">
-                <h2 className="text-2xl font-black text-white leading-tight mb-1 w-full text-center">{player.name}</h2>
-                <div className="flex items-center justify-center gap-2 flex-wrap w-full">
+                <h2 className="text-2xl font-black text-white leading-tight mb-2 w-full text-center">{player.name}</h2>
+                <div className="flex items-center justify-center gap-2 flex-wrap w-full mb-2">
                   {player.teamLogo && <img src={player.teamLogo} alt="" className="w-5 h-5 object-contain"/>}
                   <span className="text-base font-bold" style={{ color: posC.color }}>{player.team}</span>
                 </div>
-                <div className="flex items-center justify-center gap-2 flex-wrap w-full mt-1">
+                <div className="flex items-center justify-center gap-2 flex-wrap w-full mb-2">
                   <span className="text-[12px] font-black px-2.5 py-1 rounded-xl"
                     style={{ color: posC.color, background: posC.bg, border: `1px solid ${posC.border}` }}>{pos}</span>
                   {player.nationality && <span className="text-[12px] text-slate-300 font-semibold">{player.nationality}</span>}
                   {player.age > 0 && <span className="text-[12px] text-slate-500">{player.age}y</span>}
                 </div>
                 {injuryStatus?.news && (
-                  <p className="text-[11px] text-slate-500 mt-2 leading-relaxed line-clamp-2 text-center">{injuryStatus.news}</p>
+                  <p className="text-[11px] text-slate-500 mb-2 leading-relaxed line-clamp-2 text-center">{injuryStatus.news}</p>
                 )}
                 {/* height/weight — centered with units */}
                 {(player.height || player.weight) && (
-                  <div className="flex items-center justify-center gap-3 mt-2">
+                  <div className="flex items-center justify-center gap-3">
                     {player.height && (
                       <span className="text-[11px] text-slate-600">
                         {player.height}{!String(player.height).includes('cm') ? ' cm' : ''}
