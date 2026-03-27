@@ -317,21 +317,15 @@ const downloadCard = async () => {
   const ctx = canvas.getContext('2d');
   const w = canvas.width, h = canvas.height;
 
-  // ── Tiled subtle watermark ──
+// ── Single centered watermark ──
   ctx.save();
-  ctx.font = `900 ${Math.round(w * 0.06)}px Arial, sans-serif`;
-  ctx.fillStyle = 'rgba(255,255,255,0.055)';
+  ctx.translate(w / 2, h / 2);
+  ctx.rotate(-Math.PI / 10);
+  ctx.font = `900 ${Math.round(w * 0.09)}px Arial, sans-serif`;
+  ctx.fillStyle = 'rgba(255,255,255,0.06)';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  // Draw 3 rows of watermarks
-  const rows = [[h*0.3], [h*0.55], [h*0.78]];
-  rows.forEach(([y]) => {
-    ctx.save();
-    ctx.translate(w/2, y);
-    ctx.rotate(-Math.PI / 10);
-    ctx.fillText('ScoringAI', 0, 0);
-    ctx.restore();
-  });
+  ctx.fillText('ScoringAI', 0, 0);
   ctx.restore();
 
   // ── Bottom branding strip ──
