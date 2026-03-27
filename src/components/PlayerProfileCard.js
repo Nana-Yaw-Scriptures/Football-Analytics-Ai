@@ -423,13 +423,13 @@ export default function PlayerProfileCard({ player, onClose, injuryStatus }) {
                 <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-widest">{player.league}</span>
               )}
               {isHot && (
-                <span className="flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full"
+                <span className="flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full" data-hide-download
                   style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444' }}>
                   <ZapIcon className="w-3 h-3"/>
                   Hot Form
                 </span>
               )}
-              <PlayerStatusBadge status={injuryStatus}/>
+              <span data-hide-download><PlayerStatusBadge status={injuryStatus}/></span>
             </div>
             <div className="flex items-center gap-2 absolute right-5 top-4" data-hide-download>
               <button onClick={downloadCard}
