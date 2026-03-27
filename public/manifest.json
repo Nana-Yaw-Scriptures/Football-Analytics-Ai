@@ -3,17 +3,17 @@
   "name": "Scorina - Your Football Analyst Ai",
   "icons": [
     {
-      "src": "scriptiq_logo.svg",
+      "src": "scorina_ai_logo.svg",
       "sizes": "64x64 32x32 24x24 16x16",
       "type": "image/x-icon"
     },
     {
-      "src": "scriptiq_logo.svg",
+      "src": "scorina_ai_logo.svg",
       "type": "image/png",
       "sizes": "192x192"
     },
     {
-      "src": "scriptiq_logo.svg",
+      "src": "scorina_ai_logo.svg",
       "type": "image/png",
       "sizes": "512x512"
     }

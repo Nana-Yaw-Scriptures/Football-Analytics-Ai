@@ -37,8 +37,8 @@ const NAV_LINKS = [
   { id:'league',    label:'Leagues',   icon:GlobeIcon,    accent:'#60a5fa', dropdown:true },
   { id:'simulator', label:'Sim',       icon:PlayIcon,     accent:'#f59e0b' },
   { id:'history',   label:'History',   icon:HistoryIcon,  accent:'#c084fc' },
-  { id:'bestpicks', label:'Picks', icon:ZapIcon, accent:'#22d3ee' },
-  { id:'videolab', label:'Video Lab', icon:VideoIcon, accent:'#10b981' },
+  { id:'bestpicks', label:'Picks', icon:ZapIcon, accent:'#f97316' },
+  { id:'videolab', label:'Video Lab', shortLabel:'Video', icon:VideoIcon, accent:'#10b981' },
 ];
 
 const LEAGUES = [
@@ -55,7 +55,7 @@ const PAGE_LABEL = {
   home:'Home', analysis:'AI Analysis', analytics:'Analytics',
   players:'Players', managers:'Managers', live:'Live Scores',
   league:'League', simulator:'Simulator', history:'Predictions',
-  match:'Match Centre', admin:'Admin',
+  match:'Match Centre', admin:'Admin', bestpicks:'Best Picks', videolab:'Video Lab',
 };
 
 /* Pages that always snap back to a specific destination */
@@ -158,10 +158,10 @@ export default function NavBar({ currentPage, onNavigate, children }) {
             <button className="nb-logo" onClick={() => go('home')}>
               <div className="nb-logo-mark">
                 {!logoErr
-                  ? <img src="/scriptiq_logo.svg" alt="Scorina" className="nb-logo-img" onError={() => setLogoErr(true)}/>
+                  ? <img src="/scorina_ai_logo.svg" alt="Scorina" className="nb-logo-img" onError={() => setLogoErr(true)}/>
                   : <BrainIcon className="w-3.5 h-3.5 text-white"/>}
               </div>
-              <span className="nb-wordmark">Scorina</span>
+              <span className="nb-wordmark">Scorina AI</span>
               <span className="nb-wordmark-dot" style={{ background: activeAccent, boxShadow: `0 0 8px ${activeAccent}` }}/>
             </button>
 
