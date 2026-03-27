@@ -66,23 +66,36 @@ def get_international_fixtures(date=None, upcoming=False):
 
     all_fixtures = []
 
+    # Determine season dynamically — try primary then fallback if no results.
+    # API-Football seasons: Friendlies use calendar year (2026), tournaments use start year (2025 for 2025-26).
+    current_year = datetime.now(timezone.utc).year
+    CURRENT_YEAR_LEAGUES = {10}  # International Friendlies match calendar year
+
     for league_name, league_id in INTERNATIONAL_IDS.items():
         try:
-            season = 2026 if league_id == 10 else 2025
+            primary_season  = current_year if league_id in CURRENT_YEAR_LEAGUES else current_year - 1
+            fallback_season = current_year if primary_season == current_year - 1 else current_year - 1
+
             if upcoming:
                 params = {
                     "league": league_id,
-                    "season": season,
+                    "season": primary_season,
                     "next": 10,
                 }
             else:
                 params = {
                     "league": league_id,
-                    "season": season,
+                    "season": primary_season,
                     "date": date,
                 }
 
             data = _get("fixtures", params)
+
+            # No results with primary season — try fallback
+            if not data.get("response"):
+                fallback_params = dict(params)
+                fallback_params["season"] = fallback_season
+                data = _get("fixtures", fallback_params)
             for fix in data.get("response", []):
                 fixture    = fix.get("fixture", {})
                 teams      = fix.get("teams", {})
