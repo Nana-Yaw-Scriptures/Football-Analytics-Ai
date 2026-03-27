@@ -1,0 +1,23 @@
+{
+  "short_name": "Scorina AI",
+  "name": "Scorina AI - Football Analytics",
+  "description": "AI-powered football analytics — predictions, player stats, live scores across Europe's top leagues.",
+  "icons": [
+    {
+      "src": "scorina_ai_logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "logo192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#050810",
+  "background_color": "#050810",
+  "orientation": "portrait"
+}

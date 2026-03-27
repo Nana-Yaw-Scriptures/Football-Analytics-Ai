@@ -40,3 +40,4 @@ football-analyst-backend/venv/
 football-analyst-backend/.env
 football-analyst-backend/__pycache__/
 football-analyst-backend/cache/
+.vercel

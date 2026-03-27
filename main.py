@@ -35,9 +35,16 @@ _managers_cache: dict = {}
 _managers_cache_ts: float = 0
 MANAGERS_TTL = 3600
 
+ALLOWED_ORIGINS = [
+    "https://scorinai.com",
+    "https://www.scorinai.com",
+    "http://localhost:3000",
+    "http://localhost:3001",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -1400,7 +1407,7 @@ def load_models():
             print(f'Cleared stale cache: {f}')
         except:
             pass
-        
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
