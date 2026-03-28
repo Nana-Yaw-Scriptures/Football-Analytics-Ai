@@ -17,9 +17,19 @@ import LoginPage from './pages/LoginPage';
 
 function App() {
   const [currentPage, setCurrentPage] = useState(() => {
-    const hash = window.location.hash.replace('#/', '');
+    const hash = window.location.hash.replace('#/', '').replace('#', '');
     return hash || 'home';
   });
+
+  // Listen for hash changes (e.g. after OAuth redirect)
+  useEffect(() => {
+    const onHash = () => {
+      const hash = window.location.hash.replace('#/', '').replace('#', '');
+      if (!hash) setCurrentPage('home');
+    };
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
   const [selectedLeague, setSelectedLeague] = useState(null);
   const [navParams, setNavParams]           = useState({});
 

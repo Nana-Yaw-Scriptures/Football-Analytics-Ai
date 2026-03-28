@@ -15,9 +15,16 @@ export const AuthProvider = ({ children }) => {
     });
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
       setLoading(false);
+      // After OAuth redirect, go to home if on empty hash
+      if (event === 'SIGNED_IN') {
+        const hash = window.location.hash.replace('#/', '').replace('#', '');
+        if (!hash || hash === 'login') {
+          window.location.hash = '/home';
+        }
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -48,6 +55,9 @@ export const AuthProvider = ({ children }) => {
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
+    // Reset to home after logout
+    window.location.hash = '/home';
+    window.location.reload();
   };
 
   return (
