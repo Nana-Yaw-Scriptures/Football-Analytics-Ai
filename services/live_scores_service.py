@@ -417,7 +417,8 @@ def get_fixture_detail(fixture_id):
 
 
 def get_upcoming_fixtures(league=None, days=7):
-    """Fetch upcoming fixtures for the next N days."""    cache_name = f"upcoming_v4_{league or 'all'}_{days}"
+    """Fetch upcoming fixtures for the next N days."""
+    cache_name = f"upcoming_v4_{league or 'all'}_{days}"
     cached = _read_cache(cache_name, max_age_seconds=600)  # 10 min cache
     if cached is not None:
         return cached
