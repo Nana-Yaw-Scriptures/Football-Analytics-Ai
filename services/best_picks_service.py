@@ -10,7 +10,7 @@ import time
 import threading
 from datetime import datetime, timezone, timedelta
 
-CACHE_FILE  = os.path.join('cache', 'best_picks_cache.json')
+CACHE_FILE  = os.path.join('picks_only', 'best_picks_cache.json')
 CACHE_TTL   = 259200   # 72 hours — picks are weekly, no need to regenerate more often
 _mem_cache  = {}
 _cache_lock = threading.Lock()
@@ -81,7 +81,7 @@ def _get_val(result, key, default=None):
 
 def _save_to_file(picks: dict, generated_at: float):
     try:
-        os.makedirs('cache', exist_ok=True)
+        os.makedirs('picks_only', exist_ok=True)
         with open(CACHE_FILE, 'w', encoding='utf-8') as f:
             json.dump({'picks': picks, 'generated_at': generated_at}, f)
         print(f'[BestPicks] Cache saved to disk.')
