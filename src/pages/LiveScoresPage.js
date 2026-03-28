@@ -227,7 +227,7 @@ function LiveScoresPage({ onNavigate }) {
 
   useEffect(() => {
     fetchData(true);
-    refreshTimerRef.current = setInterval(() => fetchData(false), 120000);
+    refreshTimerRef.current = setInterval(() => fetchData(false), 300000); // 5min — reduces layout jumps
     return () => clearInterval(refreshTimerRef.current);
   }, [fetchData]);
 
@@ -359,7 +359,7 @@ function LiveScoresPage({ onNavigate }) {
                 <span className="text-yellow-400 text-[11px] font-black uppercase tracking-widest whitespace-nowrap">Goals</span>
               </div>
               <div className="flex-1 overflow-hidden px-4">
-                <div style={{display:'flex',gap:'2.5rem',animation:`ticker ${Math.max(goalsToday.length*5,14)}s linear infinite`,whiteSpace:'nowrap'}}>
+                <div style={{display:'flex',gap:'2.5rem',animation:`ticker ${Math.max(goalsToday.length*5,14)}s linear infinite`,whiteSpace:'nowrap',willChange:'transform',contain:'layout'}}>
                   {[...goalsToday,...goalsToday].map((g,i) => (
                     <span key={i} className="text-[12px] inline-flex items-center gap-2 flex-shrink-0">
                       <span className="text-yellow-400 font-black">{g.player}</span>
