@@ -35,6 +35,7 @@ _managers_cache: dict = {}
 _managers_cache_ts: float = 0
 MANAGERS_TTL = 3600
 
+# Allow scorinai.com in production + localhost for dev
 ALLOWED_ORIGINS = [
     "https://scorinai.com",
     "https://www.scorinai.com",
@@ -651,27 +652,30 @@ def resolve_predictions_endpoint():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.delete("/predictions/clear")
+def clear_predictions():
+    # MUST be before /predictions/{prediction_id} to avoid route conflict
+    try:
+        from services.prediction_history_service import clear_history
+        return clear_history()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.delete("/predictions/{prediction_id}")
-def delete_prediction(prediction_id: int):
+def delete_prediction(prediction_id: str):
+    # prediction_id is str to support both int and UUID-style IDs
     try:
         from services.prediction_history_service import _load_history, _save_history
         history = _load_history()
-        new_history = [p for p in history if p.get("id") != prediction_id]
+        # Match by string or int id
+        new_history = [p for p in history if str(p.get("id")) != str(prediction_id)]
         if len(new_history) == len(history):
             raise HTTPException(status_code=404, detail="Prediction not found")
         _save_history(new_history)
         return {"deleted": prediction_id}
     except HTTPException:
         raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.delete("/predictions/clear")
-def clear_predictions():
-    try:
-        from services.prediction_history_service import clear_history
-        return clear_history()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -1407,7 +1411,7 @@ def load_models():
             print(f'Cleared stale cache: {f}')
         except:
             pass
-
+        
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

@@ -10,9 +10,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-CACHE_DIR = "cache"
-HISTORY_FILE = os.path.join(CACHE_DIR, "prediction_history.json")
-os.makedirs(CACHE_DIR, exist_ok=True)
+CACHE_DIR   = "cache"
+HISTORY_DIR = "picks_only"   # volume-backed — survives Railway restarts
+HISTORY_FILE = os.path.join(HISTORY_DIR, "prediction_history.json")
+os.makedirs(CACHE_DIR,   exist_ok=True)
+os.makedirs(HISTORY_DIR, exist_ok=True)
 
 API_KEY = os.getenv("API_FOOTBALL_KEY", "")
 BASE_URL = "https://v3.football.api-sports.io"
@@ -61,8 +63,9 @@ def save_prediction(prediction):
     else:
         predicted_result = "A"
 
+    import uuid
     entry = {
-        "id": len(history) + 1,
+        "id": str(uuid.uuid4())[:8],  # unique ID — safe after deletes
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "homeTeam": prediction.get("homeTeam", prediction.get("home_team", "")),
         "awayTeam": prediction.get("awayTeam", prediction.get("away_team", "")),
