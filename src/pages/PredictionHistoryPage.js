@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import NavBar from '../components/NavBar';
+import { useAuth } from '../context/AuthContext';
+import { getPredictions, deletePrediction as sbDelete, clearPredictions as sbClear } from '../services/supabaseService';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
@@ -193,26 +195,27 @@ export default function PredictionHistoryPage({ onNavigate }) {
   const [teamSearch,   setTeamSearch]   = useState('');
   const [toast,        setToast]        = useState({ msg:'', type:'success' });
 
+  const { user } = useAuth();
+
   const showToast = useCallback((msg, type = 'success') => {
     setToast({ msg, type });
     setTimeout(() => setToast({ msg:'', type:'success' }), 2800);
   }, []);
 
-  /* ── Fetch data ── */
+  /* ── Fetch data from Supabase ── */
   const fetchData = useCallback(async () => {
+    if (!user) { setLoading(false); return; }
     setLoading(true);
     try {
-      const lq     = filterLeague ? `&league=${encodeURIComponent(filterLeague)}` : '';
+      const data = await getPredictions(user.id, filterLeague || null);
+      setHistory(Array.isArray(data) ? data : []);
+      // Accuracy still from backend
       const lqOnly = filterLeague ? `?league=${encodeURIComponent(filterLeague)}` : '';
-      const [hR, sR] = await Promise.allSettled([
-        fetch(`${API_BASE}/predictions/history?limit=200${lq}`).then(r => r.json()),
-        fetch(`${API_BASE}/predictions/accuracy${lqOnly}`).then(r => r.json()),
-      ]);
-      if (hR.status === 'fulfilled') setHistory(Array.isArray(hR.value) ? hR.value : []);
-      if (sR.status === 'fulfilled') setStats(sR.value);
+      const sR = await fetch(`${API_BASE}/predictions/accuracy${lqOnly}`).then(r => r.json()).catch(() => null);
+      if (sR) setStats(sR);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
-  }, [filterLeague]);
+  }, [filterLeague, user]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -229,13 +232,13 @@ export default function PredictionHistoryPage({ onNavigate }) {
     } finally { setResolving(false); }
   };
 
-  /* ── Delete one — FIX: show error toast on failure ── */
+  /* ── Delete one via Supabase ── */
   const deletePrediction = async (id) => {
-    if (!id) return;
+    if (!id || !user) return;
     setDeletingId(id);
     try {
-      const r = await fetch(`${API_BASE}/predictions/${id}`, { method:'DELETE' });
-      if (r.ok) {
+      const ok = await sbDelete(id, user.id);
+      if (ok) {
         setHistory(prev => prev.filter(p => p.id !== id));
         showToast('Prediction deleted');
       } else {
@@ -246,12 +249,13 @@ export default function PredictionHistoryPage({ onNavigate }) {
     } finally { setDeletingId(null); }
   };
 
-  /* ── Clear all — new feature ── */
+  /* ── Clear all via Supabase ── */
   const clearAll = async () => {
     setConfirmClear(false);
+    if (!user) return;
     try {
-      const r = await fetch(`${API_BASE}/predictions/clear`, { method:'DELETE' });
-      if (r.ok) {
+      const ok = await sbClear(user.id);
+      if (ok) {
         setHistory([]);
         setStats(null);
         showToast('All predictions cleared');
@@ -449,8 +453,25 @@ export default function PredictionHistoryPage({ onNavigate }) {
           })}
         </div>
 
+        {/* ══ NOT LOGGED IN ══ */}
+        {!user && !loading && (
+          <div className="rounded-2xl border border-white/[0.07] p-12 text-center"
+            style={{ background:'rgba(10,14,26,0.8)' }}>
+            <HistoryIcon className="w-10 h-10 text-slate-700 mx-auto mb-3"/>
+            <p className="text-white font-black text-lg mb-1">Sign in to track predictions</p>
+            <p className="text-slate-500 text-sm mb-5 max-w-sm mx-auto">
+              Create an account to save your prediction history, track accuracy and compare results over time.
+            </p>
+            <button onClick={() => onNavigate('login')}
+              className="px-6 py-3 rounded-xl font-bold text-sm border transition-all"
+              style={{ background:'rgba(34,211,238,0.1)', borderColor:'rgba(34,211,238,0.25)', color:'#22d3ee' }}>
+              Sign In →
+            </button>
+          </div>
+        )}
+
         {/* ══ LOADING ══ */}
-        {loading && (
+        {user && loading && (
           <div className="text-center py-20">
             <div className="w-16 h-16 mx-auto mb-5 relative">
               <div className="absolute inset-0 rounded-full border-2" style={{ borderColor:'rgba(16,185,129,0.2)' }}/>
@@ -463,7 +484,7 @@ export default function PredictionHistoryPage({ onNavigate }) {
           </div>
         )}
 
-        {!loading && (
+        {user && !loading && (
           <>
             {/* ══ TABS ══ */}
             <div className="flex gap-1 mb-6 rounded-2xl p-1.5 border border-white/[0.06]"

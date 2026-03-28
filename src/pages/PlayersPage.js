@@ -1,3 +1,5 @@
+import { useAuth } from '../context/AuthContext';
+import { addFavourite, removeFavourite, getFavourites } from '../services/supabaseService';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import PlayerProfileCard from '../components/PlayerProfileCard';
 import NavBar from '../components/NavBar';
@@ -174,7 +176,7 @@ const XGBadge = ({ diff }) => {
 /* ══════════════════════════════════════════
    SPOTLIGHT CARD — top 3
 ══════════════════════════════════════════ */
-const SpotlightCard = ({ player, rank, sortCol, onClick }) => {
+const SpotlightCard = ({ player, rank, sortCol, onClick, isFav, onFav }) => {
   const medals = [
     { grad: 'linear-gradient(135deg,#f59e0b,#d97706)', glow: 'rgba(245,158,11,0.3)', label: 'Gold' },
     { grad: 'linear-gradient(135deg,#94a3b8,#64748b)', glow: 'rgba(148,163,184,0.2)', label: 'Silver' },
@@ -202,6 +204,16 @@ const SpotlightCard = ({ player, rank, sortCol, onClick }) => {
         style={{ background: m.grad }}>
         {rank}
       </div>
+      {/* Heart / Favourite button */}
+      {onFav && (
+        <button onClick={e => onFav(e, player)}
+          className="absolute top-3 left-3 w-7 h-7 rounded-full flex items-center justify-center transition-all z-10"
+          style={{ background: isFav ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.06)', border: isFav ? '1px solid rgba(239,68,68,0.4)' : '1px solid rgba(255,255,255,0.1)' }}>
+          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill={isFav ? '#ef4444' : 'none'} stroke={isFav ? '#ef4444' : '#64748b'} strokeWidth="2">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+          </svg>
+        </button>
+      )}
 
       <div className="p-4">
         {/* Photo + radar */}
@@ -257,7 +269,7 @@ const SpotlightCard = ({ player, rank, sortCol, onClick }) => {
 /* ══════════════════════════════════════════
    PLAYER CARD (grid view)
 ══════════════════════════════════════════ */
-const PlayerCard = ({ player, rank, sortCol, onSelect, compareMode, isCompared, onCompare }) => {
+const PlayerCard = ({ player, rank, sortCol, onSelect, compareMode, isCompared, onCompare, isFav, onFav }) => {
   const posC   = POS_CONFIG[player.position] || POS_CONFIG.Midfielder;
   const isHot  = (player.goals || 0) >= 8 && (player.rating || 0) >= 7.2;
   const xgDiff = (player.goals || 0) - (player.xG || 0);
@@ -623,6 +635,8 @@ const CompareModal = ({ players, onClose }) => {
    MAIN PAGE
 ══════════════════════════════════════════ */
 export default function PlayersPage({ onNavigate }) {
+  const { user }                      = useAuth();
+  const [favouriteIds, setFavouriteIds] = useState(new Set());
   const [players,     setPlayers]     = useState([]);
   const [loading,     setLoading]     = useState(true);
   const [search,      setSearch]      = useState('');
@@ -648,6 +662,27 @@ export default function PlayersPage({ onNavigate }) {
       .then(d => { setPlayers(Array.isArray(d) ? d : []); setLoading(false); })
       .catch(() => setLoading(false));
   }, []);
+
+  // Load user favourites
+  useEffect(() => {
+    if (!user) return;
+    getFavourites(user.id).then(favs => {
+      setFavouriteIds(new Set(favs.map(f => f.player_id)));
+    }).catch(() => {});
+  }, [user]);
+
+  const toggleFavourite = async (e, player) => {
+    e.stopPropagation();
+    if (!user) { onNavigate('login'); return; }
+    const pid = String(player.id || player.player_id || player.name);
+    if (favouriteIds.has(pid)) {
+      setFavouriteIds(prev => { const n = new Set(prev); n.delete(pid); return n; });
+      await removeFavourite(user.id, pid);
+    } else {
+      setFavouriteIds(prev => new Set([...prev, pid]));
+      await addFavourite(user.id, player);
+    }
+  };
 
    // Pre-load injuries for all leagues in background
   useEffect(() => {
@@ -824,7 +859,7 @@ const hasFilters = league !== 'All' || position !== 'All' || minMins > 0 || stat
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {top3.map((p, i) => (
-                <SpotlightCard key={p.id||i} player={p} rank={i+1} sortCol={sortCol} onClick={setSelected}/>
+                <SpotlightCard key={p.id||i} player={p} rank={i+1} sortCol={sortCol} onClick={setSelected} isFav={favouriteIds.has(String(p.id||p.player_id||p.name))} onFav={toggleFavourite}/>
               ))}
             </div>
           </div>
@@ -1232,6 +1267,8 @@ const hasFilters = league !== 'All' || position !== 'All' || minMins > 0 || stat
                     compareMode={compareMode}
                     isCompared={!!compared.find(cp => cp.id === p.id)}
                     onCompare={toggleCompare}
+                    isFav={favouriteIds.has(String(p.id||p.player_id||p.name))}
+                    onFav={toggleFavourite}
                   />
                 ))}
           </div>

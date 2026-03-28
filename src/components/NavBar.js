@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import GlobalSearch from './GlobalSearch';
 import NotificationBell from './NotificationBell';
+import { useAuth } from '../context/AuthContext';
 
 /* ══════════════════════════════════════
    ICONS
@@ -65,6 +66,7 @@ const FORCED_BACK = { match:'live' };
    MAIN COMPONENT
 ══════════════════════════════════════ */
 export default function NavBar({ currentPage, onNavigate, children }) {
+  const { user, signOut } = useAuth();
   const [mobileOpen,   setMobileOpen]   = useState(false);
   const [leagueOpen,   setLeagueOpen]   = useState(false);
   const [leagueSearch, setLeagueSearch] = useState('');
@@ -261,6 +263,36 @@ export default function NavBar({ currentPage, onNavigate, children }) {
           <div className="nb-right">
             <GlobalSearch onNavigate={go}/>
             <NotificationBell onNavigate={go}/>
+            {user ? (
+              <div style={{ position:'relative' }} className="flex items-center gap-2">
+                <button
+                  onClick={() => signOut()}
+                  title="Sign out"
+                  style={{
+                    width:36, height:36, borderRadius:12,
+                    background: user.user_metadata?.avatar_url ? 'transparent' : 'rgba(34,211,238,0.15)',
+                    border: '1.5px solid rgba(34,211,238,0.3)',
+                    overflow:'hidden', cursor:'pointer',
+                    display:'flex', alignItems:'center', justifyContent:'center',
+                    color:'#22d3ee', fontWeight:800, fontSize:13,
+                  }}>
+                  {user.user_metadata?.avatar_url
+                    ? <img src={user.user_metadata.avatar_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
+                    : (user.email?.[0] || 'U').toUpperCase()
+                  }
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => onNavigate('login')}
+                style={{
+                  padding:'6px 14px', borderRadius:12, fontSize:12, fontWeight:700,
+                  background:'rgba(34,211,238,0.1)', border:'1px solid rgba(34,211,238,0.25)',
+                  color:'#22d3ee', cursor:'pointer', whiteSpace:'nowrap',
+                }}>
+                Sign In
+              </button>
+            )}
             {children}
             <button className="nb-burger lg:hidden" onClick={() => setMobileOpen(v => !v)}>
               {mobileOpen ? <XIcon className="w-4 h-4"/> : <MenuIcon className="w-4 h-4"/>}
