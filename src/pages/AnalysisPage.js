@@ -1,5 +1,5 @@
 import { useAuth } from '../context/AuthContext';
-import { savePrediction } from '../services/supabaseService';
+import { savePrediction as saveToSupabase } from '../services/supabaseService';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { predictMatch, analyzePlayer, checkBackend, getTeams } from '../services/api';
 import ThemeToggle from '../components/ThemeToggle';
@@ -1543,7 +1543,7 @@ const analysisTypes = [
     setSavedPredictions(upd);localStorage.setItem('fa-saved-predictions',JSON.stringify(upd));
     setToast('Prediction saved!'); setTimeout(() => setToast(''), 2500);
     if(activeTab==='match'&&mlData){
-      if (user) { savePrediction({homeTeam:mlData.home_team_name||input.split(/\s+vs\s+/i)[0]?.trim()||matchHome,awayTeam:mlData.away_team_name||input.split(/\s+vs\s+/i)[1]?.trim()||matchAway,league:selectedLeague,home_win:mlData.home_win,draw:mlData.draw,away_win:mlData.away_win,predicted_outcome:mlData.predicted_outcome,predicted_score:mlData.predicted_score}, user.id).catch(()=>{}); }
+      if (user) { saveToSupabase({homeTeam:mlData.home_team_name||input.split(/\s+vs\s+/i)[0]?.trim()||matchHome,awayTeam:mlData.away_team_name||input.split(/\s+vs\s+/i)[1]?.trim()||matchAway,league:selectedLeague,home_win:mlData.home_win,draw:mlData.draw,away_win:mlData.away_win,predicted_outcome:mlData.predicted_outcome,predicted_score:mlData.predicted_score}, user.id).catch(()=>{}); }
     }
   };
 
@@ -1652,7 +1652,7 @@ const resp = await fetch(`${API_BASE}/team-fixtures?team=${encodeURIComponent(te
       mlResult = await getMLPrediction();
       if (mlResult) {
         setMlData(mlResult);
-        if (activeTab === 'match' && user) { savePrediction({ homeTeam: input.split(/\s+vs\s+/i)[0]?.trim() || matchHome, awayTeam: input.split(/\s+vs\s+/i)[1]?.trim() || matchAway, league: selectedLeague, home_win: mlResult.home_win, draw: mlResult.draw, away_win: mlResult.away_win, predicted_outcome: mlResult.predicted_outcome, predicted_score: mlResult.predicted_score }, user.id).catch(() => {}); }
+        if (activeTab === 'match' && user) { saveToSupabase({ homeTeam: input.split(/\s+vs\s+/i)[0]?.trim() || matchHome, awayTeam: input.split(/\s+vs\s+/i)[1]?.trim() || matchAway, league: selectedLeague, home_win: mlResult.home_win, draw: mlResult.draw, away_win: mlResult.away_win, predicted_outcome: mlResult.predicted_outcome, predicted_score: mlResult.predicted_score }, user.id).catch(() => {}); }
       }
     } catch (e) { setMlError(e.message || 'ML prediction failed'); }
     try { const aiResult = await getAIAnalysis(mlResult); setAnalysis(aiResult); } catch (e) { setAnalysis('Unable to generate AI analysis.'); }
