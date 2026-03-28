@@ -419,7 +419,7 @@ def get_fixture_detail(fixture_id):
 def get_upcoming_fixtures(league=None, days=7):
     """Fetch upcoming fixtures for the next N days."""
     from datetime import timedelta
-    cache_name = f"upcoming_{league or 'all'}_{days}"
+    cache_name = f"upcoming_v2_{league or 'all'}_{days}"  # v2 busts old cached files
     cached = _read_cache(cache_name, max_age_seconds=600)  # 10 min cache
     if cached is not None:
         return cached
@@ -434,7 +434,7 @@ def get_upcoming_fixtures(league=None, days=7):
         data = _get("fixtures", {
             "league": league_id,
             "season": SEASON,
-            "next": 6,  # Reduced from 10 — saves API credits, per-league window only needs ~5
+            "next": 10,  # Next 10 fixtures per league for live scores
         })
 
         for fix in data.get("response", []):
