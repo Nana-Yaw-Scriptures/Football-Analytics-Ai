@@ -136,7 +136,7 @@ export default function PickemPage({ onNavigate }) {
 
   const submitAll = async () => {
     if (!user) { onNavigate('login'); return; }
-    const toSubmit = fixtures.filter(f => picks[f.id]?.result && !submitted[f.id]);
+    const toSubmit = fixtures.filter(f => picks[String(f.id)]?.result && !submitted[String(f.id)]);
     if (toSubmit.length === 0) { showToast('No new picks to submit', 'error'); return; }
 
     setSaving(true);
@@ -148,8 +148,8 @@ export default function PickemPage({ onNavigate }) {
         league:           f.league,
         fixture_id:       String(f.id),
         match_date:       f.date,
-        predicted_result: picks[f.id].result,
-        predicted_score:  picks[f.id].score || null,
+        predicted_result: picks[String(f.id)].result,
+        predicted_score:  picks[String(f.id)].score || null,
         resolved:         false,
       }));
 
@@ -158,7 +158,7 @@ export default function PickemPage({ onNavigate }) {
 
       // Mark as submitted
       const newSubbed = { ...submitted };
-      toSubmit.forEach(f => { newSubbed[f.id] = true; });
+      toSubmit.forEach(f => { newSubbed[String(f.id)] = true; });
       setSubmitted(newSubbed);
       showToast(`${toSubmit.length} pick${toSubmit.length !== 1 ? 's' : ''} submitted! ✅`);
     } catch(e) {
@@ -169,7 +169,7 @@ export default function PickemPage({ onNavigate }) {
 
   const leagues = ['All', ...Object.keys(grouped)];
   const totalPicks = Object.values(picks).filter(p => p?.result).length;
-  const newPicks = fixtures.filter(f => picks[f.id]?.result && !submitted[f.id]).length;
+  const newPicks = fixtures.filter(f => picks[String(f.id)]?.result && !submitted[String(f.id)]).length;
 
   const displayFixtures = filterLeague === 'All'
     ? fixtures
@@ -315,8 +315,8 @@ export default function PickemPage({ onNavigate }) {
 
               <div className="space-y-2">
                 {dayFixtures.map(fix => {
-                  const pick = picks[fix.id] || {};
-                  const isSubmitted = submitted[fix.id];
+                  const pick = picks[String(fix.id)] || {};
+                  const isSubmitted = submitted[String(fix.id)];
                   const leagueColor = LEAGUE_COLOR[fix.league] || '#22d3ee';
                   const isPicked = !!pick.result;
 
@@ -376,7 +376,7 @@ export default function PickemPage({ onNavigate }) {
                             const isSelected = pick.result === opt.key;
                             return (
                               <button key={opt.key}
-                                onClick={() => setPick(fix.id, 'result', opt.key)}
+                                onClick={() => setPick(String(fix.id), 'result', opt.key)}
                                 disabled={isSubmitted}
                                 className="py-2 rounded-xl text-xs font-black transition-all border relative overflow-hidden disabled:cursor-not-allowed"
                                 style={{
@@ -404,7 +404,7 @@ export default function PickemPage({ onNavigate }) {
                               {!isSubmitted ? (
                                 <ScoreInput
                                   value={pick.score || ''}
-                                  onChange={val => setPick(fix.id, 'score', val)}
+                                  onChange={val => setPick(String(fix.id), 'score', val)}
                                   color={leagueColor}
                                 />
                               ) : (
