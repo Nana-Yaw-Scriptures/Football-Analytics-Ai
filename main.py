@@ -204,17 +204,6 @@ def _get_team_id_by_league(name: str, league: str):
 # ── Models ──
 models = {}
 
-@app.on_event("startup")
-def load_models():
-    model_dir = "trained_models"
-    if os.path.exists(model_dir):
-        for f in os.listdir(model_dir):
-            if f.endswith(".pkl"):
-                name = f.replace(".pkl", "")
-                models[name] = joblib.load(os.path.join(model_dir, f))
-                print(f"Loaded model: {name}")
-
-
 # ── Request/Response Schemas ──
 
 class MatchPredictionRequest(BaseModel):
@@ -649,6 +638,44 @@ def resolve_predictions_endpoint():
     try:
         from services.prediction_history_service import resolve_predictions
         return resolve_predictions()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/predictions/resolve-batch")
+def resolve_batch_endpoint(predictions: list):
+    """
+    Accept a list of unresolved predictions from Supabase,
+    check actual results via API-Football, and return resolved data.
+    Each item: {id, homeTeam, awayTeam, league, fixtureId, matchDate, predictedResult}
+    Returns: [{id, actualResult, actualScore, correct, scoreCorrect, resolved}]
+    """
+    try:
+        from services.prediction_history_service import _find_result
+        results = []
+        for pred in predictions:
+            home  = pred.get('homeTeam', '')
+            away  = pred.get('awayTeam', '')
+            league= pred.get('league', '')
+            fid   = pred.get('fixtureId')
+            date  = pred.get('matchDate')
+            actual = _find_result(home, away, league, fid, date)
+            if actual:
+                hg = actual['homeGoals']
+                ag = actual['awayGoals']
+                if hg > ag:   actual_result = 'H'
+                elif hg == ag: actual_result = 'D'
+                else:          actual_result = 'A'
+                predicted = pred.get('predictedResult', 'H')
+                pred_score = pred.get('predictedScore', '')
+                results.append({
+                    'id':           pred.get('id'),
+                    'actualResult': actual_result,
+                    'actualScore':  f'{hg}-{ag}',
+                    'correct':      predicted == actual_result,
+                    'scoreCorrect': pred_score == f'{hg}-{ag}',
+                    'resolved':     True,
+                })
+        return results
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -1381,6 +1408,15 @@ def load_models():
             print(f"Cache warm error: {e}")
     threading.Thread(target=warm_cache, daemon=True).start()
 
+    # Clear stale injury caches on startup
+    import glob
+    for f in glob.glob('cache/injuries_*.json'):
+        try:
+            os.remove(f)
+            print(f'Cleared stale cache: {f}')
+        except:
+            pass
+
 # Add these endpoints to main.py before the /best-picks endpoint
 
 @app.get("/live/international")
@@ -1399,19 +1435,6 @@ def get_international_upcoming():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.on_event("startup")
-def load_models():
-    # ... existing code ...
-    
-    # Clear stale injury caches on startup
-    import glob
-    for f in glob.glob('cache/injuries_*.json'):
-        try:
-            os.remove(f)
-            print(f'Cleared stale cache: {f}')
-        except:
-            pass
-        
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

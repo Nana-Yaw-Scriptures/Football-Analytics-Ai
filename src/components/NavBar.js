@@ -23,23 +23,25 @@ const ArrowLeftIcon= p => <I {...p} d={<><line x1="19" y1="12" x2="5" y2="12"/><
 const MenuIcon     = p => <I {...p} d={<><line x1="4" y1="8" x2="20" y2="8"/><line x1="4" y1="16" x2="20" y2="16"/></>}/>;
 const XIcon        = p => <I {...p} d={<><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>}/>;
 const SettingsIcon = p => <I {...p} d={<><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></>}/>;
-const ZapIcon = p => <I {...p} d={<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>}/>;
+const ZapIcon     = p => <I {...p} d={<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>}/>;
+const HeartNavIcon= p => <I {...p} d={<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>}/>;
 const VideoIcon = p => <I {...p} d={<><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></>}/>;
 
 /* ══════════════════════════════════════
    CONFIG
 ══════════════════════════════════════ */
 const NAV_LINKS = [
-  { id:'analysis',  label:'Analysis',  icon:BrainIcon,    accent:'#22d3ee' },
-  { id:'analytics', label:'Stats',     icon:BarChartIcon, accent:'#a78bfa' },
-  { id:'players',   label:'Players',   icon:UsersIcon,    accent:'#34d399' },
-  { id:'managers',  label:'Managers',  icon:UserIcon,     accent:'#fbbf24' },
-  { id:'live',      label:'Live',      icon:ActivityIcon, accent:'#f87171', live:true },
-  { id:'league',    label:'Leagues',   icon:GlobeIcon,    accent:'#60a5fa', dropdown:true },
-  { id:'simulator', label:'Sim',       icon:PlayIcon,     accent:'#f59e0b' },
-  { id:'history',   label:'History',   icon:HistoryIcon,  accent:'#c084fc' },
-  { id:'bestpicks', label:'Picks', icon:ZapIcon, accent:'#f97316' },
-  { id:'videolab', label:'Video Lab', shortLabel:'Video', icon:VideoIcon, accent:'#10b981' },
+  { id:'analysis',   label:'Analysis',   shortLabel:'Predict', icon:BrainIcon,    accent:'#22d3ee' },
+  { id:'analytics',  label:'Stats',      shortLabel:'Stats',   icon:BarChartIcon, accent:'#a78bfa' },
+  { id:'players',    label:'Players',    shortLabel:'Players', icon:UsersIcon,    accent:'#34d399' },
+  { id:'managers',   label:'Managers',   shortLabel:'Coaches', icon:UserIcon,     accent:'#fbbf24' },
+  { id:'live',       label:'Live',       shortLabel:'Live',    icon:ActivityIcon, accent:'#f87171', live:true },
+  { id:'league',     label:'Leagues',    shortLabel:'Leagues', icon:GlobeIcon,    accent:'#60a5fa', dropdown:true },
+  { id:'simulator',  label:'Sim',        shortLabel:'Sim',     icon:PlayIcon,     accent:'#f59e0b' },
+  { id:'history',    label:'History',    shortLabel:'History', icon:HistoryIcon,  accent:'#c084fc' },
+  { id:'bestpicks',  label:'Picks',      shortLabel:'Picks',   icon:ZapIcon,      accent:'#f97316' },
+  { id:'videolab',   label:'Video Lab',  shortLabel:'Video',   icon:VideoIcon,    accent:'#10b981' },
+  { id:'favourites', label:'Favourites', shortLabel:'Favs',    icon:HeartNavIcon, accent:'#ef4444' },
 ];
 
 const LEAGUES = [
@@ -263,40 +265,39 @@ export default function NavBar({ currentPage, onNavigate, children }) {
           <div className="nb-right">
             <GlobalSearch onNavigate={go}/>
             <NotificationBell onNavigate={go}/>
+            {children}
+            <button className="nb-burger lg:hidden" onClick={() => setMobileOpen(v => !v)}>
+              {mobileOpen ? <XIcon className="w-4 h-4"/> : <MenuIcon className="w-4 h-4"/>}
+            </button>
+            {/* User profile — always last/rightmost */}
             {user ? (
-              <div style={{ position:'relative' }} className="flex items-center gap-2">
-                <button
-                  onClick={() => signOut()}
-                  title="Sign out"
-                  style={{
-                    width:36, height:36, borderRadius:12,
-                    background: user.user_metadata?.avatar_url ? 'transparent' : 'rgba(34,211,238,0.15)',
-                    border: '1.5px solid rgba(34,211,238,0.3)',
-                    overflow:'hidden', cursor:'pointer',
-                    display:'flex', alignItems:'center', justifyContent:'center',
-                    color:'#22d3ee', fontWeight:800, fontSize:13,
-                  }}>
-                  {user.user_metadata?.avatar_url
-                    ? <img src={user.user_metadata.avatar_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
-                    : (user.email?.[0] || 'U').toUpperCase()
-                  }
-                </button>
-              </div>
+              <button
+                onClick={() => signOut()}
+                title={`Signed in as ${user.email}\nClick to sign out`}
+                style={{
+                  width:36, height:36, borderRadius:12,
+                  background: user.user_metadata?.avatar_url ? 'transparent' : 'rgba(34,211,238,0.15)',
+                  border: '1.5px solid rgba(34,211,238,0.3)',
+                  overflow:'hidden', cursor:'pointer', flexShrink:0,
+                  display:'flex', alignItems:'center', justifyContent:'center',
+                  color:'#22d3ee', fontWeight:800, fontSize:13,
+                }}>
+                {user.user_metadata?.avatar_url
+                  ? <img src={user.user_metadata.avatar_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
+                  : (user.email?.[0] || 'U').toUpperCase()
+                }
+              </button>
             ) : (
               <button
                 onClick={() => onNavigate('login')}
                 style={{
                   padding:'6px 14px', borderRadius:12, fontSize:12, fontWeight:700,
                   background:'rgba(34,211,238,0.1)', border:'1px solid rgba(34,211,238,0.25)',
-                  color:'#22d3ee', cursor:'pointer', whiteSpace:'nowrap',
+                  color:'#22d3ee', cursor:'pointer', whiteSpace:'nowrap', flexShrink:0,
                 }}>
                 Sign In
               </button>
             )}
-            {children}
-            <button className="nb-burger lg:hidden" onClick={() => setMobileOpen(v => !v)}>
-              {mobileOpen ? <XIcon className="w-4 h-4"/> : <MenuIcon className="w-4 h-4"/>}
-            </button>
           </div>
         </div>
 
@@ -322,7 +323,7 @@ export default function NavBar({ currentPage, onNavigate, children }) {
                     <div className="nb-mob-ico">
                       <Icon className="w-4 h-4"/>
                     </div>
-                    <span className="nb-mob-lbl">{link.label}</span>
+                    <span className="nb-mob-lbl">{link.shortLabel || link.label}</span>
                     {link.live && <span className="nb-pulse nb-pulse-sm ml-auto"><span className="nb-ping"/></span>}
                   </button>
                 );
@@ -705,17 +706,17 @@ export default function NavBar({ currentPage, onNavigate, children }) {
         }
         .nb-mob-back:hover { color: #e2e8f0; background: rgba(255,255,255,0.07); }
 
-        .nb-mob-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 6px; }
+        .nb-mob-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; }
 
         .nb-mob-item {
-          display: flex; align-items: center; gap: 9px;
-          padding: 10px 13px; border-radius: 11px;
+          display: flex; flex-direction: column; align-items: center; gap: 5px;
+          padding: 10px 8px; border-radius: 11px;
           border: 1px solid rgba(255,255,255,0.06);
           background: rgba(255,255,255,0.03);
-          color: #64748b; font-size: 12.5px; font-weight: 600;
+          color: #64748b; font-size: 11px; font-weight: 600;
           transition: all 0.15s;
           animation: nbMobItem 0.24s ease-out both;
-          cursor: pointer;
+          cursor: pointer; text-align: center;
         }
         .nb-mob-item:hover { color: #e2e8f0; background: rgba(255,255,255,0.07); }
         .nb-mob-on {
@@ -724,12 +725,12 @@ export default function NavBar({ currentPage, onNavigate, children }) {
           border-color: rgba(255,255,255,0.1) !important;
         }
         .nb-mob-ico {
-          width: 28px; height: 28px; border-radius: 7px;
+          width: 32px; height: 32px; border-radius: 9px;
           background: rgba(255,255,255,0.05);
           display: flex; align-items: center; justify-content: center;
           flex-shrink: 0;
         }
-        .nb-mob-lbl { font-size: 12px; font-weight: 600; }
+        .nb-mob-lbl { font-size: 10px; font-weight: 600; line-height: 1.2; }
 
         .nb-mob-sec {
           font-size: 9.5px; font-weight: 700; letter-spacing: 0.13em;

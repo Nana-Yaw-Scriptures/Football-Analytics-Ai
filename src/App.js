@@ -14,6 +14,7 @@ import PredictionHistoryPage from './pages/PredictionHistoryPage';
 import BestPicksPage from './pages/BestPicksPage';
 import VideoLabPage from './pages/VideoLabPage';
 import LoginPage from './pages/LoginPage';
+import FavouritesPage from './pages/FavouritesPage';
 
 function App() {
   const [currentPage, setCurrentPage] = useState(() => {

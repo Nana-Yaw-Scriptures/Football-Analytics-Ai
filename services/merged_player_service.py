@@ -184,7 +184,7 @@ def get_merged_players(league=None):
 
     if os.path.exists(cache_path):
         age = time.time() - os.path.getmtime(cache_path)
-        if age < 604800:  # 7 days
+        if age < 604800:  # 7 days — use committed cache files on Railway
             with open(cache_path, "r", encoding="utf-8") as f:
                 return json.load(f)
 

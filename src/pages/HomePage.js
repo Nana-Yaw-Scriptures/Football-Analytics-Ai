@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import NavBar from '../components/NavBar';
+import { useAuth } from '../context/AuthContext';
+import { getPredictions } from '../services/supabaseService';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
@@ -168,7 +170,9 @@ const LivePill = ({ match }) => {
    MAIN PAGE
 ══════════════════════════════════════ */
 export default function HomePage({ onNavigate }) {
+  const { user }                          = useAuth();
   const [liveMatches,   setLiveMatches]   = useState([]);
+  const [upcomingMatches, setUpcomingMatches] = useState([]);
   const [recentPreds,   setRecentPreds]   = useState([]);
   const [matchInput,    setMatchInput]    = useState('');
   const [teamSuggestions, setTeamSuggestions] = useState([]);
@@ -200,11 +204,19 @@ export default function HomePage({ onNavigate }) {
     return () => clearInterval(interval);
   }, []);
 
-  /* Recent predictions */
+  /* Recent predictions — from Supabase if logged in */
   useEffect(() => {
-    fetch(`${API_BASE}/predictions/history?limit=3`)
+    if (!user) { setRecentPreds([]); return; }
+    getPredictions(user.id).then(d => {
+      setRecentPreds(Array.isArray(d) ? d.slice(0, 3) : []);
+    }).catch(() => {});
+  }, [user]);
+
+  /* Upcoming matches for empty live state */
+  useEffect(() => {
+    fetch(`${API_BASE}/live/upcoming`)
       .then(r => r.ok ? r.json() : [])
-      .then(d => setRecentPreds(Array.isArray(d) ? d : []))
+      .then(d => setUpcomingMatches(Array.isArray(d) ? d.slice(0, 6) : []))
       .catch(() => {});
   }, []);
 
@@ -503,13 +515,27 @@ export default function HomePage({ onNavigate }) {
                 </div>
               ))}
             </div>
+          ) : upcomingMatches.length > 0 ? (
+            <>
+              <div className="flex items-center gap-2 mb-4">
+                <ClockIcon className="w-3.5 h-3.5 text-slate-500"/>
+                <span className="text-xs text-slate-500 font-semibold uppercase tracking-widest">No live now · Upcoming</span>
+              </div>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {upcomingMatches.map((m,i) => (
+                  <div key={i} onClick={() => onNavigate('live')} className="cursor-pointer">
+                    <LivePill match={{ ...m, time: m.date ? new Date(m.date).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) : 'TBC' }}/>
+                  </div>
+                ))}
+              </div>
+            </>
           ) : (
             <div className="hp-empty-state">
               <ActivityIcon className="w-8 h-8 text-slate-700 mx-auto mb-2"/>
-              <p className="text-slate-500 text-sm font-semibold">No live matches right now</p>
+              <p className="text-slate-500 text-sm font-semibold">No matches scheduled today</p>
               <button onClick={() => onNavigate('live')}
                 className="mt-3 text-cyan-500 text-xs font-bold hover:text-cyan-400 transition-colors">
-                View all upcoming →
+                View all fixtures →
               </button>
             </div>
           )}
@@ -587,55 +613,88 @@ export default function HomePage({ onNavigate }) {
       {/* ══════════════════════════════
           RECENT PREDICTIONS
       ══════════════════════════════ */}
-      {recentPreds.length > 0 && (
-        <section className="py-14 px-4 sm:px-6 md:px-8 border-t border-white/[0.05]">
+      <section className="py-14 px-4 sm:px-6 md:px-8 border-t border-white/[0.05]">
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center justify-between mb-7">
               <div>
                 <p className="text-[11px] text-emerald-400 font-bold uppercase tracking-[0.18em] mb-2">Track Record</p>
                 <h2 className="text-2xl font-black tracking-tight">Recent Predictions</h2>
               </div>
-              <button onClick={() => onNavigate('history')}
-                className="flex items-center gap-1.5 text-slate-500 hover:text-white text-sm font-semibold transition-colors group">
-                View all <ArrowRightIcon className="w-4 h-4 group-hover:translate-x-1 transition-transform"/>
-              </button>
+              {user && recentPreds.length > 0 && (
+                <button onClick={() => onNavigate('history')}
+                  className="flex items-center gap-1.5 text-slate-500 hover:text-white text-sm font-semibold transition-colors group">
+                  View all <ArrowRightIcon className="w-4 h-4 group-hover:translate-x-1 transition-transform"/>
+                </button>
+              )}
             </div>
 
-            <div className="grid sm:grid-cols-3 gap-3">
-              {recentPreds.map((p,i) => {
-                const isCorrect = p.resolved && p.correct;
-                const isWrong   = p.resolved && !p.correct;
-                const sc = isCorrect ? '#10b981' : isWrong ? '#ef4444' : '#64748b';
-                return (
-                  <div key={i} className="hp-pred-card" style={{ '--pc': sc }}>
-                    <div className="flex items-start justify-between gap-2 mb-3">
-                      <div className="min-w-0">
-                        <p className="text-sm font-bold text-white truncate">{p.homeTeam} vs {p.awayTeam}</p>
-                        <p className="text-[11px] text-slate-500 mt-0.5">{p.league}</p>
+            {!user ? (
+              /* Not logged in — sign in prompt */
+              <div className="rounded-2xl border border-white/[0.07] p-8 text-center"
+                style={{ background: 'rgba(16,185,129,0.04)' }}>
+                <div className="w-12 h-12 rounded-2xl mx-auto mb-4 flex items-center justify-center"
+                  style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.2)' }}>
+                  <CheckIcon className="w-5 h-5 text-emerald-400"/>
+                </div>
+                <p className="text-white font-black text-base mb-1">Track your predictions</p>
+                <p className="text-slate-500 text-sm mb-5 max-w-sm mx-auto">
+                  Sign in to save every prediction, track your accuracy and see your hit rate over time.
+                </p>
+                <button onClick={() => onNavigate('login')}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm border transition-all"
+                  style={{ background: 'rgba(16,185,129,0.1)', borderColor: 'rgba(16,185,129,0.25)', color: '#10b981' }}>
+                  Sign In to Track →
+                </button>
+              </div>
+            ) : recentPreds.length === 0 ? (
+              /* Logged in but no predictions yet */
+              <div className="rounded-2xl border border-white/[0.07] p-8 text-center"
+                style={{ background: 'rgba(10,14,26,0.8)' }}>
+                <p className="text-white font-black text-base mb-1">No predictions yet</p>
+                <p className="text-slate-500 text-sm mb-5">Make your first prediction on the Analysis page.</p>
+                <button onClick={() => onNavigate('analysis')}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm border transition-all"
+                  style={{ background: 'rgba(34,211,238,0.1)', borderColor: 'rgba(34,211,238,0.25)', color: '#22d3ee' }}>
+                  Start Predicting →
+                </button>
+              </div>
+            ) : (
+              /* Show recent predictions */
+              <div className="grid sm:grid-cols-3 gap-3">
+                {recentPreds.map((p,i) => {
+                  const isCorrect = p.resolved && p.correct;
+                  const isWrong   = p.resolved && !p.correct;
+                  const sc = isCorrect ? '#10b981' : isWrong ? '#ef4444' : '#64748b';
+                  return (
+                    <div key={i} className="hp-pred-card" style={{ '--pc': sc }}>
+                      <div className="flex items-start justify-between gap-2 mb-3">
+                        <div className="min-w-0">
+                          <p className="text-sm font-bold text-white truncate">{p.homeTeam} vs {p.awayTeam}</p>
+                          <p className="text-[11px] text-slate-500 mt-0.5">{p.league}</p>
+                        </div>
+                        <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                          style={{ background:`${sc}15`, border:`1px solid ${sc}25` }}>
+                          {isCorrect ? <CheckIcon className="w-3.5 h-3.5" style={{ color:sc }}/>
+                            : isWrong ? <XCircleIcon className="w-3.5 h-3.5" style={{ color:sc }}/>
+                            : <ClockIcon className="w-3.5 h-3.5" style={{ color:sc }}/>}
+                        </div>
                       </div>
-                      <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
-                        style={{ background:`${sc}15`, border:`1px solid ${sc}25` }}>
-                        {isCorrect ? <CheckIcon className="w-3.5 h-3.5" style={{ color:sc }}/>
-                          : isWrong ? <XCircleIcon className="w-3.5 h-3.5" style={{ color:sc }}/>
-                          : <ClockIcon className="w-3.5 h-3.5" style={{ color:sc }}/>}
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="font-black text-slate-400" style={{ fontFamily:'JetBrains Mono' }}>
+                          {p.predictedScore || '—'}
+                        </span>
+                        <span className="font-bold px-2 py-0.5 rounded-md"
+                          style={{ color:sc, background:`${sc}12` }}>
+                          {isCorrect ? 'Correct' : isWrong ? 'Wrong' : 'Pending'}
+                        </span>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between text-[11px]">
-                      <span className="font-black text-slate-400" style={{ fontFamily:'JetBrains Mono' }}>
-                        {p.predictedScore || '—'}
-                      </span>
-                      <span className="font-bold px-2 py-0.5 rounded-md"
-                        style={{ color:sc, background:`${sc}12` }}>
-                        {isCorrect ? 'Correct' : isWrong ? 'Wrong' : 'Pending'}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </section>
-      )}
 
       {/* ══════════════════════════════
           CTA

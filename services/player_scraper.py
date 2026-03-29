@@ -6,15 +6,14 @@ Save as: services/player_scraper.py
 from understatapi import UnderstatClient
 import time
 
+# Understat only supports these 5 leagues
+# Primeira Liga and Champions League are NOT supported by Understat
 LEAGUE_MAP = {
     "Premier League": "EPL",
     "La Liga": "La_Liga",
     "Bundesliga": "Bundesliga",
     "Serie A": "Serie_A",
     "Ligue 1": "Ligue_1",
-    "Primeira Liga": "Primeira_Liga",
-    "Champions League": "Champions_League"
-    
 }
 
 

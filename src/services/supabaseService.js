@@ -144,3 +144,52 @@ function normalizeRow(p) {
     matchDate:        p.match_date,
   };
 }
+
+/* ── Resolve predictions via backend + update Supabase ── */
+export async function resolvePredictions(userId, apiBase) {
+  if (!userId) return { resolved: 0 };
+
+  // Get unresolved predictions from Supabase
+  const { data: unresolved, error } = await supabase
+    .from('predictions')
+    .select('id, home_team, away_team, league, fixture_id, match_date, predicted_result, predicted_score')
+    .eq('user_id', userId)
+    .eq('resolved', false);
+
+  if (error || !unresolved?.length) return { resolved: 0 };
+
+  // Send to backend for resolution
+  const resp = await fetch(`${apiBase}/predictions/resolve-batch`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(unresolved.map(p => ({
+      id:               p.id,
+      homeTeam:         p.home_team,
+      awayTeam:         p.away_team,
+      league:           p.league,
+      fixtureId:        p.fixture_id,
+      matchDate:        p.match_date,
+      predictedResult:  p.predicted_result,
+      predictedScore:   p.predicted_score,
+    }))),
+  });
+
+  if (!resp.ok) return { resolved: 0 };
+  const results = await resp.json();
+
+  // Update resolved predictions in Supabase
+  let resolvedCount = 0;
+  for (const r of results) {
+    if (!r.id) continue;
+    const { error: upErr } = await supabase.from('predictions').update({
+      actual_result:  r.actualResult,
+      actual_score:   r.actualScore,
+      correct:        r.correct,
+      score_correct:  r.scoreCorrect,
+      resolved:       true,
+    }).eq('id', r.id).eq('user_id', userId);
+    if (!upErr) resolvedCount++;
+  }
+
+  return { resolved: resolvedCount, total: unresolved.length };
+}

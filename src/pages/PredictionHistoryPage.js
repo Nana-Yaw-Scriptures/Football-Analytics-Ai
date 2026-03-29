@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import NavBar from '../components/NavBar';
 import { useAuth } from '../context/AuthContext';
-import { getPredictions, deletePrediction as sbDelete, clearPredictions as sbClear } from '../services/supabaseService';
+import { getPredictions, deletePrediction as sbDelete, clearPredictions as sbClear, resolvePredictions } from '../services/supabaseService';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
@@ -221,12 +221,16 @@ export default function PredictionHistoryPage({ onNavigate }) {
 
   /* ── Resolve results — FIX: show error toast on failure ── */
   const resolveAll = async () => {
+    if (!user) return;
     setResolving(true);
     try {
-      const r = await fetch(`${API_BASE}/predictions/resolve`, { method:'POST' });
-      if (!r.ok) throw new Error('Server error');
+      const result = await resolvePredictions(user.id, API_BASE);
       await fetchData();
-      showToast('Results updated!');
+      if (result.resolved > 0) {
+        showToast(`${result.resolved} result${result.resolved !== 1 ? 's' : ''} updated!`);
+      } else {
+        showToast('No new results available yet', 'success');
+      }
     } catch {
       showToast('Failed to check results', 'error');
     } finally { setResolving(false); }

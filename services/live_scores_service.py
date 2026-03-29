@@ -51,7 +51,7 @@ def get_international_fixtures(date=None, upcoming=False):
 
     if upcoming:
         cache_name = "intl_upcoming"
-        cached = _read_cache(cache_name, max_age_seconds=600)
+        cached = _read_cache(cache_name, max_age_seconds=1800)  # 30 min
         if cached is not None:
             return cached
     else:
@@ -203,7 +203,7 @@ def get_todays_fixtures(league=None):
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     cache_name = f"fixtures_{today}_{league or 'all'}"
 
-    cached = _read_cache(cache_name, max_age_seconds=120)
+    cached = _read_cache(cache_name, max_age_seconds=600)
     if cached is not None:
         return cached
 
@@ -264,7 +264,7 @@ def get_todays_fixtures(league=None):
 def get_live_fixtures():
     """Fetch only currently live fixtures across all top 5 leagues."""
     cache_name = "live_now"
-    cached = _read_cache(cache_name, max_age_seconds=60)
+    cached = _read_cache(cache_name, max_age_seconds=180)  # 3 min
     if cached is not None:
         return cached
 
@@ -317,7 +317,7 @@ def get_live_fixtures():
 def get_fixture_detail(fixture_id):
     """Fetch full detail for a single fixture — lineups, stats, events."""
     cache_name = f"fixture_{fixture_id}"
-    cached = _read_cache(cache_name, max_age_seconds=60)
+    cached = _read_cache(cache_name, max_age_seconds=300)  # 5 min
     if cached is not None:
         return cached
 

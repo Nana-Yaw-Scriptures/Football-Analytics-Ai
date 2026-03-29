@@ -30,8 +30,7 @@ UNDERSTAT_LEAGUES = {
     "Bundesliga":      "Bundesliga",
     "Serie A":         "Serie_A",
     "Ligue 1":         "Ligue_1",
-    "Primeira Liga":   "Primeira_Liga",
-    "Champions League":"Champions_League",
+    # Primeira Liga and Champions League not supported by Understat
 }
 
 TEAM_ALIASES = {
