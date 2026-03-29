@@ -26,8 +26,8 @@ LEAGUE_CODES = {
 _standings_cache      = {}   # { league: (fetched_at, DataFrame) }
 _recent_matches_cache = {}   # { team_id: (fetched_at, list) }
 
-STANDINGS_TTL      = 3600   # seconds — 1 hour
-RECENT_MATCHES_TTL = 1800   # seconds — 30 minutes
+STANDINGS_TTL      = 43200  # seconds — 12 hours (standings barely change daily)
+RECENT_MATCHES_TTL = 21600  # seconds — 6 hours (recent matches update after gameweek)
 
 
 def _get(endpoint, params=None):

@@ -29,8 +29,8 @@ _h2h_cache         = {}
 _team_league_cache = {}
 _team_id_cache     = {}
 
-XG_TTL  = 3600
-H2H_TTL = 86400
+XG_TTL  = 86400   # 24 hours — xG data doesn't change intraday
+H2H_TTL = 604800  # 7 days — h2h history is static
 
 API_KEY      = os.getenv("API_FOOTBALL_KEY", "")
 API_HEADERS  = {"x-apisports-key": API_KEY}

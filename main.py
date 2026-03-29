@@ -279,8 +279,26 @@ def health():
 @app.post("/predict/match", response_model=MatchPredictionResponse)
 def predict_match(req: MatchPredictionRequest):
     try:
+        import hashlib, json, os, time
         from services.match_service import get_match_prediction
-        return get_match_prediction(req, models.get("match_predictor"))
+
+        # File-based cache — survives Railway restarts
+        cache_key = hashlib.md5(f"{req.home_team}:{req.away_team}:{req.league}".lower().encode()).hexdigest()
+        cache_path = f"cache/match_{cache_key}.json"
+        cache_ttl  = 43200  # 12 hours
+
+        if os.path.exists(cache_path):
+            age = time.time() - os.path.getmtime(cache_path)
+            if age < cache_ttl:
+                with open(cache_path, "r") as f:
+                    print(f"[cache] match prediction served from file: {req.home_team} vs {req.away_team}")
+                    return json.load(f)
+
+        result = get_match_prediction(req, models.get("match_predictor"))
+        os.makedirs("cache", exist_ok=True)
+        with open(cache_path, "w") as f:
+            json.dump(result if isinstance(result, dict) else result.dict(), f)
+        return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -1418,7 +1436,6 @@ def load_models():
         except:
             pass
 
-# Add these endpoints to main.py before the /best-picks endpoint
 
 @app.get("/live/international")
 def get_international_today(date: str = None):
