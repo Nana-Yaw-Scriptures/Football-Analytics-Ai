@@ -1403,7 +1403,7 @@ def load_models():
     def warm_cache():
         try:
             from services.best_picks_service import get_best_picks
-            get_best_picks(models, force_refresh=True)
+            get_best_picks(models, force_refresh=False)  # Never force on startup — use cache
             print("Best picks cache warmed on startup")
         except Exception as e:
             print(f"Cache warm error: {e}")
