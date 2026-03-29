@@ -302,6 +302,23 @@ const PlayerCard = ({ player, rank, sortCol, onSelect, compareMode, isCompared, 
         </button>
       )}
 
+      {/* Heart / Favourite button */}
+      {!compareMode && onFav && (
+        <button onClick={e => onFav(e, player)}
+          className="absolute top-3 right-3 z-10 w-7 h-7 rounded-full flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
+          style={{
+            background: isFav ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.06)',
+            border: isFav ? '1px solid rgba(239,68,68,0.4)' : '1px solid rgba(255,255,255,0.1)',
+          }}>
+          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24"
+            fill={isFav ? '#ef4444' : 'none'}
+            stroke={isFav ? '#ef4444' : '#94a3b8'}
+            strokeWidth="2">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+          </svg>
+        </button>
+      )}
+
       <div className="p-4 cursor-pointer" onClick={() => onSelect(player)}>
         {/* Photo row */}
         <div className="flex items-start justify-between mb-3">
