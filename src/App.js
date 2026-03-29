@@ -15,6 +15,7 @@ import BestPicksPage from './pages/BestPicksPage';
 import LoginPage from './pages/LoginPage';
 import FavouritesPage from './pages/FavouritesPage';
 import LeaderboardPage from './pages/LeaderboardPage';
+import PickemPage from './pages/PickemPage';
 import UserProfilePage from './pages/UserProfilePage';
 
 function App() {
@@ -74,6 +75,7 @@ function App() {
       {currentPage === 'bestpicks' && <BestPicksPage         onNavigate={handleNavigation} />}
       {currentPage === 'favourites'   && <FavouritesPage       onNavigate={handleNavigation} />}
       {currentPage === 'leaderboard'  && <LeaderboardPage      onNavigate={handleNavigation} />}
+      {currentPage === 'pickem'       && <PickemPage           onNavigate={handleNavigation} />}
       {currentPage === 'profile'      && <UserProfilePage      onNavigate={handleNavigation} />}
     </AuthProvider>
   );

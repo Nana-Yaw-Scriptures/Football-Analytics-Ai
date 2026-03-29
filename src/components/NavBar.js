@@ -25,6 +25,7 @@ const XIcon        = p => <I {...p} d={<><line x1="18" y1="6" x2="6" y2="18"/><l
 const SettingsIcon = p => <I {...p} d={<><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></>}/>;
 const ZapIcon     = p => <I {...p} d={<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>}/>;
 const HeartNavIcon = p => <I {...p} d={<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>}/>;
+const TargetNavIcon = p => <I {...p} d={<><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></>}/>;
 const TrophyNavIcon= p => <I {...p} d={<><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></>}/>;
 const UserNavIcon  = p => <I {...p} d={<><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></>}/>;
 
@@ -41,6 +42,7 @@ const NAV_LINKS = [
   { id:'live',       label:'Live',       shortLabel:'Live',    icon:ActivityIcon, accent:'#f87171', live:true },
   { id:'league',     label:'Leagues',    shortLabel:'Leagues', icon:GlobeIcon,    accent:'#60a5fa', dropdown:true },
   { id:'bestpicks',  label:'Picks',      shortLabel:'Picks',   icon:ZapIcon,      accent:'#f97316' },
+  { id:'pickem',     label:'My Picks',   shortLabel:'My Picks', icon:TargetNavIcon, accent:'#a855f7' },
   { id:'history',    label:'History',    shortLabel:'History', icon:HistoryIcon,  accent:'#c084fc',  more:true },
   { id:'simulator',  label:'Sim',        shortLabel:'Sim',     icon:PlayIcon,     accent:'#f59e0b',  more:true },
   { id:'favourites',  label:'Favourites', shortLabel:'Favs',     icon:HeartNavIcon, accent:'#ef4444',  more:true },
