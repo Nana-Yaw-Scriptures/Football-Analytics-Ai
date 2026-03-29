@@ -1173,7 +1173,7 @@ const hasFilters = league !== 'All' || position !== 'All' || minMins > 0 || stat
 
                   {/* Desktop row */}
                   <div className="hidden md:grid items-center px-5 py-3"
-                    style={{gridTemplateColumns:'48px 1fr 160px 80px 68px 68px 68px 68px 72px 80px'}}
+                    style={{gridTemplateColumns:'48px 1fr 160px 80px 68px 68px 68px 68px 72px 80px 40px'}}
                     onMouseEnter={e=>e.currentTarget.closest('.group').style.background='rgba(255,255,255,0.025)'}
                     onMouseLeave={e=>e.currentTarget.closest('.group').style.background=isComp?'rgba(168,85,247,0.06)':isTop3?'rgba(255,255,255,0.015)':'transparent'}>
 
@@ -1223,6 +1223,21 @@ const hasFilters = league !== 'All' || position !== 'All' || minMins > 0 || stat
                     <div className="text-center"><span className="text-sm text-slate-400" style={{fontFamily:'JetBrains Mono'}}>{p.appearances||0}</span></div>
                     <div className="text-center"><span className="text-sm text-green-400" style={{fontFamily:'JetBrains Mono'}}>{p.tacklesTotal||0}</span></div>
                     <div className="flex justify-center"><RatingBadge r={p.rating} size="sm"/></div>
+                    <div className="flex justify-center">
+                      <button onClick={e => { e.stopPropagation(); toggleFavourite(e, p); }}
+                        className="w-7 h-7 rounded-full flex items-center justify-center transition-all"
+                        style={{
+                          background: favouriteIds.has(String(p.id||p.player_id||p.name)) ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.05)',
+                          border: favouriteIds.has(String(p.id||p.player_id||p.name)) ? '1px solid rgba(239,68,68,0.4)' : '1px solid rgba(255,255,255,0.1)',
+                        }}>
+                        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24"
+                          fill={favouriteIds.has(String(p.id||p.player_id||p.name)) ? '#ef4444' : 'none'}
+                          stroke={favouriteIds.has(String(p.id||p.player_id||p.name)) ? '#ef4444' : '#64748b'}
+                          strokeWidth="2">
+                          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                        </svg>
+                      </button>
+                    </div>
                   </div>
 
                   {/* Mobile row */}
