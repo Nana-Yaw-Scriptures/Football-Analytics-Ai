@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import joblib
@@ -642,7 +642,8 @@ def resolve_predictions_endpoint():
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/predictions/resolve-batch")
-def resolve_batch_endpoint(predictions: list):
+async def resolve_batch_endpoint(request: Request):
+    predictions = await request.json()
     """
     Accept a list of unresolved predictions from Supabase,
     check actual results via API-Football, and return resolved data.

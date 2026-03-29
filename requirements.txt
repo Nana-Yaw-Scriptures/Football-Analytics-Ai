@@ -13,3 +13,4 @@ httpx
 google-generativeai
 beautifulsoup4
 lxml
+python-multipart
