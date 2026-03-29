@@ -24,12 +24,15 @@ const MenuIcon     = p => <I {...p} d={<><line x1="4" y1="8" x2="20" y2="8"/><li
 const XIcon        = p => <I {...p} d={<><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>}/>;
 const SettingsIcon = p => <I {...p} d={<><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></>}/>;
 const ZapIcon     = p => <I {...p} d={<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>}/>;
-const HeartNavIcon= p => <I {...p} d={<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>}/>;
-const VideoIcon = p => <I {...p} d={<><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></>}/>;
+const HeartNavIcon = p => <I {...p} d={<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>}/>;
+const TrophyNavIcon= p => <I {...p} d={<><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></>}/>;
+const UserNavIcon  = p => <I {...p} d={<><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></>}/>;
 
 /* ══════════════════════════════════════
    CONFIG
 ══════════════════════════════════════ */
+// Primary nav — always visible on desktop
+// more:true — moved to "More" dropdown on desktop to reduce clutter
 const NAV_LINKS = [
   { id:'analysis',   label:'Analysis',   shortLabel:'Predict', icon:BrainIcon,    accent:'#22d3ee' },
   { id:'analytics',  label:'Stats',      shortLabel:'Stats',   icon:BarChartIcon, accent:'#a78bfa' },
@@ -37,11 +40,12 @@ const NAV_LINKS = [
   { id:'managers',   label:'Managers',   shortLabel:'Coaches', icon:UserIcon,     accent:'#fbbf24' },
   { id:'live',       label:'Live',       shortLabel:'Live',    icon:ActivityIcon, accent:'#f87171', live:true },
   { id:'league',     label:'Leagues',    shortLabel:'Leagues', icon:GlobeIcon,    accent:'#60a5fa', dropdown:true },
-  { id:'simulator',  label:'Sim',        shortLabel:'Sim',     icon:PlayIcon,     accent:'#f59e0b' },
-  { id:'history',    label:'History',    shortLabel:'History', icon:HistoryIcon,  accent:'#c084fc' },
   { id:'bestpicks',  label:'Picks',      shortLabel:'Picks',   icon:ZapIcon,      accent:'#f97316' },
-  { id:'videolab',   label:'Video Lab',  shortLabel:'Video',   icon:VideoIcon,    accent:'#10b981' },
-  { id:'favourites', label:'Favourites', shortLabel:'Favs',    icon:HeartNavIcon, accent:'#ef4444' },
+  { id:'history',    label:'History',    shortLabel:'History', icon:HistoryIcon,  accent:'#c084fc',  more:true },
+  { id:'simulator',  label:'Sim',        shortLabel:'Sim',     icon:PlayIcon,     accent:'#f59e0b',  more:true },
+  { id:'favourites',  label:'Favourites', shortLabel:'Favs',     icon:HeartNavIcon, accent:'#ef4444',  more:true },
+  { id:'leaderboard', label:'Leaderboard', shortLabel:'Ranks',    icon:TrophyNavIcon, accent:'#f59e0b', more:true },
+  { id:'profile',     label:'My Profile',  shortLabel:'Profile',  icon:UserNavIcon,   accent:'#22d3ee', more:true },
 ];
 
 const LEAGUES = [
@@ -71,6 +75,8 @@ export default function NavBar({ currentPage, onNavigate, children }) {
   const { user, signOut } = useAuth();
   const [mobileOpen,   setMobileOpen]   = useState(false);
   const [leagueOpen,   setLeagueOpen]   = useState(false);
+  const [moreOpen,     setMoreOpen]     = useState(false);
+  const moreRef = useRef(null);
   const [leagueSearch, setLeagueSearch] = useState('');
   const [scrolled,     setScrolled]     = useState(false);
   const [logoErr,      setLogoErr]      = useState(false);
@@ -179,7 +185,7 @@ export default function NavBar({ currentPage, onNavigate, children }) {
 
           {/* ── CENTER — desktop nav ── */}
           <nav className="nb-nav">
-            {NAV_LINKS.map(link => {
+            {NAV_LINKS.filter(l => !l.more).map(link => {
               const isActive = currentPage === link.id;
               const Icon = link.icon;
 
@@ -259,6 +265,42 @@ export default function NavBar({ currentPage, onNavigate, children }) {
                 </button>
               );
             })}
+            {/* ── MORE dropdown ── */}
+            <div style={{ position:'relative' }} ref={moreRef}>
+              <button
+                className={`nb-item ${NAV_LINKS.filter(l=>l.more).some(l=>l.id===currentPage) ? 'nb-item-on' : ''}`}
+                style={{ '--a':'#94a3b8' }}
+                onClick={() => setMoreOpen(v => !v)}>
+                <svg className="nb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>
+                </svg>
+                <span>More</span>
+                <ChevronIcon className={`nb-chevron ${moreOpen ? 'nb-chevron-open' : ''}`}/>
+              </button>
+              {moreOpen && (
+                <div className="nb-drop" style={{ minWidth:180, right:0, left:'auto' }}>
+                  <div className="nb-drop-head">More Pages</div>
+                  {NAV_LINKS.filter(l => l.more).map(link => {
+                    const Icon = link.icon;
+                    const isActive = currentPage === link.id;
+                    return (
+                      <button key={link.id}
+                        className="nb-drop-row"
+                        style={{ '--c': link.accent }}
+                        onClick={() => { go(link.id); setMoreOpen(false); }}>
+                        <div className="nb-drop-crest" style={{ background: `${link.accent}15` }}>
+                          <Icon style={{ width:14, height:14, color: isActive ? link.accent : '#64748b' }}/>
+                        </div>
+                        <div className="nb-drop-info">
+                          <span className="nb-drop-name" style={{ color: isActive ? link.accent : undefined }}>{link.label}</span>
+                        </div>
+                        {isActive && <span className="nb-drop-pip" style={{ background: link.accent }}/>}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </nav>
 
           {/* ── RIGHT ── */}
@@ -272,8 +314,8 @@ export default function NavBar({ currentPage, onNavigate, children }) {
             {/* User profile — always last/rightmost */}
             {user ? (
               <button
-                onClick={() => signOut()}
-                title={`Signed in as ${user.email}\nClick to sign out`}
+                onClick={() => go('profile')}
+                title={`Signed in as ${user.email}\nClick to view profile`}
                 style={{
                   width:36, height:36, borderRadius:12,
                   background: user.user_metadata?.avatar_url ? 'transparent' : 'rgba(34,211,238,0.15)',

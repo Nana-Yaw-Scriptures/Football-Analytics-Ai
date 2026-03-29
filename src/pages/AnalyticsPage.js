@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ScatterChart, Scatter, ZAxis, Cell } from 'recharts';
 import PerformanceTimeline from '../components/PerformanceTimeline';
-import ThemeToggle from '../components/ThemeToggle';
 import NavBar from '../components/NavBar';
 import ExportButton from '../components/ExportButton';
 import { exportPlayerComparison } from '../utils/exportPDF';
@@ -2671,7 +2670,7 @@ function AnalyticsPage({ onNavigate }) {
         <span className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-cyan-500/10 border border-cyan-500/20 rounded-full text-cyan-400 text-base font-semibold">
           <span style={{ fontFamily: 'JetBrains Mono' }}>{allPlayers.length}</span> players
         </span>
-        <ThemeToggle />
+        
       </NavBar>
 
       <div className="relative max-w-6xl mx-auto px-4 md:px-6 py-8">

@@ -2,7 +2,6 @@ import { useAuth } from '../context/AuthContext';
 import { savePrediction as saveToSupabase } from '../services/supabaseService';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { predictMatch, analyzePlayer, checkBackend, getTeams } from '../services/api';
-import ThemeToggle from '../components/ThemeToggle';
 import PlayerComparison from '../components/PlayerComparison';
 import NavBar from '../components/NavBar';
 import ExportButton from '../components/ExportButton';
@@ -3523,7 +3522,7 @@ const resp = await fetch(`${API_BASE}/team-fixtures?team=${encodeURIComponent(te
             : {background:'rgba(255,255,255,0.04)',borderColor:'rgba(255,255,255,0.08)',color:'#64748b'}}>
           <SaveIcon className="w-4 h-4"/>
         </button>
-        <ThemeToggle/>
+        
       </NavBar>
 
       <div className="relative max-w-5xl mx-auto px-4 sm:px-5 md:px-6 py-5 sm:py-8" style={{zIndex:1}}>

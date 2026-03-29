@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import ThemeToggle from '../components/ThemeToggle';
 import NavBar from '../components/NavBar';
 
 const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:8000";
@@ -311,7 +310,7 @@ function LiveScoresPage({ onNavigate }) {
         <button onClick={() => fetchData(false)} className="w-9 h-9 rounded-xl flex items-center justify-center transition-all border" style={{background:'rgba(255,255,255,0.04)',borderColor:'rgba(255,255,255,0.08)',color:'#64748b'}}>
           <RefreshIcon className="w-4 h-4"/>
         </button>
-        <ThemeToggle/>
+        
       </NavBar>
 
       <div className="relative max-w-5xl mx-auto px-4 sm:px-5 md:px-6 py-8">
