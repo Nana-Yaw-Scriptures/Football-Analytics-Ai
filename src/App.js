@@ -22,11 +22,11 @@ function App() {
     return hash || 'home';
   });
 
-  // Listen for hash changes (e.g. after OAuth redirect)
+  // Listen for hash changes (e.g. after OAuth redirect or browser back/forward)
   useEffect(() => {
     const onHash = () => {
       const hash = window.location.hash.replace('#/', '').replace('#', '');
-      if (!hash) setCurrentPage('home');
+      setCurrentPage(hash || 'home');
     };
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
@@ -71,7 +71,8 @@ function App() {
       {currentPage === 'simulator' && <SeasonSimulatorPage   onNavigate={handleNavigation} />}
       {currentPage === 'history'   && <PredictionHistoryPage onNavigate={handleNavigation} />}
       {currentPage === 'bestpicks' && <BestPicksPage         onNavigate={handleNavigation} />}
-      {currentPage === 'videolab'  && <VideoLabPage          onNavigate={handleNavigation} />}
+      {currentPage === 'videolab'    && <VideoLabPage          onNavigate={handleNavigation} />}
+      {currentPage === 'favourites'  && <FavouritesPage       onNavigate={handleNavigation} />}
     </AuthProvider>
   );
 }
