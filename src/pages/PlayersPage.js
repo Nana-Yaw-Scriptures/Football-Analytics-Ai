@@ -278,7 +278,7 @@ const PlayerCard = ({ player, rank, sortCol, onSelect, compareMode, isCompared, 
 
   return (
     <div
-      className="relative rounded-2xl overflow-hidden transition-all duration-200 group"
+      className="relative rounded-2xl transition-all duration-200 group"
       style={{
         background: isCompared
           ? 'linear-gradient(135deg,rgba(34,211,238,0.08),rgba(5,8,16,0.95))'
@@ -286,6 +286,8 @@ const PlayerCard = ({ player, rank, sortCol, onSelect, compareMode, isCompared, 
         border: isCompared ? '1px solid rgba(34,211,238,0.4)' : '1px solid rgba(255,255,255,0.07)',
         boxShadow: isCompared ? '0 0 20px rgba(34,211,238,0.15)' : 'none',
         animation: `cardIn 0.3s ease-out both`,
+        borderRadius: '16px',
+        overflow: 'visible',
       }}>
 
       {isCompared && <div className="absolute top-0 left-0 right-0 h-0.5" style={{background:'linear-gradient(90deg,transparent,#22d3ee,transparent)'}}/>}
@@ -305,10 +307,10 @@ const PlayerCard = ({ player, rank, sortCol, onSelect, compareMode, isCompared, 
       {/* Heart / Favourite button */}
       {!compareMode && onFav && (
         <button onClick={e => onFav(e, player)}
-          className="absolute top-3 right-3 z-10 w-7 h-7 rounded-full flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
+          className="absolute top-2 right-2 z-10 w-7 h-7 rounded-full flex items-center justify-center transition-all"
           style={{
-            background: isFav ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.06)',
-            border: isFav ? '1px solid rgba(239,68,68,0.4)' : '1px solid rgba(255,255,255,0.1)',
+            background: isFav ? 'rgba(239,68,68,0.2)' : 'rgba(0,0,0,0.5)',
+            border: isFav ? '1px solid rgba(239,68,68,0.5)' : '1px solid rgba(255,255,255,0.15)',
           }}>
           <svg className="w-3.5 h-3.5" viewBox="0 0 24 24"
             fill={isFav ? '#ef4444' : 'none'}
