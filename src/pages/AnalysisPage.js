@@ -1502,14 +1502,21 @@ function AnalysisPage({ onNavigate, navParams = {} }) {
 useEffect(() => {
   if (!navParams?.prefillQuery) return;
   const query = navParams.prefillQuery;
-  // If it looks like "Team A vs Team B", split into selectors
-  const parts = query.split(/\s+vs\s+/i);
-  if (parts.length === 2) {
-    setMatchHome(parts[0].trim());
-    setMatchAway(parts[1].trim());
-  }
   setInput(query);
-  setActiveTab('match');
+  // If activeTab specified in navParams, use it
+  if (navParams.activeTab) {
+    setActiveTab(navParams.activeTab);
+  } else {
+    // If it looks like "Team A vs Team B", go to match tab
+    const parts = query.split(/\s+vs\s+/i);
+    if (parts.length === 2) {
+      setMatchHome(parts[0].trim());
+      setMatchAway(parts[1].trim());
+      setActiveTab('match');
+    } else {
+      setActiveTab('scout'); // single player name → scout tab
+    }
+  }
 }, [navParams]);
 
 const analysisTypes = [

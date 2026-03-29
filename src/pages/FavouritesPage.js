@@ -251,9 +251,9 @@ export default function FavouritesPage({ onNavigate }) {
                             </button>
                           </div>
 
-                          {/* Go to analysis */}
+                          {/* Go to analysis with player prefilled */}
                           <button
-                            onClick={() => onNavigate('analysis')}
+                            onClick={() => onNavigate('analysis', { prefillQuery: fav.player_name, activeTab: 'scout' })}
                             className="mt-3 w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all border border-white/[0.05] hover:border-white/[0.12]"
                             style={{ background: 'rgba(255,255,255,0.02)', color: '#475569' }}>
                             <span>Analyse {(fav.player_name || '').split(' ').pop()}</span>
