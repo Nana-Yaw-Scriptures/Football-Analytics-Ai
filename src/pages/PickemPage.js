@@ -146,13 +146,11 @@ export default function PickemPage({ onNavigate }) {
         home_team:        f.homeTeam,
         away_team:        f.awayTeam,
         league:           f.league,
-        fixture_id:       f.id,
+        fixture_id:       String(f.id),
         match_date:       f.date,
         predicted_result: picks[f.id].result,
         predicted_score:  picks[f.id].score || null,
         resolved:         false,
-        correct:          null,
-        timestamp:        new Date().toISOString(),
       }));
 
       const { error } = await supabase.from('predictions').upsert(rows, { onConflict: 'user_id,fixture_id' });
