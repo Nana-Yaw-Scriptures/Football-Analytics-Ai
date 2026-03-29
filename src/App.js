@@ -12,9 +12,10 @@ import MatchCenterPage from './pages/MatchCenterPage';
 import SeasonSimulatorPage from './pages/SeasonSimulatorPage';
 import PredictionHistoryPage from './pages/PredictionHistoryPage';
 import BestPicksPage from './pages/BestPicksPage';
-import VideoLabPage from './pages/VideoLabPage';
 import LoginPage from './pages/LoginPage';
 import FavouritesPage from './pages/FavouritesPage';
+import LeaderboardPage from './pages/LeaderboardPage';
+import UserProfilePage from './pages/UserProfilePage';
 
 function App() {
   const [currentPage, setCurrentPage] = useState(() => {
@@ -71,8 +72,9 @@ function App() {
       {currentPage === 'simulator' && <SeasonSimulatorPage   onNavigate={handleNavigation} />}
       {currentPage === 'history'   && <PredictionHistoryPage onNavigate={handleNavigation} />}
       {currentPage === 'bestpicks' && <BestPicksPage         onNavigate={handleNavigation} />}
-      {currentPage === 'videolab'    && <VideoLabPage          onNavigate={handleNavigation} />}
-      {currentPage === 'favourites'  && <FavouritesPage       onNavigate={handleNavigation} />}
+      {currentPage === 'favourites'   && <FavouritesPage       onNavigate={handleNavigation} />}
+      {currentPage === 'leaderboard'  && <LeaderboardPage      onNavigate={handleNavigation} />}
+      {currentPage === 'profile'      && <UserProfilePage      onNavigate={handleNavigation} />}
     </AuthProvider>
   );
 }
