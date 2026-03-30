@@ -143,6 +143,7 @@ function normalizeRow(p) {
     resolved:         p.resolved,
     fixtureId:        p.fixture_id,
     matchDate:        p.match_date,
+    source:           p.source || 'analysis',
   };
 }
 

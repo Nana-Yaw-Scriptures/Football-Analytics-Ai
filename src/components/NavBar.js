@@ -43,12 +43,11 @@ const NAV_LINKS = [
   { id:'live',       label:'Live',       shortLabel:'Live',    icon:ActivityIcon, accent:'#f87171', live:true },
   { id:'league',     label:'Leagues',    shortLabel:'Leagues', icon:GlobeIcon,    accent:'#60a5fa', dropdown:true },
   { id:'bestpicks',  label:'Picks',      shortLabel:'Picks',   icon:ZapIcon,      accent:'#f97316' },
-  { id:'pickem',     label:'My Picks',   shortLabel:'My Picks', icon:TargetNavIcon, accent:'#a855f7' },
-  { id:'history',    label:'History',    shortLabel:'History', icon:HistoryIcon,  accent:'#c084fc',  more:true },
-  { id:'simulator',  label:'Sim',        shortLabel:'Sim',     icon:PlayIcon,     accent:'#f59e0b',  more:true },
-  { id:'favourites',  label:'Favourites', shortLabel:'Favs',     icon:HeartNavIcon, accent:'#ef4444',  more:true },
-  { id:'leaderboard', label:'Leaderboard', shortLabel:'Ranks',    icon:TrophyNavIcon, accent:'#f59e0b', more:true },
-  { id:'profile',     label:'My Profile',  shortLabel:'Profile',  icon:UserNavIcon,   accent:'#22d3ee', more:true },
+  { id:'history',    label:'History',     shortLabel:'History', icon:HistoryIcon,   accent:'#c084fc', more:true },
+  { id:'pickem',     label:'My Picks',    shortLabel:'Picks',   icon:TargetNavIcon, accent:'#a855f7', more:true },
+  { id:'simulator',  label:'Sim',         shortLabel:'Sim',     icon:PlayIcon,      accent:'#f59e0b', more:true },
+  { id:'favourites', label:'Favourites',  shortLabel:'Favs',    icon:HeartNavIcon,  accent:'#ef4444', more:true },
+  { id:'leaderboard',label:'Leaderboard', shortLabel:'Ranks',   icon:TrophyNavIcon, accent:'#f59e0b', more:true },
 ];
 
 const LEAGUES = [
