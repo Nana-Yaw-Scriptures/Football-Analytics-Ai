@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import NavBar from '../components/NavBar';
+import Footer from '../components/Footer';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../supabaseClient';
 
@@ -331,6 +332,7 @@ export default function LeaderboardPage({ onNavigate }) {
       <style>{`
         @keyframes lbFadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
       `}</style>
+      <Footer onNavigate={onNavigate}/>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import NavBar from '../components/NavBar';
+import Footer from '../components/Footer';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../supabaseClient';
 
@@ -506,6 +507,7 @@ export default function PickemPage({ onNavigate }) {
         .scrollbar-hide::-webkit-scrollbar{display:none}
         .scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}
       `}</style>
+      <Footer onNavigate={onNavigate}/>
     </div>
   );
 }

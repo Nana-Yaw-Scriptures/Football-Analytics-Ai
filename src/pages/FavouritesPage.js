@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import NavBar from '../components/NavBar';
+import Footer from '../components/Footer';
 import { useAuth } from '../context/AuthContext';
 import { getFavourites, removeFavourite } from '../services/supabaseService';
 
@@ -287,6 +288,7 @@ export default function FavouritesPage({ onNavigate }) {
       <style>{`
         @keyframes favIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
       `}</style>
+      <Footer onNavigate={onNavigate}/>
     </div>
   );
 }
