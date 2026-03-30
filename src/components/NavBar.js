@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import GlobalSearch from './GlobalSearch';
 import NotificationBell from './NotificationBell';
 import { useAuth } from '../context/AuthContext';
+import ProfileModal from './ProfileModal';
 
 /* ══════════════════════════════════════
    ICONS
@@ -78,6 +79,7 @@ export default function NavBar({ currentPage, onNavigate, children }) {
   const [mobileOpen,   setMobileOpen]   = useState(false);
   const [leagueOpen,   setLeagueOpen]   = useState(false);
   const [moreOpen,     setMoreOpen]     = useState(false);
+  const [profileOpen,  setProfileOpen]  = useState(false);
   const moreRef = useRef(null);
   const [leagueSearch, setLeagueSearch] = useState('');
   const [scrolled,     setScrolled]     = useState(false);
@@ -316,7 +318,7 @@ export default function NavBar({ currentPage, onNavigate, children }) {
             {/* User profile — always last/rightmost */}
             {user ? (
               <button
-                onClick={() => go('profile')}
+                onClick={() => setProfileOpen(true)}
                 title={`Signed in as ${user.email}\nClick to view profile`}
                 style={{
                   width:36, height:36, borderRadius:12,
@@ -396,6 +398,10 @@ export default function NavBar({ currentPage, onNavigate, children }) {
           </div>
         )}
       </header>
+
+      {profileOpen && (
+        <ProfileModal onClose={() => setProfileOpen(false)} onNavigate={go}/>
+      )}
 
       <style>{`
         /* ════════════════════════════════

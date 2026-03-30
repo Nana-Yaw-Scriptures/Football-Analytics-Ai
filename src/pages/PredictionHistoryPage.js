@@ -190,6 +190,7 @@ export default function PredictionHistoryPage({ onNavigate }) {
   const [sortBy,       setSortBy]       = useState('date'); // date | confidence | result
   const [sortDir,      setSortDir]      = useState('desc');
   const [activeTab,    setActiveTab]    = useState('overview');
+  const [sourceTab,    setSourceTab]    = useState('pickem'); // 'pickem' | 'analysis'
   const [deletingId,   setDeletingId]   = useState(null);
   const [confirmClear, setConfirmClear] = useState(false);
   const [teamSearch,   setTeamSearch]   = useState('');
@@ -301,6 +302,13 @@ export default function PredictionHistoryPage({ onNavigate }) {
   const filteredHistory = useMemo(() => {
     return history
       .filter(p => {
+        // Filter by source tab
+        const src = p.source || 'analysis';
+        if (sourceTab === 'pickem' && src !== 'pickem') return false;
+        if (sourceTab === 'analysis' && src === 'pickem') return false;
+        return true;
+      })
+      .filter(p => {
         if (filterStatus === 'correct') return p.resolved && p.correct;
         if (filterStatus === 'wrong')   return p.resolved && !p.correct;
         if (filterStatus === 'pending') return !p.resolved;
@@ -325,7 +333,7 @@ export default function PredictionHistoryPage({ onNavigate }) {
         const bt = new Date(b.timestamp || 0).getTime();
         return sortDir === 'desc' ? bt - at : at - bt;
       });
-  }, [history, filterStatus, teamSearch, sortBy, sortDir]);
+  }, [history, filterStatus, teamSearch, sortBy, sortDir, sourceTab]);
 
   /* ── BUG FIX: sort by date before computing streaks ── */
   const { bestStreak, currentStreakCalc } = useMemo(() => {
@@ -719,6 +727,25 @@ export default function PredictionHistoryPage({ onNavigate }) {
             ══════════════════════════════ */}
             {activeTab === 'history' && (
               <div style={{ animation:'phFadeIn 0.35s ease-out' }}>
+
+                {/* Source tabs — My Picks vs AI Predictions */}
+                <div className="flex gap-1 mb-4 rounded-2xl p-1 border border-white/[0.06]"
+                  style={{ background:'rgba(10,14,26,0.7)' }}>
+                  {[
+                    { id:'pickem',   label:'🎯 My Picks',       sub:'Your own predictions' },
+                    { id:'analysis', label:'🤖 AI Predictions',  sub:'From Analysis page' },
+                  ].map(t => (
+                    <button key={t.id} onClick={() => setSourceTab(t.id)}
+                      className="flex-1 py-2.5 rounded-xl text-xs font-bold transition-all border"
+                      style={{
+                        background:  sourceTab === t.id ? 'rgba(168,85,247,0.12)' : 'transparent',
+                        borderColor: sourceTab === t.id ? 'rgba(168,85,247,0.25)' : 'transparent',
+                        color:       sourceTab === t.id ? '#a855f7' : '#475569',
+                      }}>
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
 
                 {/* Controls */}
                 <div className="space-y-3 mb-4">

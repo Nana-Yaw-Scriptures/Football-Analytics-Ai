@@ -27,6 +27,7 @@ export async function savePrediction(prediction, userId) {
     fixture_id:       prediction.fixtureId  || null,
     match_date:       prediction.matchDate  || null,
     resolved:         false,
+    source:           'analysis',
   }).select().single();
 
   if (error) { console.error('[Supabase] Save prediction error:', error); return null; }
