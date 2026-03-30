@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import NavBar from '../components/NavBar';
+import Footer from '../components/Footer';
 import { useAuth } from '../context/AuthContext';
 import { getPredictions } from '../services/supabaseService';
 
@@ -735,49 +736,7 @@ export default function HomePage({ onNavigate }) {
       {/* ══════════════════════════════
           FOOTER
       ══════════════════════════════ */}
-      <footer className="border-t border-white/[0.06] bg-[#030508]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-12">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10">
-
-            {/* Brand */}
-            <div className="col-span-2 md:col-span-1">
-              <div className="flex items-baseline gap-1 mb-4">
-                <span className="text-2xl font-black text-white tracking-tight">Scorina</span>
-                <div className="hp-iq-badge hp-iq-badge--sm"><span>AI</span></div>
-              </div>
-              <p className="text-slate-600 text-sm leading-relaxed">
-                AI-powered football analytics across Europe's top 7 leagues. Predict smarter.
-              </p>
-            </div>
-
-            {/* Links */}
-            {[
-              { title:'Platform', links:[{l:'AI Analysis',p:'analysis'},{l:'Analytics',p:'analytics'},{l:'Players',p:'players'},{l:'Managers',p:'managers'},{l:'Simulator',p:'simulator'}] },
-              { title:'Leagues',  links:LEAGUES.slice(0,5).map(l=>({l:l.name,p:'league',code:l.code})) },
-              { title:'More',     links:[{l:'Live Scores',p:'live'},{l:'Predictions',p:'history'},{l:'Primeira Liga',p:'league',code:'Primeira Liga'},{l:'Champions League',p:'league',code:'Champions League'}] },
-            ].map((col,i) => (
-              <div key={i}>
-                <p className="text-[10px] font-bold text-slate-600 uppercase tracking-[0.15em] mb-4">{col.title}</p>
-                <div className="space-y-2.5">
-                  {col.links.map((lk,j) => (
-                    <button key={j} onClick={() => onNavigate(lk.p, lk.code)}
-                      className="block text-slate-500 hover:text-white text-sm transition-colors text-left">
-                      {lk.l}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="border-t border-white/[0.05] pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <p className="text-slate-700 text-xs">© {new Date().getFullYear()} Scorina Ai. All rights reserved.</p>
-            <p className="text-[11px] text-slate-700 tracking-[0.1em]">
-              Built by <span className="text-slate-500 font-black">Scorina</span><span className="font-black" style={{ color:'#22d3ee' }}> AI</span>
-            </p>
-          </div>
-        </div>
-      </footer>
+      <Footer onNavigate={onNavigate}/>
 
       {/* ══════════════════════════════
           STYLES

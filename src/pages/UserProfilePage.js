@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import NavBar from '../components/NavBar';
+import Footer from '../components/Footer';
 import { useAuth } from '../context/AuthContext';
 import { getPredictions } from '../services/supabaseService';
 import { supabase } from '../supabaseClient';
