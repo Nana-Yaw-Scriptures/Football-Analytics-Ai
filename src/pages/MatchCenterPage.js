@@ -131,7 +131,7 @@ function MatchCenterPage({ fixtureId, onNavigate }) {
       try {
         const r = await fetch(`${API_BASE}/predict/match`, {
           method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({homeTeam:match.homeTeam, awayTeam:match.awayTeam, league:match.league||'Premier League'}),
+          body: JSON.stringify({home_team:match.homeTeam, away_team:match.awayTeam, league:match.league||'Premier League'}),
         });
         if (r.ok) setPrediction(await r.json());
       } catch {}
