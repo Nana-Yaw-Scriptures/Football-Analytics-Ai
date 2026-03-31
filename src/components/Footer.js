@@ -191,7 +191,7 @@ export default function Footer({ onNavigate }) {
   const year = new Date().getFullYear();
 
   const SOCIAL = [
-    { name: 'X',         Icon: TwitterX,   href: 'https://twitter.com/scorinai',          color: '#e7e9ea',  bg: 'rgba(231,233,234,0.08)' },
+    { name: 'X',         Icon: TwitterX,   href: 'https://x.com/ScorinaA67179',          color: '#e7e9ea',  bg: 'rgba(231,233,234,0.08)' },
     { name: 'Facebook',  Icon: Facebook,   href: 'https://facebook.com/scorinai',         color: '#1877f2',  bg: 'rgba(24,119,242,0.08)'  },
     { name: 'Instagram', Icon: Instagram,  href: 'https://instagram.com/scorinai',        color: '#e1306c',  bg: 'rgba(225,48,108,0.08)'  },
     { name: 'TikTok',    Icon: TikTok,     href: 'https://tiktok.com/@scorinai',          color: '#fe2c55',  bg: 'rgba(254,44,85,0.08)'   },
