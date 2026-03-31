@@ -953,7 +953,7 @@ const hasFilters = league !== 'All' || position !== 'All' || minMins > 0 || stat
                 <p className="text-xs font-black text-slate-500 uppercase tracking-[0.18em] mb-4">Position breakdown</p>
                 <div className="space-y-2.5">
                   {[
-                    {pos:'Forward',    color:'#ef4444', label:'FWD'},
+                    {pos:'Attacker',   color:'#ef4444', label:'FWD'},
                     {pos:'Midfielder', color:'#60a5fa', label:'MID'},
                     {pos:'Defender',   color:'#34d399', label:'DEF'},
                     {pos:'Goalkeeper', color:'#fbbf24', label:'GK'},

@@ -453,17 +453,31 @@ export default function PlayerProfileCard({ player, onClose, injuryStatus }) {
           {/* Player identity */}
           <div className="relative px-5 pb-6 pt-2">
             <div className="flex items-start gap-4">
-              {/* Photo col — extra bottom padding so rating badge doesn't bleed into text */}
+              {/* Photo col with rating ring */}
               <div className="relative flex-shrink-0 mb-3">
-                {player.photo
-                  ? <img src={player.photo} alt="" className="w-20 h-20 rounded-2xl object-cover border-2 shadow-2xl"
-                      style={{ borderColor: `${posC.color}50`, boxShadow: `0 0 30px ${posC.color}30` }}/>
-                  : <div className="w-20 h-20 rounded-2xl flex items-center justify-center border-2"
-                      style={{ background: posC.bg, borderColor: posC.border }}>
-                      <span className="text-3xl font-black" style={{ color: posC.color }}>{(player.name || '?')[0]}</span>
-                    </div>}
+                <div className="relative w-24 h-24">
+                  {/* Rating ring SVG */}
+                  <svg className="absolute inset-0 w-24 h-24 -rotate-90" viewBox="0 0 96 96">
+                    <circle cx="48" cy="48" r="44" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="4"/>
+                    <circle cx="48" cy="48" r="44" fill="none" stroke={posC.color} strokeWidth="4"
+                      strokeLinecap="round"
+                      strokeDasharray={`${Math.min(100, rating * 10) * 2.765} 276.5`}
+                      style={{ transition: 'stroke-dasharray 1s cubic-bezier(0.16,1,0.3,1)', opacity: 0.85 }}/>
+                  </svg>
+                  {/* Photo inside ring */}
+                  <div className="absolute inset-2.5">
+                    {player.photo
+                      ? <img src={player.photo} alt="" className="w-full h-full rounded-xl object-cover"
+                          style={{ boxShadow: `0 0 20px ${posC.color}25` }}/>
+                      : <div className="w-full h-full rounded-xl flex items-center justify-center"
+                          style={{ background: posC.bg }}>
+                          <span className="text-2xl font-black" style={{ color: posC.color }}>{(player.name || '?')[0]}</span>
+                        </div>}
+                  </div>
+                </div>
+                {/* Rating badge below ring */}
                 {rating > 0 && (
-                  <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 min-w-[36px] h-7 px-2 rounded-xl flex items-center justify-center font-black text-white text-sm shadow-lg border-2 border-[#060a14]"
+                  <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 min-w-[40px] h-7 px-2 rounded-xl flex items-center justify-center font-black text-white text-sm shadow-lg border-2 border-[#060a14]"
                     style={{ background: `linear-gradient(135deg,${ratingFrom},${ratingTo})`, fontFamily: 'JetBrains Mono' }}>
                     {rating.toFixed(1)}
                   </div>
@@ -517,6 +531,109 @@ export default function PlayerProfileCard({ player, onClose, injuryStatus }) {
             })}
           </div>
         </div>
+
+        {/* ── DISCIPLINE FOOTER ── */}
+        <div className="flex items-center gap-3 px-4 py-2.5 border-t border-white/[0.05] flex-wrap"
+          style={{ background: 'rgba(0,0,0,0.25)' }}>
+          {/* Yellow cards */}
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-4 rounded-sm flex-shrink-0" style={{ background: '#eab308' }}/>
+            <span className="text-[11px] text-slate-400 font-semibold">{player.yellowCards || 0} yellow</span>
+          </div>
+          <div className="w-px h-3 bg-white/10"/>
+          {/* Red cards */}
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-4 rounded-sm flex-shrink-0" style={{ background: '#ef4444' }}/>
+            <span className="text-[11px] text-slate-400 font-semibold">{player.redCards || 0} red</span>
+          </div>
+          <div className="w-px h-3 bg-white/10"/>
+          {/* Minutes */}
+          <div className="flex items-center gap-1.5">
+            <ClockIcon className="w-3 h-3 text-slate-600"/>
+            <span className="text-[11px] text-slate-400 font-semibold">{(player.minutes || 0).toLocaleString()} min</span>
+          </div>
+          {/* Nationality */}
+          {player.nationality && (
+            <>
+              <div className="w-px h-3 bg-white/10"/>
+              <span className="text-[11px] text-slate-500">{player.nationality}</span>
+            </>
+          )}
+          {/* Fouls */}
+          {(player.foulsCommitted || 0) > 0 && (
+            <>
+              <div className="w-px h-3 bg-white/10"/>
+              <span className="text-[11px] text-slate-500">{player.foulsCommitted} fouls</span>
+            </>
+          )}
+          {/* Penalties */}
+          {(player.penaltiesScored || 0) > 0 && (
+            <>
+              <div className="w-px h-3 bg-white/10"/>
+              <span className="text-[11px] text-slate-500">{player.penaltiesScored}/{(player.penaltiesScored||0)+(player.penaltiesMissed||0)} pens</span>
+            </>
+          )}
+          {/* xG intel badge */}
+          {(() => {
+            const goals = parseFloat(player.goals) || 0;
+            const xG = parseFloat(player.xG) || 0;
+            const diff = goals - xG;
+            if (xG < 1 || Math.abs(diff) < 0.5) return null;
+            const over = diff > 0;
+            const c = over ? '#10b981' : '#ef4444';
+            return (
+              <div className="ml-auto flex items-center gap-1 px-2 py-0.5 rounded-lg"
+                style={{ background: `${c}12`, border: `1px solid ${c}25` }}>
+                <span className="text-[10px] font-black" style={{ color: c }}>
+                  {over ? '+' : ''}{diff.toFixed(1)} vs xG
+                </span>
+              </div>
+            );
+          })()}
+        </div>
+
+        {/* ── PERFORMANCE BARS (position-specific) ── */}
+        {(() => {
+          const p = (player.position || '').toLowerCase();
+          const bars = p.includes('goalkeeper') ? [
+            { label: 'Save rate',  val: player.saves || 0,        max: 120, color: '#22d3ee' },
+            { label: 'Pass acc.',  val: player.passAccuracy || 0, max: 100, color: '#60a5fa' },
+            { label: 'Aerial won', val: player.aerialWon || 0,    max: 60,  color: '#a855f7' },
+          ] : p.includes('defender') ? [
+            { label: 'Tackles',    val: player.tacklesTotal || 0,  max: 100, color: '#34d399' },
+            { label: 'Intercepts', val: player.interceptions || 0, max: 60,  color: '#22d3ee' },
+            { label: 'Aerial won', val: player.aerialWon || 0,     max: 120, color: '#10b981' },
+            { label: 'Duel win%',  val: player.duelWinPct || 0,    max: 70,  color: '#f59e0b' },
+          ] : p.includes('midfielder') ? [
+            { label: 'Key passes', val: player.keyPasses || 0,     max: 80,  color: '#60a5fa' },
+            { label: 'Pass acc.',  val: player.passAccuracy || 0,  max: 100, color: '#22d3ee' },
+            { label: 'Goals',      val: player.goals || 0,         max: 20,  color: '#ef4444' },
+            { label: 'Dribbles',   val: player.dribbleSuccessPct || 0, max: 80, color: '#f59e0b' },
+          ] : [
+            { label: 'Goals',      val: player.goals || 0,         max: 30,  color: '#22d3ee' },
+            { label: 'Shot acc.',  val: player.shotAccuracy || 0,  max: 100, color: '#10b981' },
+            { label: 'Dribbles',   val: player.dribbleSuccessPct || 0, max: 80, color: '#f59e0b' },
+            { label: 'Goals/90',   val: (player.goalsPerNinety || 0) * 100, max: 100, color: '#ef4444' },
+          ];
+          return (
+            <div className="px-4 py-3 border-t border-white/[0.05] space-y-2"
+              style={{ background: 'rgba(255,255,255,0.01)' }}>
+              {bars.map((b, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <span className="text-[10px] text-slate-600 uppercase tracking-wide w-20 flex-shrink-0">{b.label}</span>
+                  <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                    <div className="h-full rounded-full transition-all duration-700"
+                      style={{ width: `${Math.min(100, (b.val / b.max) * 100)}%`, background: b.color }}/>
+                  </div>
+                  <span className="text-[10px] font-black w-8 text-right flex-shrink-0"
+                    style={{ color: b.color, fontFamily: 'JetBrains Mono' }}>
+                    {typeof b.val === 'number' && b.val % 1 !== 0 ? b.val.toFixed(1) : Math.round(b.val)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
 
         {/* ── TABS ── */}
         <div className="flex border-b border-white/[0.07]" style={{ background: 'rgba(0,0,0,0.2)' }}>
