@@ -299,6 +299,8 @@ def predict_match(req: MatchPredictionRequest):
         with open(cache_path, "w") as f:
             json.dump(result if isinstance(result, dict) else result.dict(), f)
         return result
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -589,9 +591,15 @@ def get_live_now():
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/live/fixture/{fixture_id}")
-def get_fixture_details(fixture_id: int):
+def get_fixture_details(fixture_id: int, fresh: bool = False):
     try:
         from services.live_scores_service import get_fixture_detail
+        import os, glob
+        # Allow forced cache bust via ?fresh=1
+        if fresh:
+            for f in glob.glob(f"cache/fixture_{fixture_id}*.json"):
+                try: os.remove(f)
+                except: pass
         result = get_fixture_detail(fixture_id)
         if not result:
             raise HTTPException(status_code=404, detail="Fixture not found")
