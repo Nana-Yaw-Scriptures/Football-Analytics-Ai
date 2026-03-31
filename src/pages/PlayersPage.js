@@ -270,109 +270,158 @@ const SpotlightCard = ({ player, rank, sortCol, onClick, isFav, onFav }) => {
    PLAYER CARD (grid view)
 ══════════════════════════════════════════ */
 const PlayerCard = ({ player, rank, sortCol, onSelect, compareMode, isCompared, onCompare, isFav, onFav }) => {
-  const posC   = POS_CONFIG[player.position] || POS_CONFIG.Midfielder;
-  const isHot  = (player.goals || 0) >= 8 && (player.rating || 0) >= 7.2;
-  const xgDiff = (player.goals || 0) - (player.xG || 0);
-  const sortV  = player[sortCol];
-  const accentC = SORT_OPTS.find(s=>s.col===sortCol)?.color || '#22d3ee';
+  const posC    = POS_CONFIG[player.position] || POS_CONFIG.Midfielder;
+  const isHot   = (player.goals || 0) >= 8 && (player.rating || 0) >= 7.2;
+  const xgDiff  = ((player.goals || 0) - (player.xG || 0)).toFixed(1);
+  const isOver  = parseFloat(xgDiff) > 0;
+  const pos     = (player.position || '').toLowerCase();
+
+  // Position-specific performance bars
+  const bars = pos.includes('goalkeeper') ? [
+    { label:'Saves',    val:player.saves||0,        max:120, color:'#22d3ee' },
+    { label:'Pass%',    val:player.passAccuracy||0, max:100, color:'#60a5fa' },
+    { label:'Rating',   val:(player.rating||0)*10,  max:100, color:'#a855f7' },
+  ] : pos.includes('defender') ? [
+    { label:'Tackles',  val:player.tacklesTotal||0,  max:100, color:'#34d399' },
+    { label:'Aerial',   val:player.aerialWon||0,     max:120, color:'#22d3ee' },
+    { label:'Pass%',    val:player.passAccuracy||0,  max:100, color:'#60a5fa' },
+  ] : pos.includes('midfielder') ? [
+    { label:'Key Pass', val:player.keyPasses||0,     max:80,  color:'#f59e0b' },
+    { label:'Pass%',    val:player.passAccuracy||0,  max:100, color:'#60a5fa' },
+    { label:'Goals',    val:player.goals||0,         max:20,  color:'#22d3ee' },
+  ] : [
+    { label:'Goals',    val:player.goals||0,         max:30,  color:'#22d3ee' },
+    { label:'Shot acc', val:player.shotAccuracy||0,  max:100, color:'#10b981' },
+    { label:'G/90',     val:(player.goalsPerNinety||0)*100, max:100, color:'#f59e0b' },
+  ];
 
   return (
-    <div
-      className="relative rounded-2xl transition-all duration-200 group"
+    <div className="rounded-2xl overflow-hidden transition-all duration-200 group cursor-pointer"
       style={{
-        background: isCompared
-          ? 'linear-gradient(135deg,rgba(34,211,238,0.08),rgba(5,8,16,0.95))'
-          : 'rgba(10,14,26,0.85)',
+        background: isCompared ? 'linear-gradient(135deg,rgba(34,211,238,0.08),rgba(5,8,16,0.98))' : 'rgba(8,12,22,0.9)',
         border: isCompared ? '1px solid rgba(34,211,238,0.4)' : '1px solid rgba(255,255,255,0.07)',
-        boxShadow: isCompared ? '0 0 20px rgba(34,211,238,0.15)' : 'none',
-        animation: `cardIn 0.3s ease-out both`,
-        borderRadius: '16px',
-        overflow: 'visible',
+        boxShadow: isCompared ? '0 0 20px rgba(34,211,238,0.12)' : 'none',
       }}>
 
-      {isCompared && <div className="absolute top-0 left-0 right-0 h-0.5" style={{background:'linear-gradient(90deg,transparent,#22d3ee,transparent)'}}/>}
+      {/* Position accent top line */}
+      <div className="h-0.5" style={{background:`linear-gradient(90deg,${posC.color},${posC.color}40,transparent)`}}/>
 
-      {/* Compare checkbox */}
-      {compareMode && (
-        <button onClick={(e) => { e.stopPropagation(); onCompare(player); }}
-          className="absolute top-3 left-3 z-10 w-6 h-6 rounded-lg flex items-center justify-center transition-all"
-          style={{
-            background: isCompared ? '#22d3ee' : 'rgba(255,255,255,0.08)',
-            border: isCompared ? '1px solid #22d3ee' : '1px solid rgba(255,255,255,0.12)',
-          }}>
-          {isCompared && <CheckIcon className="w-3.5 h-3.5 text-[#050810]"/>}
-        </button>
-      )}
-
-      {/* Heart / Favourite button */}
-      {!compareMode && onFav && (
-        <button onClick={e => onFav(e, player)}
-          className="absolute top-2 right-2 z-10 w-7 h-7 rounded-full flex items-center justify-center transition-all"
-          style={{
-            background: isFav ? 'rgba(239,68,68,0.2)' : 'rgba(0,0,0,0.5)',
-            border: isFav ? '1px solid rgba(239,68,68,0.5)' : '1px solid rgba(255,255,255,0.15)',
-          }}>
-          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24"
-            fill={isFav ? '#ef4444' : 'none'}
-            stroke={isFav ? '#ef4444' : '#94a3b8'}
-            strokeWidth="2">
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-          </svg>
-        </button>
-      )}
-
-      <div className="p-4 cursor-pointer" onClick={() => onSelect(player)}>
-        {/* Photo row */}
-        <div className="flex items-start justify-between mb-3">
-          <div className="relative">
-            {player.photo
-              ? <img src={player.photo} alt="" className="w-12 h-12 rounded-xl object-cover border border-white/10 group-hover:border-white/20 transition-all"/>
-              : <div className="w-12 h-12 rounded-xl flex items-center justify-center border border-white/10"
-                  style={{ background: posC.bg }}>
-                  <span className="text-lg font-black" style={{ color: posC.color }}>{(player.name||'?')[0]}</span>
-                </div>}
+      {/* Header */}
+      <div className="p-4 pb-2" onClick={() => onSelect(player)}>
+        <div className="flex items-start gap-3">
+          {/* Avatar with position ring */}
+          <div className="relative flex-shrink-0">
+            <div className="relative w-12 h-12">
+              <svg className="absolute inset-0 w-12 h-12 -rotate-90" viewBox="0 0 48 48">
+                <circle cx="24" cy="24" r="21" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="2.5"/>
+                <circle cx="24" cy="24" r="21" fill="none" stroke={posC.color} strokeWidth="2.5"
+                  strokeDasharray={`${Math.min(100,(player.rating||0)*10) * 1.32} 132`}
+                  strokeLinecap="round"/>
+              </svg>
+              {player.photo
+                ? <img src={player.photo} alt="" className="absolute inset-1.5 w-9 h-9 rounded-lg object-cover"/>
+                : <div className="absolute inset-1.5 w-9 h-9 rounded-lg flex items-center justify-center font-black text-base"
+                    style={{background:posC.bg, color:posC.color}}>{(player.name||'?')[0]}</div>
+              }
+            </div>
             {player.league && LEAGUE_IMG[player.league] && (
-              <img src={LEAGUE_IMG[player.league]} alt="" className="absolute -bottom-1 -right-1 w-4 h-4 object-contain bg-[#0a0e1a] rounded-full border border-[#0a0e1a]"/>
+              <img src={LEAGUE_IMG[player.league]} alt="" className="absolute -bottom-0.5 -right-0.5 w-4 h-4 object-contain rounded-full border border-[#080c16] bg-[#080c16]"/>
             )}
           </div>
-          <div className="flex flex-col items-end gap-1">
-            <RatingBadge r={player.rating} size="sm"/>
-            <PosBadge pos={player.position}/>
+
+          {/* Info */}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-black text-white leading-tight truncate group-hover:text-cyan-300 transition-colors">{player.name}</p>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              {player.teamLogo && <img src={player.teamLogo} alt="" className="w-3 h-3 object-contain flex-shrink-0"/>}
+              <span className="text-[10px] text-slate-500 truncate">{(player.team||'').replace(/ (FC|AFC|CF)$/,'')}</span>
+            </div>
+            <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+              <span className="text-[9px] font-black px-1.5 py-0.5 rounded-md" style={{background:posC.bg, color:posC.color}}>{posC.short}</span>
+              {isHot && <span className="text-[9px] font-black px-1.5 py-0.5 rounded-md" style={{background:'rgba(245,158,11,0.15)',color:'#f59e0b'}}>🔥 Hot</span>}
+              {Math.abs(parseFloat(xgDiff)) > 1.5 && (
+                <span className="text-[9px] font-black px-1.5 py-0.5 rounded-md"
+                  style={{background:isOver?'rgba(16,185,129,0.12)':'rgba(239,68,68,0.12)', color:isOver?'#10b981':'#ef4444'}}>
+                  {isOver?'+':''}{xgDiff} xG
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+            {compareMode ? (
+              <button onClick={e=>{e.stopPropagation();onCompare(player);}}
+                className="w-6 h-6 rounded-lg flex items-center justify-center transition-all"
+                style={{background:isCompared?'#22d3ee':'rgba(255,255,255,0.08)',border:isCompared?'1px solid #22d3ee':'1px solid rgba(255,255,255,0.12)'}}>
+                {isCompared && <CheckIcon className="w-3.5 h-3.5 text-[#050810]"/>}
+              </button>
+            ) : onFav && (
+              <button onClick={e=>onFav(e,player)}
+                className="w-6 h-6 rounded-full flex items-center justify-center transition-all"
+                style={{background:isFav?'rgba(239,68,68,0.2)':'rgba(255,255,255,0.06)',border:isFav?'1px solid rgba(239,68,68,0.4)':'1px solid rgba(255,255,255,0.1)'}}>
+                <svg className="w-3 h-3" viewBox="0 0 24 24" fill={isFav?'#ef4444':'none'} stroke={isFav?'#ef4444':'#94a3b8'} strokeWidth="2">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                </svg>
+              </button>
+            )}
+            <div className="text-right">
+              <p className="text-base font-black" style={{color:posC.color,fontFamily:'JetBrains Mono'}}>{(player.rating||0).toFixed(1)}</p>
+              <p className="text-[8px] text-slate-700 uppercase">Rating</p>
+            </div>
           </div>
         </div>
+      </div>
 
-        {/* Name + team */}
-        <p className="text-sm font-black text-white leading-tight truncate group-hover:text-cyan-300 transition-colors mb-0.5">{player.name}</p>
-        <div className="flex items-center gap-1.5 mb-2">
-          {player.teamLogo && <img src={player.teamLogo} alt="" className="w-3.5 h-3.5 object-contain flex-shrink-0"/>}
-          <span className="text-[11px] text-slate-600 truncate">{(player.team||'').replace(/ (FC|AFC|CF)$/, '')}</span>
-        </div>
-
-        {/* Badges */}
-        {(isHot || Math.abs(xgDiff) > 1.5) && (
-          <div className="flex items-center gap-1.5 mb-2 flex-wrap">
-            {isHot && <OnFireBadge/>}
-            {Math.abs(xgDiff) > 1.5 && <XGBadge diff={xgDiff}/>}
+      {/* Key stats row */}
+      <div className="grid grid-cols-4 gap-0 border-t border-white/[0.05] mx-4" onClick={() => onSelect(player)}>
+        {[
+          {val:player.goals||0,     lbl:'Goals',   color:'#22d3ee'},
+          {val:player.assists||0,   lbl:'Assists',  color:'#f59e0b'},
+          {val:(player.xG||0).toFixed(1), lbl:'xG', color:'#10b981'},
+          {val:player.appearances||0, lbl:'Apps',  color:'#64748b'},
+        ].map((s,i) => (
+          <div key={i} className="py-2.5 text-center">
+            <p className="text-sm font-black" style={{color:s.color,fontFamily:'JetBrains Mono'}}>{s.val}</p>
+            <p className="text-[8px] text-slate-700 uppercase tracking-wider">{s.lbl}</p>
           </div>
+        ))}
+      </div>
+
+      {/* Performance bars */}
+      <div className="px-4 pt-2 pb-2 space-y-1.5 border-t border-white/[0.04]" onClick={() => onSelect(player)}>
+        {bars.map((b,i) => (
+          <div key={i} className="flex items-center gap-2">
+            <span className="text-[9px] text-slate-600 uppercase w-12 flex-shrink-0">{b.label}</span>
+            <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{background:'rgba(255,255,255,0.05)'}}>
+              <div className="h-full rounded-full transition-all" style={{width:`${Math.min(100,(b.val/b.max)*100)}%`,background:b.color}}/>
+            </div>
+            <span className="text-[9px] font-black w-7 text-right" style={{color:b.color,fontFamily:'JetBrains Mono'}}>{typeof b.val === 'number' && b.val < 100 && b.label.includes('%') ? b.val+'%' : b.val}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Discipline footer */}
+      <div className="flex items-center gap-3 px-4 py-2 border-t border-white/[0.04]"
+        style={{background:'rgba(255,255,255,0.015)'}} onClick={() => onSelect(player)}>
+        <div className="flex items-center gap-1.5 text-[9px] text-slate-600">
+          <div className="w-2 h-2.5 rounded-sm flex-shrink-0" style={{background:'#eab308'}}/>
+          {player.yellowCards||0}
+        </div>
+        <div className="flex items-center gap-1.5 text-[9px] text-slate-600">
+          <div className="w-2 h-2.5 rounded-sm flex-shrink-0" style={{background:'#ef4444'}}/>
+          {player.redCards||0}
+        </div>
+        <div className="w-px h-3 bg-white/10"/>
+        <span className="text-[9px] text-slate-600">{(player.minutes||0).toLocaleString()} min</span>
+        {player.nationality && (
+          <>
+            <div className="w-px h-3 bg-white/10"/>
+            <span className="text-[9px] text-slate-600 truncate">{player.nationality}</span>
+          </>
         )}
-
-        {/* Stats row */}
-        <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/[0.05]">
-          <div className="text-center">
-            <p className="text-base font-black text-cyan-400" style={{fontFamily:'JetBrains Mono'}}>{player.goals||0}</p>
-            <p className="text-[9px] text-slate-700 uppercase tracking-wider">G</p>
-          </div>
-          <div className="text-center">
-            <p className="text-base font-black text-yellow-400" style={{fontFamily:'JetBrains Mono'}}>{player.assists||0}</p>
-            <p className="text-[9px] text-slate-700 uppercase tracking-wider">A</p>
-          </div>
-          <div className="text-center">
-            <p className="text-base font-black" style={{fontFamily:'JetBrains Mono',color:accentC}}>
-              {sortCol==='rating'||sortCol==='xG' ? (parseFloat(sortV)||0).toFixed(1) : sortV||0}
-            </p>
-            <p className="text-[9px] text-slate-700 uppercase tracking-wider">{SORT_OPTS.find(s=>s.col===sortCol)?.label?.slice(0,3)}</p>
-          </div>
-          <MiniRadar player={player} color={posC.color} size={44}/>
+        <div className="ml-auto">
+          <MiniRadar player={player} color={posC.color} size={28}/>
         </div>
       </div>
     </div>
@@ -860,6 +909,160 @@ const hasFilters = league !== 'All' || position !== 'All' || minMins > 0 || stat
             </div>
           </div>
         </div>
+
+        {/* ══ ANALYTICS DASHBOARD ══ */}
+        {!search && players.length > 0 && (
+          <div className="mb-10">
+            <div className="flex items-center gap-2 mb-5">
+              <div className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse"/>
+              <span className="text-purple-400 text-xs font-bold uppercase tracking-[0.2em]">League Analytics</span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+              {/* League distribution */}
+              <div className="md:col-span-2 rounded-2xl border border-white/[0.07] p-5 overflow-hidden"
+                style={{background:'rgba(8,12,22,0.9)'}}>
+                <p className="text-xs font-black text-slate-500 uppercase tracking-[0.18em] mb-4">Player distribution by league</p>
+                <div className="space-y-3">
+                  {['Premier League','La Liga','Bundesliga','Serie A','Ligue 1','Primeira Liga'].map(lg => {
+                    const count = players.filter(p => p.league === lg).length;
+                    const pct = players.length ? (count / players.length) * 100 : 0;
+                    const color = LEAGUE_COLOR[lg] || '#22d3ee';
+                    const goals = players.filter(p => p.league === lg).reduce((s,p) => s + (p.goals||0), 0);
+                    return (
+                      <div key={lg} className="flex items-center gap-3 group cursor-pointer"
+                        onClick={() => { setLeague(lg); setPage(1); }}>
+                        <img src={LEAGUE_IMG[lg]} alt="" className="w-5 h-5 object-contain flex-shrink-0 opacity-80 group-hover:opacity-100 transition-opacity"/>
+                        <span className="text-xs text-slate-400 w-28 flex-shrink-0 truncate group-hover:text-white transition-colors">{lg.replace(' League','')}</span>
+                        <div className="flex-1 h-2 rounded-full overflow-hidden" style={{background:'rgba(255,255,255,0.05)'}}>
+                          <div className="h-full rounded-full transition-all duration-700"
+                            style={{width:`${pct}%`, background:`linear-gradient(90deg,${color},${color}88)`}}/>
+                        </div>
+                        <span className="text-xs font-black w-8 text-right flex-shrink-0" style={{color, fontFamily:'JetBrains Mono'}}>{count}</span>
+                        <span className="text-[10px] text-slate-600 w-12 text-right flex-shrink-0">{goals}⚽</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Position breakdown */}
+              <div className="rounded-2xl border border-white/[0.07] p-5"
+                style={{background:'rgba(8,12,22,0.9)'}}>
+                <p className="text-xs font-black text-slate-500 uppercase tracking-[0.18em] mb-4">Position breakdown</p>
+                <div className="space-y-2.5">
+                  {[
+                    {pos:'Forward',    color:'#ef4444', label:'FWD'},
+                    {pos:'Midfielder', color:'#60a5fa', label:'MID'},
+                    {pos:'Defender',   color:'#34d399', label:'DEF'},
+                    {pos:'Goalkeeper', color:'#fbbf24', label:'GK'},
+                  ].map(({pos, color, label}) => {
+                    const count = (league === 'All' ? players : players.filter(p=>p.league===league))
+                      .filter(p => p.position === pos).length;
+                    const total = league === 'All' ? players.length : players.filter(p=>p.league===league).length;
+                    const pct = total ? Math.round((count/total)*100) : 0;
+                    return (
+                      <div key={pos} className="flex items-center gap-3 cursor-pointer group"
+                        onClick={() => { setPosition(pos); setPage(1); }}>
+                        <div className="w-8 h-8 rounded-xl flex items-center justify-center text-[10px] font-black flex-shrink-0 transition-all group-hover:scale-110"
+                          style={{background:`${color}15`, border:`1px solid ${color}30`, color}}>
+                          {label}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex justify-between mb-1">
+                            <span className="text-xs text-slate-400 group-hover:text-white transition-colors">{pos}</span>
+                            <span className="text-xs font-black" style={{color, fontFamily:'JetBrains Mono'}}>{count}</span>
+                          </div>
+                          <div className="h-1.5 rounded-full overflow-hidden" style={{background:'rgba(255,255,255,0.05)'}}>
+                            <div className="h-full rounded-full transition-all duration-700"
+                              style={{width:`${pct}%`, background:color}}/>
+                          </div>
+                        </div>
+                        <span className="text-[10px] text-slate-600 w-8 text-right" style={{fontFamily:'JetBrains Mono'}}>{pct}%</span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Quick stat */}
+                <div className="mt-4 pt-4 border-t border-white/[0.06]">
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      {label:'Avg Rating', val: (players.reduce((s,p)=>s+(p.rating||0),0)/players.length).toFixed(1), color:'#a855f7'},
+                      {label:'Total Goals', val: players.reduce((s,p)=>s+(p.goals||0),0).toLocaleString(), color:'#22d3ee'},
+                    ].map((s,i) => (
+                      <div key={i} className="rounded-xl p-3 text-center border border-white/[0.06]"
+                        style={{background:`${s.color}08`}}>
+                        <p className="text-base font-black" style={{color:s.color, fontFamily:'JetBrains Mono'}}>{s.val}</p>
+                        <p className="text-[9px] text-slate-600 uppercase tracking-wider mt-0.5">{s.label}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* xG Leaders strip */}
+            <div className="mt-4 rounded-2xl border border-white/[0.07] p-5"
+              style={{background:'rgba(8,12,22,0.9)'}}>
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-xs font-black text-slate-500 uppercase tracking-[0.18em]">Top xG performers</p>
+                <span className="text-[10px] text-slate-600">Goals vs expected goals</span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                {[...players]
+                  .filter(p => (p.xG||0) > 0 && (p.goals||0) > 0)
+                  .sort((a,b) => ((b.goals||0)-(b.xG||0)) - ((a.goals||0)-(a.xG||0)))
+                  .slice(0,5)
+                  .map((p, i) => {
+                    const diff = ((p.goals||0) - (p.xG||0)).toFixed(1);
+                    const isOver = diff > 0;
+                    const posC = POS_CONFIG[p.position] || POS_CONFIG.Midfielder;
+                    return (
+                      <div key={i} onClick={() => setSelected(p)}
+                        className="rounded-xl p-3 border border-white/[0.06] cursor-pointer transition-all hover:border-white/20 hover:-translate-y-0.5"
+                        style={{background:'rgba(255,255,255,0.02)'}}>
+                        <div className="flex items-center gap-2 mb-2">
+                          {p.photo
+                            ? <img src={p.photo} alt="" className="w-8 h-8 rounded-lg object-cover flex-shrink-0"/>
+                            : <div className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm flex-shrink-0"
+                                style={{background:posC.bg, color:posC.color}}>{(p.name||'?')[0]}</div>
+                          }
+                          <div className="min-w-0">
+                            <p className="text-xs font-black text-white truncate">{p.name?.split(' ').pop()}</p>
+                            <p className="text-[9px] text-slate-600 truncate">{(p.team||'').replace(/ (FC|AFC|CF)$/,'')}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-black text-white" style={{fontFamily:'JetBrains Mono'}}>{p.goals||0}</p>
+                            <p className="text-[9px] text-slate-600">Goals</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-sm font-black" style={{color: isOver ? '#10b981' : '#ef4444', fontFamily:'JetBrains Mono'}}>
+                              {isOver ? '+' : ''}{diff}
+                            </p>
+                            <p className="text-[9px] text-slate-600">vs xG</p>
+                          </div>
+                          <div>
+                            <p className="text-sm font-black text-slate-400" style={{fontFamily:'JetBrains Mono'}}>{(p.xG||0).toFixed(1)}</p>
+                            <p className="text-[9px] text-slate-600">xG</p>
+                          </div>
+                        </div>
+                        <div className="mt-2 h-1 rounded-full overflow-hidden" style={{background:'rgba(255,255,255,0.05)'}}>
+                          <div className="h-full rounded-full" style={{
+                            width: `${Math.min(100, ((p.goals||0)/30)*100)}%`,
+                            background: isOver ? '#10b981' : '#ef4444'
+                          }}/>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ══ SPOTLIGHT TOP 3 ══ */}
         {page === 1 && !search && filtered.length >= 3 && (

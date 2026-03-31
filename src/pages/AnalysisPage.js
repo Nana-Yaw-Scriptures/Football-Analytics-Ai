@@ -3508,32 +3508,40 @@ const resp = await fetch(`${API_BASE}/team-fixtures?team=${encodeURIComponent(te
       <NavBar currentPage="analysis" onNavigate={onNavigate}>
         {/* Backend status pill */}
         {backendOnline
-          ? <span className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-base font-semibold border" style={{background:'rgba(16,185,129,0.08)',borderColor:'rgba(16,185,129,0.2)',color:'#10b981'}}>
+          ? <span className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold border" style={{background:'rgba(16,185,129,0.08)',borderColor:'rgba(16,185,129,0.2)',color:'#10b981'}}>
               <CheckIcon className="w-3 h-3"/>Online
             </span>
-          : <span className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-base font-semibold border" style={{background:'rgba(245,158,11,0.08)',borderColor:'rgba(245,158,11,0.2)',color:'#f59e0b'}}>
+          : <span className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold border" style={{background:'rgba(245,158,11,0.08)',borderColor:'rgba(245,158,11,0.2)',color:'#f59e0b'}}>
               <AlertIcon className="w-3 h-3"/>Offline
             </span>}
-        {/* Saved predictions toggle */}
-        <button onClick={()=>setShowSaved(!showSaved)}
-          className="w-9 h-9 rounded-xl flex items-center justify-center transition-all border"
-          style={showSaved
-            ? {background:'rgba(34,211,238,0.1)',borderColor:'rgba(34,211,238,0.25)',color:'#22d3ee'}
-            : {background:'rgba(255,255,255,0.04)',borderColor:'rgba(255,255,255,0.08)',color:'#64748b'}}>
-          <SaveIcon className="w-4 h-4"/>
-        </button>
-        
       </NavBar>
 
       <div className="relative max-w-5xl mx-auto px-4 sm:px-5 md:px-6 py-5 sm:py-8" style={{zIndex:1}}>
 
         {/* ── PAGE HERO — changes per tab ── */}
         <div className="mb-10">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-2 h-2 rounded-full animate-pulse" style={{background:tc.accent}}/>
-            <span className="text-sm font-bold uppercase tracking-[0.2em]" style={{color:tc.accent}}>
-              Football Analyst AI
-            </span>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full animate-pulse" style={{background:tc.accent}}/>
+              <span className="text-sm font-bold uppercase tracking-[0.2em]" style={{color:tc.accent}}>
+                Football Analyst AI
+              </span>
+            </div>
+            {/* Saved predictions toggle — belongs here not in NavBar */}
+            <button onClick={()=>setShowSaved(!showSaved)}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all border"
+              style={showSaved
+                ? {background:'rgba(34,211,238,0.1)',borderColor:'rgba(34,211,238,0.25)',color:'#22d3ee'}
+                : {background:'rgba(255,255,255,0.04)',borderColor:'rgba(255,255,255,0.08)',color:'#64748b'}}>
+              <SaveIcon className="w-4 h-4"/>
+              <span className="hidden sm:inline">Saved</span>
+              {savedPredictions.length > 0 && (
+                <span className="w-5 h-5 rounded-full text-[10px] font-black flex items-center justify-center"
+                  style={{background:'rgba(34,211,238,0.2)',color:'#22d3ee'}}>
+                  {savedPredictions.length}
+                </span>
+              )}
+            </button>
           </div>
           <h1 className="text-5xl md:text-6xl font-black tracking-tight leading-none mb-4">
             {activeTab === 'match' && <>Match<br/><span className="bg-gradient-to-r from-cyan-400 via-purple-400 to-blue-400 bg-clip-text text-transparent">Prediction</span></>}

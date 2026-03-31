@@ -696,6 +696,97 @@ function MatchCenterPage({ fixtureId, onNavigate }) {
               </div>
             )}
 
+            {/* ══ FORM + H2H VISUAL ══ */}
+            {prediction && (prediction.home_form_sequence?.length > 0 || prediction.h2h_summary) && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+
+                {/* Team Form Strips */}
+                {(prediction.home_form_sequence?.length > 0 || prediction.away_form_sequence?.length > 0) && (
+                  <div className="rounded-2xl border border-white/[0.06] overflow-hidden" style={{background:'rgba(10,14,26,0.8)'}}>
+                    <div className="px-4 py-3 border-b border-white/[0.06] flex items-center gap-2" style={{background:'rgba(255,255,255,0.02)'}}>
+                      <ActivityIcon className="w-4 h-4 text-slate-400"/>
+                      <span className="text-white font-black text-sm">Recent Form</span>
+                      <span className="text-[10px] text-slate-600 ml-auto">Last 5 matches</span>
+                    </div>
+                    <div className="p-4 space-y-3">
+                      {[
+                        {name: match.homeTeam?.replace(/ FC$/,''), seq: prediction.home_form_sequence, color:'#22d3ee'},
+                        {name: match.awayTeam?.replace(/ FC$/,''), seq: prediction.away_form_sequence, color:'#a855f7'},
+                      ].map(({name, seq, color}) => {
+                        const results = (seq || []).slice(-5);
+                        const wins = results.filter(r=>r==='W').length;
+                        const form = wins >= 4 ? 'Excellent' : wins >= 3 ? 'Good' : wins >= 2 ? 'Average' : 'Poor';
+                        return (
+                          <div key={name}>
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-xs font-bold text-white">{name}</span>
+                              <span className="text-[10px] font-semibold" style={{color}}>{form}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              {results.map((r, i) => {
+                                const bg = r==='W' ? '#10b981' : r==='D' ? '#64748b' : '#ef4444';
+                                return (
+                                  <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                                    <div className="w-full h-6 rounded-lg flex items-center justify-center text-[10px] font-black text-white"
+                                      style={{background:bg, boxShadow:`0 2px 6px ${bg}40`}}>
+                                      {r}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                              {results.length < 5 && Array(5-results.length).fill(0).map((_,i) => (
+                                <div key={`e${i}`} className="flex-1 h-6 rounded-lg border border-dashed border-white/10"/>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* H2H Visual Timeline */}
+                {prediction.h2h_summary && prediction.h2h_summary.total_matches >= 2 && (
+                  <div className="rounded-2xl border border-white/[0.06] overflow-hidden" style={{background:'rgba(10,14,26,0.8)'}}>
+                    <div className="px-4 py-3 border-b border-white/[0.06] flex items-center gap-2" style={{background:'rgba(255,255,255,0.02)'}}>
+                      <RepeatIcon className="w-4 h-4 text-slate-400"/>
+                      <span className="text-white font-black text-sm">Head to Head</span>
+                      <span className="text-[10px] text-slate-600 ml-auto">{prediction.h2h_summary.total_matches} meetings</span>
+                    </div>
+                    <div className="p-4">
+                      {/* H2H summary bar */}
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-xs font-black w-6 text-center" style={{color:'#22d3ee'}}>{prediction.h2h_summary.home_wins}</span>
+                        <div className="flex-1 h-3 rounded-full overflow-hidden flex gap-px">
+                          <div className="h-full rounded-l-full" style={{width:`${(prediction.h2h_summary.home_wins/prediction.h2h_summary.total_matches)*100}%`, background:'#22d3ee'}}/>
+                          <div className="h-full" style={{width:`${(prediction.h2h_summary.draws/prediction.h2h_summary.total_matches)*100}%`, background:'#475569'}}/>
+                          <div className="h-full rounded-r-full" style={{width:`${(prediction.h2h_summary.away_wins/prediction.h2h_summary.total_matches)*100}%`, background:'#a855f7'}}/>
+                        </div>
+                        <span className="text-xs font-black w-6 text-center" style={{color:'#a855f7'}}>{prediction.h2h_summary.away_wins}</span>
+                      </div>
+                      <div className="flex justify-between text-[10px] text-slate-600 mb-3 px-1">
+                        <span className="text-cyan-400 font-semibold">{match.homeTeam?.split(' ')[0]} wins</span>
+                        <span>{prediction.h2h_summary.draws} draws</span>
+                        <span className="text-purple-400 font-semibold">{match.awayTeam?.split(' ')[0]} wins</span>
+                      </div>
+                      {/* Goals per game */}
+                      <div className="grid grid-cols-2 gap-2 pt-3 border-t border-white/[0.05]">
+                        {[
+                          {label:'Avg Goals/Game', val: prediction.h2h_summary.total_matches > 0 ? ((prediction.h2h_summary.home_goals_avg||0) + (prediction.h2h_summary.away_goals_avg||0)).toFixed(1) : '—', color:'#f59e0b'},
+                          {label:'Home Avg', val: (prediction.h2h_summary.home_goals_avg||0).toFixed(1), color:'#22d3ee'},
+                        ].map((s,i) => (
+                          <div key={i} className="rounded-xl p-2.5 text-center border border-white/[0.05]" style={{background:`${s.color}08`}}>
+                            <p className="text-sm font-black" style={{color:s.color, fontFamily:'JetBrains Mono'}}>{s.val}</p>
+                            <p className="text-[9px] text-slate-600 uppercase tracking-wider mt-0.5">{s.label}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* ══ PREDICTED SCORERS ══ */}
             {predictors && (predictors.home?.length > 0 || predictors.away?.length > 0) && (
               <div className="rounded-2xl border border-white/[0.06] overflow-hidden mb-4" style={{background:'rgba(10,14,26,0.8)'}}>
@@ -1418,6 +1509,54 @@ function MatchCenterPage({ fixtureId, onNavigate }) {
                   ) : (
                     <div className="py-16 text-center"><BarChartIcon className="w-8 h-8 text-slate-700 mx-auto mb-3"/><p className="text-slate-500 text-sm">Statistics not available yet</p><p className="text-slate-700 text-[12px] mt-1">Stats appear after kickoff</p></div>
                   )}
+
+                  {/* Goals timing chart */}
+                  {match.events && match.events.filter(e=>e.type==='Goal'&&e.detail!=='Missed Penalty').length > 0 && (
+                    <div className="mt-5 pt-5 border-t border-white/[0.06]">
+                      <p className="text-[11px] font-black text-slate-500 uppercase tracking-[0.18em] mb-3">Goals by time period</p>
+                      <div className="space-y-2">
+                        {[
+                          {label:"0-15",  min:0,  max:15},
+                          {label:"16-30", min:16, max:30},
+                          {label:"31-45", min:31, max:45},
+                          {label:"46-60", min:46, max:60},
+                          {label:"61-75", min:61, max:75},
+                          {label:"76-90", min:76, max:120},
+                        ].map(({label, min, max}) => {
+                          const goals = match.events.filter(e => e.type==='Goal' && e.detail!=='Missed Penalty' && parseInt(e.time)>=min && parseInt(e.time)<=max);
+                          const homeG = goals.filter(e => e.team===match.homeTeam).length;
+                          const awayG = goals.filter(e => e.team===match.awayTeam).length;
+                          const total = homeG + awayG;
+                          if (total === 0) return (
+                            <div key={label} className="flex items-center gap-3">
+                              <span className="text-[10px] text-slate-700 w-12 flex-shrink-0">{label}</span>
+                              <div className="flex-1 h-4 rounded-lg" style={{background:'rgba(255,255,255,0.03)'}}/>
+                            </div>
+                          );
+                          return (
+                            <div key={label} className="flex items-center gap-3">
+                              <span className="text-[10px] text-slate-500 w-12 flex-shrink-0">{label}</span>
+                              <div className="flex-1 flex gap-1 items-center">
+                                {homeG > 0 && Array(homeG).fill(0).map((_,i) => (
+                                  <div key={`h${i}`} className="h-5 flex-shrink-0 rounded-md flex items-center justify-center text-[9px] font-black px-2"
+                                    style={{background:'rgba(34,211,238,0.2)',border:'1px solid rgba(34,211,238,0.3)',color:'#22d3ee',minWidth:28}}>⚽</div>
+                                ))}
+                                {awayG > 0 && Array(awayG).fill(0).map((_,i) => (
+                                  <div key={`a${i}`} className="h-5 flex-shrink-0 rounded-md flex items-center justify-center text-[9px] font-black px-2"
+                                    style={{background:'rgba(168,85,247,0.2)',border:'1px solid rgba(168,85,247,0.3)',color:'#a855f7',minWidth:28}}>⚽</div>
+                                ))}
+                              </div>
+                              <span className="text-[10px] font-black text-slate-400 w-4 text-right">{total}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <div className="flex items-center gap-4 mt-3 text-[10px] text-slate-600">
+                        <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded" style={{background:'rgba(34,211,238,0.3)'}}/>{(match.homeTeam||'').replace(/ FC$/,'')}</div>
+                        <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded" style={{background:'rgba(168,85,247,0.3)'}}/>{(match.awayTeam||'').replace(/ FC$/,'')}</div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -1455,115 +1594,173 @@ function MatchCenterPage({ fixtureId, onNavigate }) {
 
               /* ── Single pitch SVG with both teams ── */
               const BothTeamsPitch = ({ homeLineup, awayLineup }) => {
-                const homeRows = parseFormation(homeLineup?.formation);
-                const awayRows = parseFormation(awayLineup?.formation);
+                const [showLines,   setShowLines]   = React.useState(false);
+                const [showHeatmap, setShowHeatmap] = React.useState(false);
+
+                const homeRows   = parseFormation(homeLineup?.formation);
+                const awayRows   = parseFormation(awayLineup?.formation);
                 const homePlayers = homeLineup?.startXI || [];
                 const awayPlayers = awayLineup?.startXI || [];
-                const homePos = homeRows ? getPositions(homeRows, false) : [];
-                const awayPos = awayRows ? getPositions(awayRows, true) : [];
+                const homePos    = homeRows ? getPositions(homeRows, false) : [];
+                const awayPos    = awayRows ? getPositions(awayRows, true)  : [];
+                const events     = match.events || [];
+
+                // Derive per-player event state from match events
+                const scorers    = new Set(events.filter(e=>e.type==='Goal'&&e.detail!=='Missed Penalty').map(e=>e.player));
+                const yellowCards= new Set(events.filter(e=>e.type==='Card'&&e.detail==='Yellow Card').map(e=>e.player));
+                const redCards   = new Set(events.filter(e=>e.type==='Card'&&(e.detail==='Red Card'||e.detail==='Second Yellow card')).map(e=>e.player));
+                const subbedOff  = new Set(events.filter(e=>e.type==='subst').map(e=>e.player));
+
+                const renderPlayer = (pos, p, baseColor, key) => {
+                  if (!p) return null;
+                  const surname  = (p.name||'').split(' ').pop();
+                  const display  = surname.length > 9 ? surname.slice(0,8)+'.' : surname;
+                  const isScorer = scorers.has(p.name);
+                  const isYellow = yellowCards.has(p.name);
+                  const isRed    = redCards.has(p.name);
+                  const isSub    = subbedOff.has(p.name);
+                  const isCapt   = p.captain === true;
+                  const dotColor = isRed ? '#ef4444' : baseColor;
+                  const dotOp    = isSub ? 0.5 : 0.97;
+                  const ringCol  = isCapt ? '#fbbf24' : 'white';
+                  const ringW    = isCapt ? 0.9 : 0.5;
+                  const glowR    = isScorer ? 6.5 : 4.5;
+                  const glowOp   = isScorer ? 0.4 : 0.15;
+                  return (
+                    <g key={key}>
+                      <circle cx={pos.x} cy={pos.y} r={glowR}  fill={baseColor} opacity={glowOp}/>
+                      <circle cx={pos.x} cy={pos.y} r="3.2" fill={dotColor} opacity={dotOp}/>
+                      <circle cx={pos.x} cy={pos.y} r="3.2" fill="none" stroke={ringCol} strokeWidth={ringW} opacity="0.85"
+                        strokeDasharray={isSub ? '1.5,1' : undefined}/>
+                      <text x={pos.x} y={pos.y+0.9} textAnchor="middle" dominantBaseline="middle"
+                        fill="white" fontSize="2.1" fontWeight="900" fontFamily="JetBrains Mono">{p.number}</text>
+                      <text x={pos.x} y={pos.y+6} textAnchor="middle"
+                        fill={isSub ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.85)'}
+                        fontSize="2.3" fontFamily="system-ui">{display}</text>
+                      {isYellow && !isRed && <rect x={pos.x+2.4} y={pos.y-5.4} width="1.8" height="2.5" rx="0.3" fill="#eab308"/>}
+                      {isRed    &&           <rect x={pos.x+2.4} y={pos.y-5.4} width="1.8" height="2.5" rx="0.3" fill="#ef4444"/>}
+                      {isScorer && <text x={pos.x+4}   y={pos.y-2.8} fontSize="3"   textAnchor="middle">⚽</text>}
+                      {isSub    && <text x={pos.x}     y={pos.y-5.2} fontSize="3.2" textAnchor="middle" fill="#f97316" fontWeight="900">↕</text>}
+                    </g>
+                  );
+                };
+
+                const renderLines = (positions, color) => {
+                  const byRow = {};
+                  positions.forEach(p => { const k = Math.round(p.y*2)/2; byRow[k] = [...(byRow[k]||[]), p]; });
+                  return Object.values(byRow).flatMap((row,ri) =>
+                    row.slice(0,-1).map((p,i) => (
+                      <line key={`ln-${ri}-${i}`}
+                        x1={p.x} y1={p.y} x2={row[i+1].x} y2={row[i+1].y}
+                        stroke={color} strokeWidth="0.35" opacity="0.35"/>
+                    ))
+                  );
+                };
 
                 return (
-                  <div className="relative rounded-2xl overflow-hidden border border-white/[0.06]" style={{background:'rgba(10,14,26,0.8)'}}>
+                  <div className="rounded-2xl overflow-hidden border border-white/[0.06]" style={{background:'rgba(10,14,26,0.8)'}}>
                     {/* Header */}
-                    <div className="px-5 py-3.5 border-b border-white/[0.06] flex items-center justify-between" style={{background:'rgba(255,255,255,0.02)'}}>
-                      <div className="flex items-center gap-2">
-                        {homeLineup?.teamLogo && <img src={homeLineup.teamLogo} alt="" className="w-5 h-5"/>}
-                        <span className="text-cyan-400 font-black text-sm">{homeLineup?.team?.replace(/ FC$| AFC$/,'')}</span>
-                        {homeLineup?.formation && <span className="text-[11px] font-black px-2 py-0.5 rounded-lg" style={{background:'rgba(34,211,238,0.1)',color:'#22d3ee',border:'1px solid rgba(34,211,238,0.2)',fontFamily:'JetBrains Mono'}}>{homeLineup.formation}</span>}
+                    <div className="px-4 py-3 border-b border-white/[0.06] flex items-center justify-between gap-2" style={{background:'rgba(255,255,255,0.02)'}}>
+                      <div className="flex items-center gap-2 min-w-0">
+                        {homeLineup?.teamLogo && <img src={homeLineup.teamLogo} alt="" className="w-4 h-4 flex-shrink-0"/>}
+                        <span className="text-cyan-400 font-black text-sm truncate">{homeLineup?.team?.replace(/ FC$| AFC$/,'')}</span>
+                        {homeLineup?.formation && <span className="text-[10px] font-black px-2 py-0.5 rounded-lg flex-shrink-0" style={{background:'rgba(34,211,238,0.1)',color:'#22d3ee',border:'1px solid rgba(34,211,238,0.2)',fontFamily:'JetBrains Mono'}}>{homeLineup.formation}</span>}
                       </div>
-                      <div className="flex items-center gap-2">
-                        {awayLineup?.formation && <span className="text-[11px] font-black px-2 py-0.5 rounded-lg" style={{background:'rgba(168,85,247,0.1)',color:'#a855f7',border:'1px solid rgba(168,85,247,0.2)',fontFamily:'JetBrains Mono'}}>{awayLineup.formation}</span>}
-                        <span className="text-purple-400 font-black text-sm">{awayLineup?.team?.replace(/ FC$| AFC$/,'')}</span>
-                        {awayLineup?.teamLogo && <img src={awayLineup.teamLogo} alt="" className="w-5 h-5"/>}
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <button onClick={()=>setShowHeatmap(v=>!v)}
+                          className="text-[10px] font-bold px-2.5 py-1 rounded-lg border transition-all whitespace-nowrap"
+                          style={{background:showHeatmap?'rgba(239,68,68,0.15)':'rgba(255,255,255,0.04)',borderColor:showHeatmap?'rgba(239,68,68,0.3)':'rgba(255,255,255,0.08)',color:showHeatmap?'#ef4444':'#64748b'}}>
+                          Heatmap
+                        </button>
+                        <button onClick={()=>setShowLines(v=>!v)}
+                          className="text-[10px] font-bold px-2.5 py-1 rounded-lg border transition-all whitespace-nowrap"
+                          style={{background:showLines?'rgba(34,211,238,0.15)':'rgba(255,255,255,0.04)',borderColor:showLines?'rgba(34,211,238,0.3)':'rgba(255,255,255,0.08)',color:showLines?'#22d3ee':'#64748b'}}>
+                          Lines
+                        </button>
+                      </div>
+                      <div className="flex items-center gap-2 min-w-0 justify-end">
+                        {awayLineup?.formation && <span className="text-[10px] font-black px-2 py-0.5 rounded-lg flex-shrink-0" style={{background:'rgba(168,85,247,0.1)',color:'#a855f7',border:'1px solid rgba(168,85,247,0.2)',fontFamily:'JetBrains Mono'}}>{awayLineup.formation}</span>}
+                        <span className="text-purple-400 font-black text-sm truncate">{awayLineup?.team?.replace(/ FC$| AFC$/,'')}</span>
+                        {awayLineup?.teamLogo && <img src={awayLineup.teamLogo} alt="" className="w-4 h-4 flex-shrink-0"/>}
                       </div>
                     </div>
 
                     {/* Pitch */}
-                    <div className="p-3">
-                      <svg viewBox="0 0 100 140" width="100%" style={{maxHeight:480}}>
-                        {/* Pitch background */}
+                    <div className="p-2">
+                      <svg viewBox="0 0 100 140" width="100%" style={{maxHeight:500,display:'block'}}>
                         <defs>
                           <linearGradient id="pitchGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="#0d5a36" stopOpacity="0.95"/>
-                            <stop offset="50%" stopColor="#0a4a2c" stopOpacity="1"/>
+                            <stop offset="0%"   stopColor="#0d5a36" stopOpacity="0.95"/>
+                            <stop offset="50%"  stopColor="#083d22" stopOpacity="1"/>
                             <stop offset="100%" stopColor="#0d5a36" stopOpacity="0.95"/>
                           </linearGradient>
-                          {/* Stripe pattern */}
-                          <pattern id="stripes" patternUnits="userSpaceOnUse" width="100" height="10">
-                            <rect width="100" height="5" fill="rgba(255,255,255,0.02)"/>
+                          <pattern id="pitchStripes" patternUnits="userSpaceOnUse" width="100" height="10">
+                            <rect width="100" height="5" fill="rgba(255,255,255,0.018)"/>
                             <rect y="5" width="100" height="5" fill="rgba(0,0,0,0)"/>
                           </pattern>
+                          <radialGradient id="heatH" cx="50%" cy="22%" r="40%">
+                            <stop offset="0%"   stopColor="#22d3ee" stopOpacity="0.5"/>
+                            <stop offset="100%" stopColor="#22d3ee" stopOpacity="0"/>
+                          </radialGradient>
+                          <radialGradient id="heatA" cx="50%" cy="78%" r="40%">
+                            <stop offset="0%"   stopColor="#a855f7" stopOpacity="0.5"/>
+                            <stop offset="100%" stopColor="#a855f7" stopOpacity="0"/>
+                          </radialGradient>
                         </defs>
-                        <rect x="1" y="1" width="98" height="138" rx="2" fill="url(#pitchGrad)" stroke="rgba(255,255,255,0.15)" strokeWidth="0.5"/>
-                        <rect x="1" y="1" width="98" height="138" rx="2" fill="url(#stripes)"/>
+
+                        {/* Grass */}
+                        <rect x="0" y="0" width="100" height="140" fill="url(#pitchGrad)"/>
+                        <rect x="0" y="0" width="100" height="140" fill="url(#pitchStripes)"/>
 
                         {/* Pitch markings */}
-                        {/* Centre line */}
-                        <line x1="1" y1="70" x2="99" y2="70" stroke="rgba(255,255,255,0.2)" strokeWidth="0.4"/>
-                        {/* Centre circle */}
-                        <circle cx="50" cy="70" r="9" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="0.4"/>
-                        <circle cx="50" cy="70" r="0.8" fill="rgba(255,255,255,0.4)"/>
+                        <rect x="1" y="1" width="98" height="138" rx="2" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="0.4"/>
+                        <line x1="1" y1="70" x2="99" y2="70" stroke="rgba(255,255,255,0.2)" strokeWidth="0.35"/>
+                        <circle cx="50" cy="70" r="9" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="0.35"/>
+                        <circle cx="50" cy="70" r="0.8" fill="rgba(255,255,255,0.5)"/>
+                        <rect x="20" y="1"   width="60" height="18" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="0.35"/>
+                        <rect x="32" y="1"   width="36" height="9"  fill="none" stroke="rgba(255,255,255,0.1)"  strokeWidth="0.3"/>
+                        <circle cx="50" cy="11"  r="0.6" fill="rgba(255,255,255,0.4)"/>
+                        <rect x="20" y="121" width="60" height="18" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="0.35"/>
+                        <rect x="32" y="130" width="36" height="9"  fill="none" stroke="rgba(255,255,255,0.1)"  strokeWidth="0.3"/>
+                        <circle cx="50" cy="129" r="0.6" fill="rgba(255,255,255,0.4)"/>
+                        <path d="M1,6 A5,5 0 0,0 6,1"     fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="0.3"/>
+                        <path d="M94,1 A5,5 0 0,0 99,6"   fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="0.3"/>
+                        <path d="M1,134 A5,5 0 0,1 6,139" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="0.3"/>
+                        <path d="M94,139 A5,5 0 0,1 99,134" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="0.3"/>
+                        <rect x="40" y="0"     width="20" height="1.5" fill="rgba(255,255,255,0.3)" rx="0.3"/>
+                        <rect x="40" y="138.5" width="20" height="1.5" fill="rgba(255,255,255,0.3)" rx="0.3"/>
 
-                        {/* Home penalty area (top) */}
-                        <rect x="20" y="1" width="60" height="18" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="0.4"/>
-                        <rect x="32" y="1" width="36" height="9" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="0.4"/>
-                        <circle cx="50" cy="12" r="6" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="0.3" strokeDasharray="2,2"/>
+                        {/* Heatmap overlay */}
+                        {showHeatmap && <rect x="0" y="0" width="100" height="140" fill="url(#heatH)"/>}
+                        {showHeatmap && <rect x="0" y="0" width="100" height="140" fill="url(#heatA)"/>}
 
-                        {/* Away penalty area (bottom) */}
-                        <rect x="20" y="121" width="60" height="18" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="0.4"/>
-                        <rect x="32" y="130" width="36" height="9" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="0.4"/>
-                        <circle cx="50" cy="128" r="6" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="0.3" strokeDasharray="2,2"/>
+                        {/* Formation lines */}
+                        {showLines && renderLines(homePos, '#22d3ee')}
+                        {showLines && renderLines(awayPos, '#a855f7')}
 
-                        {/* Goals */}
-                        <rect x="40" y="0" width="20" height="2" fill="rgba(255,255,255,0.25)" rx="0.5"/>
-                        <rect x="40" y="138" width="20" height="2" fill="rgba(255,255,255,0.25)" rx="0.5"/>
+                        {/* Players */}
+                        {homePos.map((pos,i) => renderPlayer(pos, homePlayers[i], '#22d3ee', `h${i}`))}
+                        {awayPos.map((pos,i) => renderPlayer(pos, awayPlayers[i], '#a855f7', `a${i}`))}
 
-                        {/* HOME PLAYERS (cyan) */}
-                        {homePos.map((pos, i) => {
-                          const p = homePlayers[i];
-                          if (!p) return null;
-                          const surname = p.name?.split(' ').pop() || p.name || '';
-                          const display = surname.length > 9 ? surname.slice(0,8)+'.' : surname;
-                          return (
-                            <g key={`h-${i}`}>
-                              {/* Glow */}
-                              <circle cx={pos.x} cy={pos.y} r="4.5" fill="rgba(34,211,238,0.15)"/>
-                              {/* Player dot */}
-                              <circle cx={pos.x} cy={pos.y} r="3.2" fill="#22d3ee" opacity="0.95"/>
-                              <circle cx={pos.x} cy={pos.y} r="3.2" fill="none" stroke="white" strokeWidth="0.5" opacity="0.7"/>
-                              {/* Number */}
-                              <text x={pos.x} y={pos.y + 0.9} textAnchor="middle" dominantBaseline="middle"
-                                fill="white" fontSize="2.2" fontWeight="900" fontFamily="JetBrains Mono">{p.number}</text>
-                              {/* Name label */}
-                              <text x={pos.x} y={pos.y + 6} textAnchor="middle"
-                                fill="rgba(255,255,255,0.8)" fontSize="2.4" fontWeight="700" fontFamily="Outfit">{display}</text>
-                            </g>
-                          );
-                        })}
-
-                        {/* AWAY PLAYERS (purple) */}
-                        {awayPos.map((pos, i) => {
-                          const p = awayPlayers[i];
-                          if (!p) return null;
-                          const surname = p.name?.split(' ').pop() || p.name || '';
-                          const display = surname.length > 9 ? surname.slice(0,8)+'.' : surname;
-                          return (
-                            <g key={`a-${i}`}>
-                              <circle cx={pos.x} cy={pos.y} r="4.5" fill="rgba(168,85,247,0.15)"/>
-                              <circle cx={pos.x} cy={pos.y} r="3.2" fill="#a855f7" opacity="0.95"/>
-                              <circle cx={pos.x} cy={pos.y} r="3.2" fill="none" stroke="white" strokeWidth="0.5" opacity="0.7"/>
-                              <text x={pos.x} y={pos.y + 0.9} textAnchor="middle" dominantBaseline="middle"
-                                fill="white" fontSize="2.2" fontWeight="900" fontFamily="JetBrains Mono">{p.number}</text>
-                              <text x={pos.x} y={pos.y + 6} textAnchor="middle"
-                                fill="rgba(255,255,255,0.8)" fontSize="2.4" fontWeight="700" fontFamily="Outfit">{display}</text>
-                            </g>
-                          );
-                        })}
-
-                        {/* Direction labels */}
-                        <text x="50" y="6" textAnchor="middle" fill="rgba(34,211,238,0.45)" fontSize="3" fontWeight="700" fontFamily="Outfit">ATTACK ↑</text>
-                        <text x="50" y="136" textAnchor="middle" fill="rgba(168,85,247,0.45)" fontSize="3" fontWeight="700" fontFamily="Outfit">↓ ATTACK</text>
+                        {/* Attack direction */}
+                        <text x="50" y="5.5"   textAnchor="middle" fill="rgba(34,211,238,0.5)"  fontSize="2.8" fontFamily="system-ui">ATTACK ↑</text>
+                        <text x="50" y="136.5" textAnchor="middle" fill="rgba(168,85,247,0.5)" fontSize="2.8" fontFamily="system-ui">↓ ATTACK</text>
                       </svg>
+                    </div>
+
+                    {/* Legend */}
+                    <div className="flex items-center gap-4 px-4 py-2 border-t border-white/[0.05] flex-wrap" style={{background:'rgba(0,0,0,0.2)'}}>
+                      {[
+                        {label:'Captain', el:<><svg width="10" height="10" viewBox="0 0 10 10" style={{display:'inline',verticalAlign:'middle'}}><circle cx="5" cy="5" r="4" fill="#22d3ee"/><circle cx="5" cy="5" r="4" fill="none" stroke="#fbbf24" strokeWidth="1.5"/></svg></>},
+                        {label:'Goal',    el:<span style={{fontSize:10}}>⚽</span>},
+                        {label:'Yellow',  el:<div style={{width:6,height:8,background:'#eab308',borderRadius:1,display:'inline-block'}}/>},
+                        {label:'Red',     el:<div style={{width:6,height:8,background:'#ef4444',borderRadius:1,display:'inline-block'}}/>},
+                        {label:'Subbed',  el:<span style={{fontSize:11,color:'#f97316',fontWeight:900}}>↕</span>},
+                      ].map((item,i)=>(
+                        <div key={i} className="flex items-center gap-1.5 text-[10px] text-slate-500">
+                          {item.el}{item.label}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 );
