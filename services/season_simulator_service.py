@@ -352,8 +352,47 @@ def get_remaining_fixtures(league):
 
 
 # ══════════════════════════════════════════
-# MAIN SIMULATION
+# MAIN SIMULATION — Monte Carlo 1,000 runs
 # ══════════════════════════════════════════
+
+N_RUNS = 1000  # Monte Carlo iterations
+
+def _run_once(standings, remaining, config):
+    """Single simulation run — returns final points table."""
+    table = {}
+    for team in standings:
+        table[team["team"]] = {
+            "team": team["team"],
+            "points": team["points"],
+            "played": team["played"],
+            "won": team["won"], "drawn": team["drawn"], "lost": team["lost"],
+            "goalsFor": team["goalsFor"], "goalsAgainst": team["goalsAgainst"],
+        }
+    ratings = _build_ratings(table)
+    for fix in remaining:
+        home = find_team(fix["homeTeam"], table)
+        away = find_team(fix["awayTeam"], table)
+        if not home or not away or home == away:
+            continue
+        try:
+            pred = quick_predict(home, away, table, ratings)
+            res, hg, ag = pred["result"], pred["home_goals"], pred["away_goals"]
+            if res == "H":
+                table[home]["won"]   += 1; table[home]["points"] += 3
+                table[away]["lost"]  += 1
+            elif res == "D":
+                table[home]["drawn"] += 1; table[home]["points"] += 1
+                table[away]["drawn"] += 1; table[away]["points"] += 1
+            else:
+                table[away]["won"]   += 1; table[away]["points"] += 3
+                table[home]["lost"]  += 1
+            table[home]["goalsFor"] += hg; table[home]["goalsAgainst"] += ag
+            table[away]["goalsFor"] += ag; table[away]["goalsAgainst"] += hg
+            table[home]["played"]   += 1;  table[away]["played"]       += 1
+        except Exception:
+            pass
+    return table
+
 
 def simulate_season(league):
     cache_name = f"simulation_{league.replace(' ', '_').lower()}"
@@ -370,96 +409,128 @@ def simulate_season(league):
         return {"error": "Could not fetch standings"}
 
     remaining = get_remaining_fixtures(league)
+    n_teams = config["teams"]
 
-    # Build table
-    table = {}
-    for team in standings:
-        table[team["team"]] = {
-            "team": team["team"],
-            "currentPosition": team["position"],
-            "currentPoints": team["points"],
-            "currentPlayed": team["played"],
-            "currentWon": team["won"],
-            "currentDrawn": team["drawn"],
-            "currentLost": team["lost"],
-            "currentGF": team["goalsFor"],
-            "currentGA": team["goalsAgainst"],
-            "currentGD": team["goalDifference"],
-            "points": team["points"],
-            "played": team["played"],
-            "won": team["won"],
-            "drawn": team["drawn"],
-            "lost": team["lost"],
-            "goalsFor": team["goalsFor"],
-            "goalsAgainst": team["goalsAgainst"],
-            "simWins": 0, "simDraws": 0, "simLosses": 0,
-        }
+    # ── Monte Carlo: track position finishes + zone finishes ──────────
+    team_names = [t["team"] for t in standings]
+    pos_counts  = {t: [0] * n_teams for t in team_names}  # pos_counts[team][pos-1]
+    zone_counts = {t: {"champions_league":0,"europa_league":0,"relegation":0,"mid_table":0}
+                   for t in team_names}
+    pts_runs    = {t: [] for t in team_names}
 
-    # Build ratings + simulate
-    ratings = _build_ratings(table)
-    simulated = []
     skipped = []
-
+    # Collect skipped from first run for reporting
     for fix in remaining:
-        home = find_team(fix["homeTeam"], table)
-        away = find_team(fix["awayTeam"], table)
-        if not home or not away or home == away:
+        h = find_team(fix["homeTeam"], {t["team"]:t for t in standings})
+        a = find_team(fix["awayTeam"], {t["team"]:t for t in standings})
+        if not h or not a or h == a:
             skipped.append(f"{fix['homeTeam']} vs {fix['awayTeam']}")
+
+    print(f"[Simulator] {league}: Running {N_RUNS} Monte Carlo iterations...")
+    for run in range(N_RUNS):
+        table = _run_once(standings, remaining, config)
+        final = sorted(
+            table.values(),
+            key=lambda x: (-x["points"], -(x["goalsFor"]-x["goalsAgainst"]), -x["goalsFor"])
+        )
+        for pos, team in enumerate(final):
+            name = team["team"]
+            if name in pos_counts:
+                pos_counts[name][pos] += 1
+                pts_runs[name].append(team["points"])
+                i = pos + 1
+                if i <= config["cl"]:                     zone_counts[name]["champions_league"] += 1
+                elif i <= config["cl"] + config["el"]:   zone_counts[name]["europa_league"]    += 1
+                elif i > n_teams - config["relegation"]: zone_counts[name]["relegation"]        += 1
+                else:                                     zone_counts[name]["mid_table"]         += 1
+
+    # ── Build median table (most likely outcome) ──────────────────────
+    median_table = _run_once(standings, remaining, config)
+    final_median = sorted(
+        median_table.values(),
+        key=lambda x: (-x["points"], -(x["goalsFor"]-x["goalsAgainst"]), -x["goalsFor"])
+    )
+
+    # ── Attach probability data ───────────────────────────────────────
+    predicted_table = []
+    for i, team in enumerate(final_median):
+        name = team["team"]
+        pts_list = pts_runs.get(name, [team["points"]])
+        pts_sorted = sorted(pts_list)
+        pts_p10 = pts_sorted[int(len(pts_sorted)*0.10)] if pts_list else team["points"]
+        pts_p90 = pts_sorted[int(len(pts_sorted)*0.90)] if pts_list else team["points"]
+        pts_median = pts_sorted[len(pts_sorted)//2]     if pts_list else team["points"]
+        pos_dist = pos_counts.get(name, [0]*n_teams)
+        most_likely_pos = pos_dist.index(max(pos_dist)) + 1
+        zc = zone_counts.get(name, {})
+        src = next((s for s in standings if s["team"] == name), {})
+        predicted_table.append({
+            "team":              name,
+            "currentPosition":   src.get("position", i+1),
+            "currentPoints":     src.get("points", 0),
+            "currentPlayed":     src.get("played", 0),
+            "currentWon":        src.get("won", 0),
+            "currentDrawn":      src.get("drawn", 0),
+            "currentLost":       src.get("lost", 0),
+            "currentGF":         src.get("goalsFor", 0),
+            "currentGA":         src.get("goalsAgainst", 0),
+            "currentGD":         src.get("goalDifference", 0),
+            "predictedPosition": most_likely_pos,
+            "medianPoints":      pts_median,
+            "simPoints":         pts_median - src.get("points", 0),
+            "pointsP10":         pts_p10,
+            "pointsP90":         pts_p90,
+            "positionChange":    src.get("position", i+1) - most_likely_pos,
+            "goalDifference":    team["goalsFor"] - team["goalsAgainst"],
+            # Zone probabilities (%)
+            "clProb":            round(zc.get("champions_league", 0) / N_RUNS * 100, 1),
+            "elProb":            round(zc.get("europa_league",    0) / N_RUNS * 100, 1),
+            "relegationProb":    round(zc.get("relegation",       0) / N_RUNS * 100, 1),
+            # Zone based on most likely finish
+            "zone": (
+                "champions_league" if most_likely_pos <= config["cl"] else
+                "europa_league"    if most_likely_pos <= config["cl"] + config["el"] else
+                "relegation"       if most_likely_pos > n_teams - config["relegation"] else
+                "mid_table"
+            ),
+            # Position distribution (top 5 most likely positions)
+            "posDistribution": sorted(
+                [{"pos": p+1, "pct": round(c/N_RUNS*100,1)} for p,c in enumerate(pos_dist) if c > 0],
+                key=lambda x: -x["pct"]
+            )[:5],
+        })
+
+    # ── Sample simulated matches from last run for display ────────────
+    simulated_sample = []
+    last_table_raw = {t["team"]: t.copy() for t in standings}
+    ratings = _build_ratings({t["team"]: t for t in standings})
+    for fix in remaining[:40]:  # show first 40 for UI
+        home = find_team(fix["homeTeam"], last_table_raw)
+        away = find_team(fix["awayTeam"], last_table_raw)
+        if not home or not away or home == away:
             continue
-
         try:
-            pred = quick_predict(home, away, table, ratings)
-            res = pred["result"]
-            hg, ag = pred["home_goals"], pred["away_goals"]
-
-            if res == "H":
-                table[home]["won"] += 1; table[home]["points"] += 3; table[home]["simWins"] += 1
-                table[away]["lost"] += 1; table[away]["simLosses"] += 1
-            elif res == "D":
-                table[home]["drawn"] += 1; table[home]["points"] += 1; table[home]["simDraws"] += 1
-                table[away]["drawn"] += 1; table[away]["points"] += 1; table[away]["simDraws"] += 1
-            else:
-                table[away]["won"] += 1; table[away]["points"] += 3; table[away]["simWins"] += 1
-                table[home]["lost"] += 1; table[home]["simLosses"] += 1
-
-            table[home]["goalsFor"] += hg; table[home]["goalsAgainst"] += ag
-            table[away]["goalsFor"] += ag; table[away]["goalsAgainst"] += hg
-            table[home]["played"] += 1; table[away]["played"] += 1
-
-            simulated.append({
+            pred = quick_predict(home, away, last_table_raw, ratings)
+            simulated_sample.append({
                 "homeTeam": home, "awayTeam": away,
                 "homeWinProb": pred["home_win"], "drawProb": pred["draw"], "awayWinProb": pred["away_win"],
-                "predictedResult": res, "predictedScore": pred["predicted_score"],
-                "round": fix.get("round", ""), "date": fix.get("date", ""),
+                "predictedResult": pred["result"], "predictedScore": pred["predicted_score"],
+                "round": fix.get("round",""), "date": fix.get("date",""),
             })
-        except Exception as e:
-            print(f"[Simulator] Error: {home} vs {away}: {e}")
-
-    # Final standings
-    final = sorted(table.values(), key=lambda x: (-x["points"], -(x["goalsFor"]-x["goalsAgainst"]), -x["goalsFor"]))
-    for i, team in enumerate(final):
-        team["predictedPosition"] = i + 1
-        team["positionChange"] = team["currentPosition"] - (i + 1)
-        team["goalDifference"] = team["goalsFor"] - team["goalsAgainst"]
-        team["simPoints"] = team["points"] - team["currentPoints"]
-        n = config["teams"]
-        if i + 1 <= config["cl"]: team["zone"] = "champions_league"
-        elif i + 1 <= config["cl"] + config["el"]: team["zone"] = "europa_league"
-        elif i + 1 > n - config["relegation"]: team["zone"] = "relegation"
-        else: team["zone"] = "mid_table"
+        except Exception:
+            pass
 
     result = {
         "league": league, "config": config,
-        "currentStandings": standings, "predictedTable": final,
-        "simulatedMatches": simulated,
-        "totalRemaining": len(remaining), "totalSimulated": len(simulated),
-        "skippedMatches": skipped,
+        "monteCarlo": {"runs": N_RUNS},
+        "currentStandings": standings,
+        "predictedTable": sorted(predicted_table, key=lambda x: x["predictedPosition"]),
+        "simulatedMatches": simulated_sample,
+        "totalRemaining": len(remaining), "totalSimulated": len(simulated_sample),
+        "skippedMatches": skipped[:10],
         "simulatedAt": datetime.now(timezone.utc).isoformat(),
     }
 
-    if skipped:
-        print(f"[Simulator] {league}: SKIPPED {len(skipped)} matches: {skipped[:5]}")
-    print(f"[Simulator] {league}: {len(simulated)}/{len(remaining)} matches simulated")
-
+    print(f"[Simulator] {league}: Done. {N_RUNS} runs × {len(remaining)} fixtures.")
     _write_cache(cache_name, result)
     return result
