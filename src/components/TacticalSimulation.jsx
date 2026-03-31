@@ -377,7 +377,7 @@ export default function TacticalSimulation({
         <div className="flex items-center gap-2 flex-wrap">
           <div className="flex items-center gap-1.5">
             <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"/>
-            <span className="text-white font-black text-[11px] uppercase tracking-widest">Tactical Sim</span>
+            <span className="text-white font-black text-[11px] uppercase tracking-widest">Formation Guide</span>
           </div>
           {/* Formation selectors */}
           <FormationSelect value={formation}    onChange={setFormation}    label="Home"/>
@@ -392,6 +392,13 @@ export default function TacticalSimulation({
             {matchupNote.note}
           </span>
         )}
+
+        {/* Educational disclaimer */}
+        <div className="w-full mt-1 px-0.5">
+          <p className="text-[9px] text-slate-600 leading-relaxed">
+            Illustrative formation guide — positions and metrics are idealized models, not real match data.
+          </p>
+        </div>
 
         <div className="flex items-center gap-1.5 ml-auto">
           {/* Speed */}

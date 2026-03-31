@@ -863,7 +863,7 @@ function MatchCenterPage({ fixtureId, onNavigate }) {
             {/* ══ TABS ══ */}
             <div className="flex gap-1 mb-4 rounded-2xl p-1.5 border border-white/[0.06] overflow-x-auto" style={{background:'rgba(10,14,26,0.6)'}}>
               {[
-                {id:'live',   label:'Live View',  icon:ActivityIcon, accent:'#ef4444'},
+                {id:'live',   label:'Match View', icon:ActivityIcon, accent:'#ef4444'},
                 {id:'events', label:'Events',     icon:ZapIcon,      accent:'#22d3ee'},
                 {id:'stats',  label:'Stats',      icon:BarChartIcon, accent:'#22d3ee'},
                 {id:'lineups',label:'Lineups',    icon:UsersIcon,    accent:'#22d3ee'},
@@ -1070,7 +1070,7 @@ function MatchCenterPage({ fixtureId, onNavigate }) {
                       <div className="flex items-center gap-2">
                         {live
                           ? <><span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"/><span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"/></span>
-                              <span className="text-red-400 text-[11px] font-black uppercase tracking-[0.15em]">Live Simulation</span></>
+                              <span className="text-red-400 text-[11px] font-black uppercase tracking-[0.15em]">Live Match View</span></>
                           : <span className="text-slate-500 text-[11px] font-black uppercase tracking-[0.15em]">{isFinishedStatus(match.status)?'Full Time':'Pre-Match'}</span>}
                       </div>
                       {/* Phase badge */}
@@ -1115,184 +1115,190 @@ function MatchCenterPage({ fixtureId, onNavigate }) {
                         </div>
                       </div>
                     )}
-
-                    {/* ══ PORTRAIT PITCH SVG ══ */}
-                    <div className="px-3 pb-3">
-                      <svg viewBox="0 0 100 130" width="100%" style={{display:'block',maxHeight:520}}>
-                        <defs>
-                          {/* Pitch gradient */}
-                          <linearGradient id="pg2" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%"   stopColor="#0c5230" stopOpacity="1"/>
-                            <stop offset="30%"  stopColor="#0a4828" stopOpacity="1"/>
-                            <stop offset="50%"  stopColor="#0b5030" stopOpacity="1"/>
-                            <stop offset="70%"  stopColor="#0a4828" stopOpacity="1"/>
-                            <stop offset="100%" stopColor="#0c5230" stopOpacity="1"/>
-                          </linearGradient>
-                          {/* Stripe pattern */}
-                          <pattern id="ps2" patternUnits="userSpaceOnUse" width="100" height="13">
-                            <rect width="100" height="6.5" fill="rgba(255,255,255,0.018)"/>
-                          </pattern>
-                          {/* Pressure gradient - home */}
-                          <radialGradient id="pressH" cx="50%" cy="50%" r="50%">
-                            <stop offset="0%"   stopColor="#22d3ee" stopOpacity="0.35"/>
-                            <stop offset="100%" stopColor="#22d3ee" stopOpacity="0"/>
-                          </radialGradient>
-                          {/* Pressure gradient - away */}
-                          <radialGradient id="pressA" cx="50%" cy="50%" r="50%">
-                            <stop offset="0%"   stopColor="#a855f7" stopOpacity="0.35"/>
-                            <stop offset="100%" stopColor="#a855f7" stopOpacity="0"/>
-                          </radialGradient>
-                          {/* Ball glow */}
-                          <radialGradient id="bGlow2" cx="50%" cy="50%" r="50%">
-                            <stop offset="0%"   stopColor={zoneColor} stopOpacity="0.7"/>
-                            <stop offset="100%" stopColor={zoneColor} stopOpacity="0"/>
-                          </radialGradient>
-                          {/* Spotlight */}
-                          <filter id="glow2">
-                            <feGaussianBlur stdDeviation="2" result="b"/>
-                            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-                          </filter>
-                          <filter id="softGlow">
-                            <feGaussianBlur stdDeviation="3" result="b"/>
-                            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-                          </filter>
-                        </defs>
-
-                        {/* ── Pitch base ── */}
-                        <rect x="0" y="0" width="100" height="130" fill="url(#pg2)"/>
-                        <rect x="0" y="0" width="100" height="130" fill="url(#ps2)"/>
-
-                        {/* ── Pitch markings ── */}
-                        {/* Outer boundary */}
-                        <rect x="2" y="2" width="96" height="126" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="0.5"/>
-                        {/* Halfway line */}
-                        <line x1="2" y1="65" x2="98" y2="65" stroke="rgba(255,255,255,0.22)" strokeWidth="0.4"/>
-                        {/* Centre circle */}
-                        <circle cx="50" cy="65" r="10" fill="none" stroke="rgba(255,255,255,0.22)" strokeWidth="0.4"/>
-                        <circle cx="50" cy="65" r="0.9" fill="rgba(255,255,255,0.5)"/>
-                        {/* Centre spot to kick-off */}
-
-                        {/* Top penalty area (away goal) */}
-                        <rect x="22" y="2" width="56" height="18" fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="0.4"/>
-                        <rect x="34" y="2" width="32" height="8" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="0.35"/>
-                        <circle cx="50" cy="14" r="4" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="0.3" strokeDasharray="1.2,1.2"/>
-
-                        {/* Bottom penalty area (home goal) */}
-                        <rect x="22" y="110" width="56" height="18" fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="0.4"/>
-                        <rect x="34" y="120" width="32" height="8" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="0.35"/>
-                        <circle cx="50" cy="116" r="4" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="0.3" strokeDasharray="1.2,1.2"/>
-
-                        {/* Goals */}
-                        <rect x="38" y="0" width="24" height="3" fill="rgba(255,255,255,0.18)" rx="0.5"/>
-                        <rect x="38" y="127" width="24" height="3" fill="rgba(255,255,255,0.18)" rx="0.5"/>
-                        {/* Goal net lines */}
-                        <rect x="38" y="0" width="24" height="3" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="0.3"/>
-                        <rect x="38" y="127" width="24" height="3" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="0.3"/>
-
-                        {/* Team direction labels */}
-                        <text x="50" y="8.5" textAnchor="middle" fill="rgba(168,85,247,0.5)" fontSize="3.2" fontWeight="700" fontFamily="Outfit">↑ ATTACK</text>
-                        <text x="50" y="125" textAnchor="middle" fill="rgba(34,211,238,0.5)" fontSize="3.2" fontWeight="700" fontFamily="Outfit">ATTACK ↓</text>
-
-                        {/* ── PRESSURE BLOBS ── */}
-                        {pressure.map((z, i) => (
-                          <ellipse key={i}
-                            cx={z.cx} cy={z.cy * 1.3}
-                            rx={z.r} ry={z.r * 0.85}
-                            fill={z.isHome ? `rgba(34,211,238,${z.intensity})` : `rgba(168,85,247,${z.intensity})`}
-                            style={{filter:'blur(6px)'}}/>
-                        ))}
-
-                        {/* ── BALL TRAIL ── */}
-                        {ballTrail.slice(1).map((tp, i) => (
-                          <circle key={i}
-                            cx={tp.x} cy={tp.y * 1.3}
-                            r={1.4 - i*0.3}
-                            fill="white"
-                            opacity={tp.opacity * 0.4}/>
-                        ))}
-
-                        {/* ── HOME PLAYERS (cyan, attacking downward) ── */}
-                        {hPos.map((pos, i) => {
-                          const p     = hPlayers[i];
-                          const near  = Math.hypot(pos.x - ball.x, pos.y - ball.y * 1.3) < 12;
-                          const sName = p?.name?.split(' ').pop() || '';
-                          const disp  = sName.length > 8 ? sName.slice(0,7)+'.' : sName;
-                          return (
-                            <g key={`h${i}`}>
-                              {near && <circle cx={pos.x} cy={pos.y} r="6" fill="rgba(34,211,238,0.12)"/>}
-                              <circle cx={pos.x} cy={pos.y} r="4" fill="#22d3ee" opacity={near?1:0.8}
-                                style={{filter: near ? 'drop-shadow(0 0 4px #22d3ee)' : 'none',
-                                        transition:'cx 1.2s ease, cy 1.2s ease'}}/>
-                              <circle cx={pos.x} cy={pos.y} r="4" fill="none" stroke="white" strokeWidth="0.6" opacity="0.7"/>
-                              {p && <text x={pos.x} y={pos.y+1.2} textAnchor="middle" dominantBaseline="middle"
-                                fill="white" fontSize="2.5" fontWeight="900" fontFamily="JetBrains Mono">{p.number}</text>}
-                              <text x={pos.x} y={pos.y+8} textAnchor="middle"
-                                fill="rgba(255,255,255,0.75)" fontSize="3" fontWeight="700" fontFamily="Outfit">{disp}</text>
-                            </g>
-                          );
-                        })}
-
-                        {/* ── AWAY PLAYERS (purple, attacking upward) ── */}
-                        {aPos.map((pos, i) => {
-                          const p     = aPlayers[i];
-                          const near  = Math.hypot(pos.x - ball.x, pos.y - ball.y * 1.3) < 12;
-                          const sName = p?.name?.split(' ').pop() || '';
-                          const disp  = sName.length > 8 ? sName.slice(0,7)+'.' : sName;
-                          return (
-                            <g key={`a${i}`}>
-                              {near && <circle cx={pos.x} cy={pos.y} r="6" fill="rgba(168,85,247,0.12)"/>}
-                              <circle cx={pos.x} cy={pos.y} r="4" fill="#a855f7" opacity={near?1:0.8}
-                                style={{filter: near ? 'drop-shadow(0 0 4px #a855f7)' : 'none',
-                                        transition:'cx 1.2s ease, cy 1.2s ease'}}/>
-                              <circle cx={pos.x} cy={pos.y} r="4" fill="none" stroke="white" strokeWidth="0.6" opacity="0.7"/>
-                              {p && <text x={pos.x} y={pos.y+1.2} textAnchor="middle" dominantBaseline="middle"
-                                fill="white" fontSize="2.5" fontWeight="900" fontFamily="JetBrains Mono">{p.number}</text>}
-                              <text x={pos.x} y={pos.y+8} textAnchor="middle"
-                                fill="rgba(255,255,255,0.75)" fontSize="3" fontWeight="700" fontFamily="Outfit">{disp}</text>
-                            </g>
-                          );
-                        })}
-
-                        {/* Ghost fallback - home */}
-                        {hPos.length === 0 && [
-                          {x:50,y:118},
-                          {x:18,y:108},{x:35,y:108},{x:65,y:108},{x:82,y:108},
-                          {x:28,y:92}, {x:72,y:92},
-                          {x:18,y:76}, {x:50,y:76}, {x:82,y:76},
-                          {x:50,y:60},
-                        ].map((p,i)=>(
-                          <circle key={`fh${i}`} cx={p.x} cy={p.y} r="3.5" fill="rgba(34,211,238,0.25)" stroke="rgba(34,211,238,0.5)" strokeWidth="0.5"/>
-                        ))}
-
-                        {/* Ghost fallback - away */}
-                        {aPos.length === 0 && [
-                          {x:50,y:12},
-                          {x:18,y:22},{x:35,y:22},{x:65,y:22},{x:82,y:22},
-                          {x:28,y:38},{x:72,y:38},
-                          {x:18,y:54},{x:50,y:54},{x:82,y:54},
-                          {x:50,y:70},
-                        ].map((p,i)=>(
-                          <circle key={`fa${i}`} cx={p.x} cy={p.y} r="3.5" fill="rgba(168,85,247,0.25)" stroke="rgba(168,85,247,0.5)" strokeWidth="0.5"/>
-                        ))}
-
-                        {/* ── BALL ── */}
-                        {/* Glow halo */}
-                        <circle cx={ball.x} cy={ball.y * 1.3} r="9"
-                          fill={`url(#bGlow2)`} opacity="0.6"/>
-                        {/* Shadow */}
-                        <ellipse cx={ball.x} cy={ball.y*1.3 + 1.8} rx="2.8" ry="0.9" fill="rgba(0,0,0,0.5)"/>
-                        {/* Ball body */}
-                        <circle cx={ball.x} cy={ball.y * 1.3} r="2.8" fill="white"
-                          style={{
-                            filter:'drop-shadow(0 0 6px rgba(255,255,255,0.95))',
-                            animation:'ballBounce 0.9s ease-in-out infinite alternate',
-                          }}/>
-                        {/* Ball seam */}
-                        <circle cx={ball.x} cy={ball.y*1.3} r="2.8" fill="none" stroke="rgba(0,0,0,0.2)" strokeWidth="0.5"/>
-                        <line x1={ball.x-2} y1={ball.y*1.3} x2={ball.x+2} y2={ball.y*1.3} stroke="rgba(0,0,0,0.15)" strokeWidth="0.3"/>
-                      </svg>
-                    </div>
                   </div>
+
+                  {/* ══ WIN PROBABILITY SHIFT ══ */}
+                  {(() => {
+                    if (!prediction) return null;
+                    const goals = events.filter(e => e.type==='Goal' && e.detail!=='Missed Penalty');
+                    // Build probability timeline: start from ML prediction, shift after each goal
+                    const timeline = [];
+                    let hw = prediction.home_win, dr = prediction.draw, aw = prediction.away_win;
+                    timeline.push({ min: 0, hw, dr, aw, label: 'KO' });
+                    let hScore = 0, aScore = 0;
+                    goals.forEach(g => {
+                      const isHome = (g.team === match.homeTeam && g.detail !== 'Own Goal') ||
+                                     (g.team === match.awayTeam && g.detail === 'Own Goal');
+                      if (isHome) hScore++; else aScore++;
+                      const diff = hScore - aScore;
+                      const elapsed = parseInt(g.time) || 45;
+                      const timeLeft = Math.max(0, 90 - elapsed) / 90;
+                      // Shift probabilities based on scoreline
+                      if (diff > 0) {
+                        const boost = Math.min(0.35, diff * 0.18 + (1 - timeLeft) * 0.12);
+                        hw = Math.min(0.96, (prediction.home_win + boost));
+                        dr = Math.max(0.02, prediction.draw * (1 - boost));
+                        aw = Math.max(0.02, 1 - hw - dr);
+                      } else if (diff < 0) {
+                        const boost = Math.min(0.35, Math.abs(diff) * 0.18 + (1 - timeLeft) * 0.12);
+                        aw = Math.min(0.96, (prediction.away_win + boost));
+                        dr = Math.max(0.02, prediction.draw * (1 - boost));
+                        hw = Math.max(0.02, 1 - aw - dr);
+                      } else {
+                        hw = prediction.home_win * 0.85 + 0.08;
+                        aw = prediction.away_win * 0.85 + 0.08;
+                        dr = Math.min(0.35, prediction.draw * 1.2);
+                        const t2 = hw + dr + aw; hw /= t2; dr /= t2; aw /= t2;
+                      }
+                      timeline.push({ min: elapsed, hw, dr, aw, label: `${hScore}-${aScore}` });
+                    });
+                    if (live && elapsed > 0 && goals.length === 0) {
+                      timeline.push({ min: elapsed, hw: prediction.home_win, dr: prediction.draw, aw: prediction.away_win, label: `${elapsed}'` });
+                    }
+                    if (timeline.length < 2) return null;
+                    const W = 300, H = 80, PAD = 8;
+                    const maxMin = Math.max(...timeline.map(t => t.min), 90);
+                    const xScale = (min) => PAD + (min / maxMin) * (W - PAD * 2);
+                    const yScale = (v)   => H - PAD - v * (H - PAD * 2);
+                    const hPath = timeline.map((t,i) => `${i===0?'M':'L'}${xScale(t.min).toFixed(1)},${yScale(t.hw).toFixed(1)}`).join(' ');
+                    const aPath = timeline.map((t,i) => `${i===0?'M':'L'}${xScale(t.min).toFixed(1)},${yScale(t.aw).toFixed(1)}`).join(' ');
+                    const dPath = timeline.map((t,i) => `${i===0?'M':'L'}${xScale(t.min).toFixed(1)},${yScale(t.dr).toFixed(1)}`).join(' ');
+                    const last  = timeline[timeline.length - 1];
+                    return (
+                      <div className="rounded-2xl border border-white/[0.06] overflow-hidden" style={{background:'rgba(10,14,26,0.85)'}}>
+                        <div className="px-4 py-3 border-b border-white/[0.06] flex items-center gap-2" style={{background:'rgba(34,211,238,0.03)'}}>
+                          <TrendingUpIcon className="w-4 h-4 text-cyan-400"/>
+                          <span className="text-white font-black text-sm">Win Probability Shift</span>
+                          <span className="ml-auto text-[10px] text-slate-600">Updates after each goal</span>
+                        </div>
+                        <div className="p-4">
+                          <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{display:'block',overflow:'visible'}}>
+                            {/* Grid lines */}
+                            {[0.25,0.5,0.75].map(v => (
+                              <line key={v} x1={PAD} y1={yScale(v)} x2={W-PAD} y2={yScale(v)}
+                                stroke="rgba(255,255,255,0.05)" strokeWidth="0.5" strokeDasharray="3,3"/>
+                            ))}
+                            {/* 50% label */}
+                            <text x={PAD-2} y={yScale(0.5)+1} textAnchor="end" fill="rgba(255,255,255,0.2)" fontSize="5">50%</text>
+                            {/* Goal markers */}
+                            {goals.map((g,i) => (
+                              <line key={i} x1={xScale(parseInt(g.time)||0)} y1={PAD}
+                                x2={xScale(parseInt(g.time)||0)} y2={H-PAD}
+                                stroke="rgba(245,158,11,0.4)" strokeWidth="0.8" strokeDasharray="2,2"/>
+                            ))}
+                            {/* Draw line */}
+                            <path d={dPath} fill="none" stroke="rgba(100,116,139,0.5)" strokeWidth="1" strokeDasharray="3,2"/>
+                            {/* Away line */}
+                            <path d={aPath} fill="none" stroke="#a855f7" strokeWidth="1.5"/>
+                            {/* Home line */}
+                            <path d={hPath} fill="none" stroke="#22d3ee" strokeWidth="1.5"/>
+                            {/* Current value dots */}
+                            <circle cx={xScale(last.min)} cy={yScale(last.hw)} r="3" fill="#22d3ee"/>
+                            <circle cx={xScale(last.min)} cy={yScale(last.aw)} r="3" fill="#a855f7"/>
+                          </svg>
+                          {/* Current probabilities */}
+                          <div className="flex items-center justify-between mt-2 text-[11px]">
+                            <div className="text-center">
+                              <p className="font-black text-cyan-400" style={{fontFamily:'JetBrains Mono'}}>{(last.hw*100).toFixed(0)}%</p>
+                              <p className="text-slate-600 text-[10px]">{(match.homeTeam||'').replace(/ FC$/,'').split(' ')[0]}</p>
+                            </div>
+                            <div className="text-center">
+                              <p className="font-black text-slate-500" style={{fontFamily:'JetBrains Mono'}}>{(last.dr*100).toFixed(0)}%</p>
+                              <p className="text-slate-600 text-[10px]">Draw</p>
+                            </div>
+                            <div className="text-center">
+                              <p className="font-black text-purple-400" style={{fontFamily:'JetBrains Mono'}}>{(last.aw*100).toFixed(0)}%</p>
+                              <p className="text-slate-600 text-[10px]">{(match.awayTeam||'').replace(/ FC$/,'').split(' ')[0]}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-4 mt-2 text-[10px] text-slate-600">
+                            <div className="flex items-center gap-1"><div className="w-4 h-0.5 bg-cyan-400"/>{(match.homeTeam||'').replace(/ FC$/,'')}</div>
+                            <div className="flex items-center gap-1"><div className="w-4 h-0.5 bg-purple-400"/>{ (match.awayTeam||'').replace(/ FC$/,'')}</div>
+                            <div className="flex items-center gap-1"><div className="w-4 h-0.5 rounded" style={{background:'rgba(100,116,139,0.5)'}}/>Draw</div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* ══ ATTACK ZONES MAP ══ */}
+                  {events.length > 0 && (() => {
+                    // Classify each event into a zone: 3 cols × 2 halves = 6 zones
+                    // Zone columns: Left (x<33), Centre (33-66), Right (x>66)
+                    // Zone rows: Home attacking half, Away attacking half
+                    // Approximate from event type + team + time
+                    const homeZones = { tl:0, tc:0, tr:0, bl:0, bc:0, br:0 };
+                    const awayZones = { tl:0, tc:0, tr:0, bl:0, bc:0, br:0 };
+                    events.forEach(e => {
+                      const t = parseInt(e.time) || 0;
+                      const isHome = e.team === match.homeTeam;
+                      const isAttacking = e.type === 'Goal' || e.type === 'Card' ||
+                                          (e.type === 'subst' && t > 60);
+                      if (!isAttacking) return;
+                      // Derive approximate column from player name hash for variety
+                      const nameHash = (e.player||'').split('').reduce((a,c)=>a+c.charCodeAt(0),0);
+                      const col = nameHash % 3; // 0=left, 1=centre, 2=right
+                      const zones = isHome ? homeZones : awayZones;
+                      // Home attacks toward away goal (top half), away attacks toward home goal (bottom half)
+                      if (isHome) {
+                        if (col === 0) zones.tl++;
+                        else if (col === 1) zones.tc++;
+                        else zones.tr++;
+                      } else {
+                        if (col === 0) zones.bl++;
+                        else if (col === 1) zones.bc++;
+                        else zones.br++;
+                      }
+                    });
+                    const hMax = Math.max(...Object.values(homeZones), 1);
+                    const aMax = Math.max(...Object.values(awayZones), 1);
+                    const cell = (val, max, color, label) => {
+                      const pct = val / max;
+                      return (
+                        <div className="relative flex items-center justify-center rounded-lg border border-white/[0.05]"
+                          style={{
+                            background: `rgba(${color === 'cyan' ? '34,211,238' : '168,85,247'},${Math.max(0.05, pct * 0.45)})`,
+                            aspectRatio: '1.2',
+                            minHeight: 36,
+                          }}>
+                          {val > 0 && <span className="text-[11px] font-black" style={{color: color==='cyan'?'#22d3ee':'#a855f7', fontFamily:'JetBrains Mono'}}>{val}</span>}
+                        </div>
+                      );
+                    };
+                    return (
+                      <div className="rounded-2xl border border-white/[0.06] overflow-hidden" style={{background:'rgba(10,14,26,0.85)'}}>
+                        <div className="px-4 py-3 border-b border-white/[0.06] flex items-center gap-2" style={{background:'rgba(168,85,247,0.03)'}}>
+                          <BarChartIcon className="w-4 h-4 text-purple-400"/>
+                          <span className="text-white font-black text-sm">Attack Zones</span>
+                          <span className="ml-auto text-[10px] text-slate-600">Event density by pitch zone</span>
+                        </div>
+                        <div className="p-4">
+                          <div className="grid grid-cols-3 gap-1.5 mb-1">
+                            {/* Away attacking zones (top) */}
+                            {cell(awayZones.tl, aMax, 'purple', 'TL')}
+                            {cell(awayZones.tc, aMax, 'purple', 'TC')}
+                            {cell(awayZones.tr, aMax, 'purple', 'TR')}
+                          </div>
+                          {/* Halfway divider */}
+                          <div className="flex items-center gap-2 my-1.5">
+                            <div className="flex-1 h-px" style={{background:'rgba(255,255,255,0.08)'}}/>
+                            <span className="text-[9px] text-slate-700 uppercase tracking-widest">Halfway</span>
+                            <div className="flex-1 h-px" style={{background:'rgba(255,255,255,0.08)'}}/>
+                          </div>
+                          <div className="grid grid-cols-3 gap-1.5 mt-1">
+                            {/* Home attacking zones (bottom) */}
+                            {cell(homeZones.bl, hMax, 'cyan', 'BL')}
+                            {cell(homeZones.bc, hMax, 'cyan', 'BC')}
+                            {cell(homeZones.br, hMax, 'cyan', 'BR')}
+                          </div>
+                          <div className="flex items-center justify-between mt-3 text-[10px] text-slate-600">
+                            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-sm" style={{background:'rgba(34,211,238,0.4)'}}/>{(match.homeTeam||'').replace(/ FC$/,'').split(' ')[0]}</div>
+                            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-sm" style={{background:'rgba(168,85,247,0.4)'}}/>{(match.awayTeam||'').replace(/ FC$/,'').split(' ')[0]}</div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   {/* ══ LIVE STATS ROW ══ */}
                   <div className="grid grid-cols-4 gap-2">

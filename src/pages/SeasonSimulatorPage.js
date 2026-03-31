@@ -305,32 +305,54 @@ function SeasonSimulatorPage({ onNavigate }) {
                         </div>
                       </div>
 
-                      {/* Expanded Detail */}
+                      {/* Expanded Detail — Monte Carlo */}
                       {isExpanded && (
-                        <div className="px-3 sm:px-5 py-3 sm:py-4 bg-white/[0.02] border-t border-white/[0.03]" style={{ animation: 'fadeSlideIn 0.2s ease-out' }}>
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-                            <div className="bg-white/[0.03] rounded-xl p-2.5 sm:p-3">
-                              <p className="text-[10px] sm:text-[11px] text-slate-600 uppercase tracking-widest mb-1">Current</p>
-                              <p className="text-xs text-slate-400">{team.currentPlayed}P · {team.currentPoints}pts · #{team.currentPosition}</p>
-                            </div>
-                            <div className="bg-purple-500/5 rounded-xl p-2.5 sm:p-3 border border-purple-500/10">
-                              <p className="text-[10px] sm:text-[11px] text-purple-400 uppercase tracking-widest mb-1">Simulated</p>
-                              <p className="text-xs text-white font-bold">+{team.simWins}W +{team.simDraws}D +{team.simLosses}L</p>
-                            </div>
-                            <div className="bg-white/[0.03] rounded-xl p-2.5 sm:p-3">
-                              <p className="text-[10px] sm:text-[11px] text-slate-600 uppercase tracking-widest mb-1">Points Gained</p>
-                              <p className="text-sm font-black text-purple-400" style={{ fontFamily: 'JetBrains Mono' }}>+{team.simPoints}</p>
-                            </div>
-                            <div className="bg-white/[0.03] rounded-xl p-2.5 sm:p-3">
-                              <p className="text-[10px] sm:text-[11px] text-slate-600 uppercase tracking-widest mb-1">Goals</p>
-                              <p className="text-xs"><span className="text-emerald-400 font-bold">{team.goalsFor}</span> scored · <span className="text-red-400 font-bold">{team.goalsAgainst}</span> conceded</p>
-                            </div>
+                        <div className="px-3 sm:px-5 py-3 sm:py-4 border-t border-white/[0.03]" style={{ background:'rgba(255,255,255,0.015)', animation: 'fadeSlideIn 0.2s ease-out' }}>
+                          <p className="text-[10px] text-slate-600 uppercase tracking-[0.15em] font-bold mb-2">Zone probability — {simulation.monteCarlo?.runs||1} simulations</p>
+                          <div className="grid grid-cols-3 gap-2 mb-3">
+                            {[
+                              {label:'UCL', prob:team.clProb, color:'#3b82f6', bg:'rgba(59,130,246,0.08)'},
+                              {label:'UEL', prob:team.elProb, color:'#f97316', bg:'rgba(249,115,22,0.08)'},
+                              {label:'REL', prob:team.relegationProb, color:'#ef4444', bg:'rgba(239,68,68,0.08)'},
+                            ].map((z,i) => (
+                              <div key={i} className="rounded-xl p-2.5 text-center border" style={{background:z.bg, borderColor:z.color+'20'}}>
+                                <p className="text-sm font-black" style={{color:z.color, fontFamily:'JetBrains Mono'}}>{z.prob ?? 0}%</p>
+                                <p className="text-[9px] text-slate-600 mt-0.5 uppercase tracking-wide">{z.label}</p>
+                              </div>
+                            ))}
                           </div>
-                          <div className="mt-2.5 sm:mt-3">
+                          <p className="text-[10px] text-slate-600 uppercase tracking-[0.15em] font-bold mb-2">Points range (10th-90th pct)</p>
+                          <div className="flex items-center gap-3 mb-3">
+                            <span className="text-xs font-black text-slate-500" style={{fontFamily:'JetBrains Mono'}}>{team.pointsP10 ?? team.currentPoints}</span>
+                            <div className="flex-1 relative h-2 rounded-full" style={{background:'rgba(255,255,255,0.06)'}}>
+                              {team.pointsP10 != null && <div className="absolute h-full rounded-full" style={{
+                                left:((team.pointsP10/maxPts)*100)+'%',
+                                right:(100-(team.pointsP90/maxPts)*100)+'%',
+                                background:'linear-gradient(90deg,rgba(168,85,247,0.4),#a855f7)'
+                              }}/>}
+                              <div className="absolute w-2.5 h-2.5 rounded-full bg-white border-2 border-purple-400"
+                                style={{left:((team.medianPoints??team.currentPoints)/maxPts*100)+'%', top:'50%', transform:'translate(-50%,-50%)'}}/>
+                            </div>
+                            <span className="text-xs font-black text-purple-400" style={{fontFamily:'JetBrains Mono'}}>{team.pointsP90 ?? team.medianPoints}</span>
+                          </div>
+                          {team.posDistribution?.length > 0 && (
+                            <>
+                              <p className="text-[10px] text-slate-600 uppercase tracking-[0.15em] font-bold mb-2">Most likely finish positions</p>
+                              <div className="flex items-end gap-1.5" style={{height:40}}>
+                                {team.posDistribution.map((pd,i) => (
+                                  <div key={i} className="flex-1 flex flex-col items-center gap-0.5">
+                                    <div className="w-full rounded-t-md" style={{height:Math.max(2,(pd.pct/team.posDistribution[0].pct*32))+'px', background:i===0?'#a855f7':'rgba(168,85,247,0.3)'}}/>
+                                    <span className="text-[9px] text-slate-600" style={{fontFamily:'JetBrains Mono'}}>#{pd.pos}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </>
+                          )}
+                          <div className="mt-3">
                             <PointsBar current={team.currentPoints} simulated={team.simPoints} max={maxPts} />
                             <div className="flex justify-between mt-1">
-                              <span className="text-[11px] text-cyan-400/60">Current: {team.currentPoints}</span>
-                              <span className="text-[11px] text-purple-400/60">+{team.simPoints} simulated</span>
+                              <span className="text-[11px] text-cyan-400/60">Now: {team.currentPoints}pts</span>
+                              <span className="text-[11px] text-purple-400/60">Median: {team.medianPoints}pts</span>
                             </div>
                           </div>
                         </div>
