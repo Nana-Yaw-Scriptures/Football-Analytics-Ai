@@ -75,7 +75,7 @@ function SeasonSimulatorPage({ onNavigate }) {
   };
 
   const champion = simulation?.predictedTable?.[0];
-  const maxPts = champion?.points || 100;
+  const maxPts = Math.max(champion?.medianPoints || champion?.points || 100, 100);
 
   return (
     <div className="theme-page min-h-screen bg-[#0a0e1a] text-white overflow-x-hidden" style={{ fontFamily: "'Outfit', sans-serif" }}>
@@ -176,7 +176,7 @@ function SeasonSimulatorPage({ onNavigate }) {
                     <div className="flex-1 min-w-0">
                       <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-white mb-1 truncate">{champion.team?.replace(/ FC$| AFC$| CF$| SC$/, '')}</h2>
                       <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
-                        <div><span className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-yellow-400 to-amber-300 bg-clip-text text-transparent" style={{ fontFamily: 'JetBrains Mono' }}>{champion.points}</span><span className="text-slate-500 text-xs ml-1">pts</span></div>
+                        <div><span className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-yellow-400 to-amber-300 bg-clip-text text-transparent" style={{ fontFamily: 'JetBrains Mono' }}>{champion.medianPoints || champion.points}</span><span className="text-slate-500 text-xs ml-1">pts</span></div>
                         <div className="h-5 w-px bg-white/10 hidden sm:block" />
                         <div className="hidden sm:block"><span className="text-base sm:text-lg font-bold text-white" style={{ fontFamily: 'JetBrains Mono' }}>{champion.won}W {champion.drawn}D {champion.lost}L</span></div>
                         <div className="h-5 w-px bg-white/10 hidden sm:block" />
@@ -196,8 +196,8 @@ function SeasonSimulatorPage({ onNavigate }) {
               {[
                 { label: 'Matches Simulated', value: simulation.totalSimulated, icon: CalendarIcon, color: '#a855f7', gradient: 'from-purple-500/10 to-purple-600/5' },
                 { label: 'Remaining Fixtures', value: simulation.totalRemaining, icon: LayersIcon, color: '#22d3ee', gradient: 'from-cyan-500/10 to-cyan-600/5' },
-                { label: 'Title Race Gap', value: simulation.predictedTable?.length >= 2 ? `${simulation.predictedTable[0].points - simulation.predictedTable[1].points} pts` : '-', icon: ZapIcon, color: '#f59e0b', gradient: 'from-yellow-500/10 to-amber-600/5' },
-                { label: 'Top Scorer (pts)', value: simulation.predictedTable?.[0]?.points || 0, icon: AwardIcon, color: '#10b981', gradient: 'from-emerald-500/10 to-emerald-600/5' },
+                { label: 'Title Race Gap', value: simulation.predictedTable?.length >= 2 ? `${(simulation.predictedTable[0].medianPoints||simulation.predictedTable[0].points||0) - (simulation.predictedTable[1].medianPoints||simulation.predictedTable[1].points||0)} pts` : '-', icon: ZapIcon, color: '#f59e0b', gradient: 'from-yellow-500/10 to-amber-600/5' },
+                { label: 'Champion pts', value: simulation.predictedTable?.[0]?.medianPoints || simulation.predictedTable?.[0]?.points || 0, icon: AwardIcon, color: '#10b981', gradient: 'from-emerald-500/10 to-emerald-600/5' },
               ].map((s, i) => (
                 <div key={i} className={`bg-gradient-to-br ${s.gradient} rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-white/5 relative overflow-hidden`} style={{ animation: `fadeSlideIn 0.3s ease-out ${i * 0.08}s both` }}>
                   <div className="absolute top-0 right-0 w-12 h-12 sm:w-16 sm:h-16" style={{ background: `radial-gradient(circle, ${s.color}10, transparent)` }} />
@@ -301,7 +301,7 @@ function SeasonSimulatorPage({ onNavigate }) {
                           {team.goalDifference > 0 ? '+' : ''}{team.goalDifference}
                         </div>
                         <div className="text-center">
-                          <span className="text-xs sm:text-sm font-black text-white" style={{ fontFamily: 'JetBrains Mono' }}>{team.points}</span>
+                          <span className="text-xs sm:text-sm font-black text-white" style={{ fontFamily: 'JetBrains Mono' }}>{team.medianPoints || team.points}</span>
                         </div>
                       </div>
 
@@ -414,7 +414,7 @@ function SeasonSimulatorPage({ onNavigate }) {
                       <TrendingUpIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" /><h3 className="text-white font-bold text-xs">Biggest Climbers</h3>
                     </div>
                     <div className="divide-y divide-white/[0.03]">
-                      {[...simulation.predictedTable].sort((a, b) => b.positionChange - a.positionChange).slice(0, 5).map((t, i) => (
+                      {[...simulation.predictedTable].sort((a, b) => (b.positionChange||0) - (a.positionChange||0)).slice(0, 5).map((t, i) => (
                         <div key={i} className="flex items-center justify-between px-4 sm:px-5 py-2 sm:py-2.5">
                           <span className="text-xs text-white font-medium truncate flex-1 mr-2">{t.team?.replace(/ FC$| AFC$| CF$/, '')}</span>
                           <div className="flex items-center gap-2 flex-shrink-0">
@@ -430,7 +430,7 @@ function SeasonSimulatorPage({ onNavigate }) {
                       <TrendingDownIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-400" /><h3 className="text-white font-bold text-xs">Biggest Fallers</h3>
                     </div>
                     <div className="divide-y divide-white/[0.03]">
-                      {[...simulation.predictedTable].sort((a, b) => a.positionChange - b.positionChange).slice(0, 5).map((t, i) => (
+                      {[...simulation.predictedTable].sort((a, b) => (a.positionChange||0) - (b.positionChange||0)).slice(0, 5).map((t, i) => (
                         <div key={i} className="flex items-center justify-between px-4 sm:px-5 py-2 sm:py-2.5">
                           <span className="text-xs text-white font-medium truncate flex-1 mr-2">{t.team?.replace(/ FC$| AFC$| CF$/, '')}</span>
                           <div className="flex items-center gap-2 flex-shrink-0">
