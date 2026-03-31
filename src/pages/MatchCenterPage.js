@@ -134,6 +134,8 @@ function MatchCenterPage({ fixtureId, onNavigate }) {
           body: JSON.stringify({home_team:match.homeTeam, away_team:match.awayTeam, league:match.league||'Premier League'}),
         });
         if (r.ok) setPrediction(await r.json());
+        // 404 = team not in our leagues (international/cup), silently skip
+        // 500 = backend error, silently skip — prediction section just won't show
       } catch {}
     })();
   }, [match?.homeTeam, match?.awayTeam]);
