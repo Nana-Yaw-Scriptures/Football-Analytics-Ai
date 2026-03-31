@@ -11,11 +11,12 @@ CACHE_DIR = "cache"
 os.makedirs(CACHE_DIR, exist_ok=True)
 
 LEAGUE_CONFIG = {
-    "Premier League": {"id": 39, "teams": 20, "cl": 4, "el": 2, "relegation": 3},
-    "La Liga": {"id": 140, "teams": 20, "cl": 4, "el": 2, "relegation": 3},
-    "Bundesliga": {"id": 78, "teams": 18, "cl": 4, "el": 2, "relegation": 3},
-    "Serie A": {"id": 135, "teams": 20, "cl": 4, "el": 2, "relegation": 3},
-    "Ligue 1": {"id": 61, "teams": 18, "cl": 3, "el": 2, "relegation": 4},
+    "Premier League": {"id": 39,  "teams": 20, "cl": 4, "el": 2, "relegation": 3},
+    "La Liga":        {"id": 140, "teams": 20, "cl": 4, "el": 2, "relegation": 3},
+    "Bundesliga":     {"id": 78,  "teams": 18, "cl": 4, "el": 2, "relegation": 3},
+    "Serie A":        {"id": 135, "teams": 20, "cl": 4, "el": 2, "relegation": 3},
+    "Ligue 1":        {"id": 61,  "teams": 18, "cl": 3, "el": 2, "relegation": 4},
+    "Primeira Liga":  {"id": 94,  "teams": 18, "cl": 3, "el": 2, "relegation": 3},
 }
 SEASON = 2025
 
@@ -464,6 +465,18 @@ def simulate_season(league):
         most_likely_pos = pos_dist.index(max(pos_dist)) + 1
         zc = zone_counts.get(name, {})
         src = next((s for s in standings if s["team"] == name), {})
+        # Estimate simulated W/D/L from median points gain
+        cur_pts  = src.get("points", 0)
+        cur_p    = max(src.get("played", 1), 1)
+        sim_pts  = pts_median - cur_pts
+        sim_w    = round(sim_pts / 3 * 0.7)
+        sim_d    = round((sim_pts - sim_w * 3) / 1) if sim_pts > sim_w * 3 else 0
+        sim_l    = max(0, len(remaining) // max(len(standings),1) - sim_w - sim_d)
+        total_p  = src.get("played", 0) + sim_w + sim_d + sim_l
+        total_w  = src.get("won",   0) + sim_w
+        total_d  = src.get("drawn", 0) + sim_d
+        total_l  = src.get("lost",  0) + sim_l
+
         predicted_table.append({
             "team":              name,
             "currentPosition":   src.get("position", i+1),
@@ -477,7 +490,15 @@ def simulate_season(league):
             "currentGD":         src.get("goalDifference", 0),
             "predictedPosition": most_likely_pos,
             "medianPoints":      pts_median,
+            "points":            pts_median,   # alias for frontend compat
+            "played":            total_p,
+            "won":               total_w,
+            "drawn":             total_d,
+            "lost":              total_l,
             "simPoints":         pts_median - src.get("points", 0),
+            "simWins":           sim_w,
+            "simDraws":          sim_d,
+            "simLosses":         sim_l,
             "pointsP10":         pts_p10,
             "pointsP90":         pts_p90,
             "positionChange":    src.get("position", i+1) - most_likely_pos,

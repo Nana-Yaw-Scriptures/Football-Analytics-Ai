@@ -84,12 +84,15 @@ function MatchCenterPage({ fixtureId, onNavigate }) {
   const intervalRef  = useRef(null);
 
   /* ── Fetch match ── */
-  const smartFetch = useCallback(async (showLoader = false) => {
+  const smartFetch = useCallback(async (showLoader = false, force = false) => {
     if (!fixtureId) return;
     if (showLoader) setLoading(true);
     setIsRefreshing(true);
     try {
-      const resp = await fetch(`${API_BASE}/live/fixture/${fixtureId}`);
+      const url = force
+        ? `${API_BASE}/live/fixture/${fixtureId}?fresh=1`
+        : `${API_BASE}/live/fixture/${fixtureId}`;
+      const resp = await fetch(url);
       if (!resp.ok) throw new Error('Fixture not found');
       const data = await resp.json();
       const newScore = `${data.homeGoals}-${data.awayGoals}`;
@@ -105,9 +108,21 @@ function MatchCenterPage({ fixtureId, onNavigate }) {
   useEffect(() => {
     if (!fixtureId) { setError('No fixture ID provided'); setLoading(false); return; }
     smartFetch(true);
+    // Poll every 15s - backend no longer caches live fixtures
     intervalRef.current = setInterval(() => smartFetch(false), 15000);
     return () => clearInterval(intervalRef.current);
   }, [fixtureId]);
+
+  // Debug: log what data we receive
+  useEffect(() => {
+    if (!match) return;
+    console.log('[MatchCenter] Data:', {
+      status: match.status,
+      events: match.events?.length,
+      lineups: match.lineups?.length,
+      stats: Object.keys(match.statistics||{}).length,
+    });
+  }, [match]);
 
   /* ── Fetch ML prediction once match loads ── */
   useEffect(() => {
@@ -418,7 +433,7 @@ function MatchCenterPage({ fixtureId, onNavigate }) {
 
       <NavBar currentPage="live" onNavigate={onNavigate}>
         {live && <span className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black border" style={{background:'rgba(239,68,68,0.1)',borderColor:'rgba(239,68,68,0.25)',color:'#ef4444'}}><span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"/>LIVE</span>}
-        <button onClick={() => smartFetch()} disabled={isRefreshing} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-semibold border transition-all" style={isRefreshing?{background:'rgba(34,211,238,0.1)',borderColor:'rgba(34,211,238,0.2)',color:'#22d3ee'}:{background:'rgba(255,255,255,0.04)',borderColor:'rgba(255,255,255,0.08)',color:'#64748b'}}>
+        <button onClick={() => smartFetch(false, true)} disabled={isRefreshing} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-semibold border transition-all" style={isRefreshing?{background:'rgba(34,211,238,0.1)',borderColor:'rgba(34,211,238,0.2)',color:'#22d3ee'}:{background:'rgba(255,255,255,0.04)',borderColor:'rgba(255,255,255,0.08)',color:'#64748b'}}>
           <RefreshIcon className={`w-3.5 h-3.5 ${isRefreshing?'animate-spin':''}`}/>
           <span className="hidden sm:inline">{isRefreshing?'Updating…':'Refresh'}</span>
         </button>
@@ -1229,27 +1244,40 @@ function MatchCenterPage({ fixtureId, onNavigate }) {
                     // Approximate from event type + team + time
                     const homeZones = { tl:0, tc:0, tr:0, bl:0, bc:0, br:0 };
                     const awayZones = { tl:0, tc:0, tr:0, bl:0, bc:0, br:0 };
-                    events.forEach(e => {
+                    // Use ALL events — goals weighted higher, cards/subs lighter
+                    events.forEach((e, ei) => {
                       const t = parseInt(e.time) || 0;
                       const isHome = e.team === match.homeTeam;
-                      const isAttacking = e.type === 'Goal' || e.type === 'Card' ||
-                                          (e.type === 'subst' && t > 60);
-                      if (!isAttacking) return;
-                      // Derive approximate column from player name hash for variety
-                      const nameHash = (e.player||'').split('').reduce((a,c)=>a+c.charCodeAt(0),0);
-                      const col = nameHash % 3; // 0=left, 1=centre, 2=right
                       const zones = isHome ? homeZones : awayZones;
-                      // Home attacks toward away goal (top half), away attacks toward home goal (bottom half)
-                      if (isHome) {
-                        if (col === 0) zones.tl++;
-                        else if (col === 1) zones.tc++;
-                        else zones.tr++;
+                      // Weight by event type
+                      const weight = e.type==='Goal' ? 3 : e.type==='Card' ? 1 : e.type==='subst' ? 1 : 2;
+                      // Column: spread events across left/centre/right using event index + time
+                      // Goals/shots → centre-weighted, others spread wider
+                      let col;
+                      if (e.type === 'Goal') {
+                        // Goals can come from any zone — use time-based spread
+                        col = t % 3;
                       } else {
-                        if (col === 0) zones.bl++;
-                        else if (col === 1) zones.bc++;
-                        else zones.br++;
+                        // Use event index for natural distribution
+                        col = (ei + Math.floor(t / 20)) % 3;
+                      }
+                      // Home team attacks into away half (top of grid = tl/tc/tr)
+                      // Away team attacks into home half (bottom of grid = bl/bc/br)
+                      if (isHome) {
+                        if (col === 0) zones.tl += weight;
+                        else if (col === 1) zones.tc += weight;
+                        else zones.tr += weight;
+                      } else {
+                        if (col === 0) zones.bl += weight;
+                        else if (col === 1) zones.bc += weight;
+                        else zones.br += weight;
                       }
                     });
+                    // Fallback: if still all zero (no events at all), show equal base
+                    const totalH = Object.values(homeZones).reduce((a,b)=>a+b,0);
+                    const totalA = Object.values(awayZones).reduce((a,b)=>a+b,0);
+                    if (totalH === 0) { homeZones.tl=1; homeZones.tc=1; homeZones.tr=1; }
+                    if (totalA === 0) { awayZones.bl=1; awayZones.bc=1; awayZones.br=1; }
                     const hMax = Math.max(...Object.values(homeZones), 1);
                     const aMax = Math.max(...Object.values(awayZones), 1);
                     const cell = (val, max, color, label) => {
