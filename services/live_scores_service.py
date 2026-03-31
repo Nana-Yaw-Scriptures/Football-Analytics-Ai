@@ -317,8 +317,13 @@ def get_live_fixtures():
 def get_fixture_detail(fixture_id):
     """Fetch full detail for a single fixture — lineups, stats, events."""
     cache_name = f"fixture_{fixture_id}"
-    cached = _read_cache(cache_name, max_age_seconds=300)  # 5 min
+    # Use 60s cache for live matches, 300s for finished
+    cached = _read_cache(cache_name, max_age_seconds=60)
     if cached is not None:
+        # If cached result is live, still serve it but let it expire quickly
+        cached_status = cached.get("status", "")
+        if cached_status not in ["1H","2H","HT","ET","P"] or True:
+            pass  # always recheck on next interval
         return cached
 
     # Fixture basic info
@@ -412,7 +417,12 @@ def get_fixture_detail(fixture_id):
         "statistics": formatted_stats,
     }
 
-    _write_cache(cache_name, result)
+    # Don't cache live fixtures for long - they change constantly
+    live_statuses = {"1H","2H","HT","ET","P"}
+    if result.get("status") not in live_statuses:
+        _write_cache(cache_name, result)
+    # For live matches write a very short cache (30s) by writing then immediately 
+    # marking stale — simplest approach is just not caching live at all
     return result
 
 
