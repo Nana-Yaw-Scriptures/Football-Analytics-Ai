@@ -127,6 +127,9 @@ function MatchCenterPage({ fixtureId, onNavigate }) {
   /* ── Fetch ML prediction once match loads ── */
   useEffect(() => {
     if (!match?.homeTeam || !match?.awayTeam || prediction) return;
+    // Only call for supported European leagues — avoids 404 noise for international matches
+    const SUPPORTED = ['Premier League','La Liga','Bundesliga','Serie A','Ligue 1','Primeira Liga','Champions League'];
+    if (match.league && !SUPPORTED.includes(match.league)) return;
     (async () => {
       try {
         const r = await fetch(`${API_BASE}/predict/match`, {
@@ -134,8 +137,6 @@ function MatchCenterPage({ fixtureId, onNavigate }) {
           body: JSON.stringify({home_team:match.homeTeam, away_team:match.awayTeam, league:match.league||'Premier League'}),
         });
         if (r.ok) setPrediction(await r.json());
-        // 404 = team not in our leagues (international/cup), silently skip
-        // 500 = backend error, silently skip — prediction section just won't show
       } catch {}
     })();
   }, [match?.homeTeam, match?.awayTeam]);
