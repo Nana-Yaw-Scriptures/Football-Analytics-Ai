@@ -123,7 +123,7 @@ export function DisclaimerModal({ onClose }) {
               <p className="text-slate-300 text-sm leading-relaxed mb-4">
                 Gambling can be addictive and harmful. If you or someone you know is experiencing problems, please seek help:
               </p>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {[
                   { name: 'GamCare (UK)',                  url: 'https://www.gamcare.org.uk'           },
                   { name: 'BeGambleAware',                 url: 'https://www.begambleaware.org'        },
@@ -191,7 +191,7 @@ export default function Footer({ onNavigate }) {
   const year = new Date().getFullYear();
 
   const SOCIAL = [
-    { name: 'X',         Icon: TwitterX,   href: 'https://x.com/ScorinaA67179',          color: '#e7e9ea',  bg: 'rgba(231,233,234,0.08)' },
+    { name: 'X',         Icon: TwitterX,   href: 'https://twitter.com/scorinai',          color: '#e7e9ea',  bg: 'rgba(231,233,234,0.08)' },
     { name: 'Facebook',  Icon: Facebook,   href: 'https://facebook.com/scorinai',         color: '#1877f2',  bg: 'rgba(24,119,242,0.08)'  },
     { name: 'Instagram', Icon: Instagram,  href: 'https://instagram.com/scorinai',        color: '#e1306c',  bg: 'rgba(225,48,108,0.08)'  },
     { name: 'TikTok',    Icon: TikTok,     href: 'https://tiktok.com/@scorinai',          color: '#fe2c55',  bg: 'rgba(254,44,85,0.08)'   },
@@ -275,10 +275,10 @@ export default function Footer({ onNavigate }) {
 
         {/* ── Main body ── */}
         <div className="max-w-7xl mx-auto px-6 md:px-10 pt-14 pb-10">
-          <div className="grid grid-cols-1 md:grid-cols-6 gap-10 mb-14">
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-6 sm:gap-8 md:gap-10 mb-10 md:mb-14">
 
             {/* ── Brand column ── */}
-            <div className="md:col-span-2">
+            <div className="col-span-2 md:col-span-2">
               {/* Logo */}
               <div className="flex items-baseline gap-1.5 mb-5">
                 <span className="text-3xl font-black text-white tracking-tight">Scorina</span>
@@ -300,7 +300,7 @@ export default function Footer({ onNavigate }) {
 
               {/* Social links */}
               <p className="text-xs font-black text-slate-600 uppercase tracking-[0.2em] mb-3">Follow Us</p>
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-2 flex-wrap max-w-[200px] sm:max-w-none">
                 {SOCIAL.map(s => (
                   <a key={s.name} href={s.href} target="_blank" rel="noopener noreferrer"
                     title={s.name}
@@ -365,7 +365,7 @@ export default function Footer({ onNavigate }) {
             style={{ background: 'linear-gradient(90deg,transparent,rgba(255,255,255,0.08),transparent)' }}/>
 
           {/* ── Bottom row ── */}
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-5 mb-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-5 mb-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6">
               <p className="text-slate-500 text-sm">© {year} Scorina AI. All rights reserved.</p>
               <span className="hidden sm:block text-slate-800">|</span>
