@@ -112,10 +112,17 @@ export default function NavBar({ currentPage, onNavigate, children }) {
     if (!leagueOpen) { setLeagueSearch(''); return; }
     const h = e => { if (dropRef.current && !dropRef.current.contains(e.target)) setLeagueOpen(false); };
     document.addEventListener('mousedown', h);
-    // Auto-focus search input when dropdown opens
     setTimeout(() => searchRef.current?.focus(), 50);
     return () => document.removeEventListener('mousedown', h);
   }, [leagueOpen]);
+
+  // Close More dropdown on outside click
+  useEffect(() => {
+    if (!moreOpen) return;
+    const h = e => { if (moreRef.current && !moreRef.current.contains(e.target)) setMoreOpen(false); };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
+  }, [moreOpen]);
 
   const goBack = useCallback(() => {
     if (FORCED_BACK[currentPage]) { onNavigate(FORCED_BACK[currentPage]); return; }
@@ -198,7 +205,7 @@ export default function NavBar({ currentPage, onNavigate, children }) {
                     <button
                       className={`nb-item ${isActive ? 'nb-item-on' : ''}`}
                       style={{ '--a': link.accent }}
-                      onClick={() => setLeagueOpen(v => !v)}>
+                      onClick={() => { setMoreOpen(false); setLeagueOpen(v => !v); }}>
                       <Icon className="nb-icon"/>
                       <span>{link.label}</span>
                       <ChevronIcon className={`nb-chevron ${leagueOpen ? 'nb-chevron-open' : ''}`}/>
@@ -273,7 +280,7 @@ export default function NavBar({ currentPage, onNavigate, children }) {
               <button
                 className={`nb-item ${NAV_LINKS.filter(l=>l.more).some(l=>l.id===currentPage) ? 'nb-item-on' : ''}`}
                 style={{ '--a':'#94a3b8' }}
-                onClick={() => setMoreOpen(v => !v)}>
+                onClick={() => { setLeagueOpen(false); setMoreOpen(v => !v); }}>
                 <svg className="nb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>
                 </svg>
@@ -281,7 +288,7 @@ export default function NavBar({ currentPage, onNavigate, children }) {
                 <ChevronIcon className={`nb-chevron ${moreOpen ? 'nb-chevron-open' : ''}`}/>
               </button>
               {moreOpen && (
-                <div className="nb-drop" style={{ minWidth:180, right:0, left:'auto' }}>
+                <div className="nb-drop" style={{ minWidth:200, left:0, right:'auto', transform:'none' }}>
                   <div className="nb-drop-head">More Pages</div>
                   {NAV_LINKS.filter(l => l.more).map(link => {
                     const Icon = link.icon;
