@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import NavBar from '../components/NavBar';
+import { useAuth } from '../context/AuthContext';
 import jsPDF from 'jspdf';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000';
@@ -129,6 +130,7 @@ function exportBestPicksPDF(picks, date) {
 }
 
 export default function BestPicksPage({ onNavigate }) {
+  const { user, canSeeAIPicks } = useAuth();
   const [picks, setPicks]         = useState({});
   const [loading, setLoading]     = useState(false);
   const [error, setError]         = useState('');
@@ -184,6 +186,77 @@ export default function BestPicksPage({ onNavigate }) {
     ? LEAGUES.filter(l => picks[l.name]?.length > 0)
     : LEAGUES.filter(l => l.name === activeLeague && picks[l.name]?.length > 0);
 
+  // ── AUTH GATE ──
+  if (!canSeeAIPicks) {
+    return (
+      <div className="min-h-screen" style={{ background: 'linear-gradient(135deg,#060a14 0%,#080c18 50%,#06090f 100%)' }}>
+        <NavBar currentPage="bestpicks" onNavigate={onNavigate}/>
+        <div className="max-w-lg mx-auto px-4 pt-24 pb-24 flex flex-col items-center text-center">
+          {/* Lock icon */}
+          <div className="w-20 h-20 rounded-2xl flex items-center justify-center mb-6"
+            style={{ background: 'rgba(251,146,60,0.1)', border: '1px solid rgba(251,146,60,0.2)' }}>
+            <svg className="w-10 h-10" viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="1.5"
+              strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+          </div>
+          {/* Badge */}
+          <div className="flex items-center gap-2 mb-4">
+            <div className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest"
+              style={{ background: 'rgba(251,146,60,0.1)', border: '1px solid rgba(251,146,60,0.25)', color: '#f97316' }}>
+              🤖 AI Picks
+            </div>
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-black text-white mb-3">
+            Create a free account to unlock AI Picks
+          </h2>
+          <p className="text-slate-500 text-sm mb-8 leading-relaxed max-w-sm">
+            Get access to our AI-generated daily predictions across Europe's top 7 leagues.
+            Free to join — no credit card required.
+          </p>
+          {/* Teaser picks — blurred */}
+          <div className="w-full space-y-3 mb-8 pointer-events-none select-none">
+            {[
+              { home: 'Arsenal', away: 'Chelsea', conf: '78%', pick: 'Home Win', league: 'EPL' },
+              { home: 'Barcelona', away: 'Real Madrid', conf: '65%', pick: 'BTTS', league: 'La Liga' },
+              { home: 'Bayern', away: 'Dortmund', conf: '71%', pick: 'Home Win', league: 'Bundesliga' },
+            ].map((p, i) => (
+              <div key={i} className="relative rounded-2xl p-4 border text-left"
+                style={{ background: 'rgba(15,23,42,0.8)', borderColor: 'rgba(255,255,255,0.06)', filter: 'blur(3px)' }}>
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-orange-400">{p.league}</span>
+                  <span className="text-[10px] text-slate-600">{p.conf} confidence</span>
+                </div>
+                <div className="flex items-center justify-between mt-1">
+                  <span className="text-white font-bold text-sm">{p.home} vs {p.away}</span>
+                  <span className="text-orange-400 font-black text-xs px-2 py-0.5 rounded-lg"
+                    style={{ background: 'rgba(251,146,60,0.1)' }}>{p.pick}</span>
+                </div>
+              </div>
+            ))}
+            {/* Overlay on teaser */}
+            <div className="absolute inset-0 rounded-2xl" style={{ background: 'linear-gradient(to bottom, transparent, rgba(6,10,20,0.8))' }}/>
+          </div>
+          {/* CTA Buttons */}
+          <div className="flex flex-col sm:flex-row gap-3 w-full max-w-xs">
+            <button onClick={() => onNavigate('login')}
+              className="flex-1 py-3 rounded-xl font-black text-sm"
+              style={{ background: 'linear-gradient(135deg,#f97316,#ea580c)', color: 'white' }}>
+              Create Free Account
+            </button>
+            <button onClick={() => onNavigate('login')}
+              className="flex-1 py-3 rounded-xl font-bold text-sm border"
+              style={{ borderColor: 'rgba(249,115,22,0.3)', color: '#f97316', background: 'rgba(249,115,22,0.06)' }}>
+              Sign In
+            </button>
+          </div>
+          <p className="text-slate-700 text-xs mt-4">No credit card required · Free forever</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(135deg,#060a14 0%,#080c18 50%,#06090f 100%)' }}>
       <NavBar currentPage="bestpicks" onNavigate={onNavigate}/>
@@ -201,7 +274,13 @@ export default function BestPicksPage({ onNavigate }) {
                 <ZapIcon className="w-5 h-5 text-cyan-400"/>
               </div>
               <div>
-                <h1 className="text-3xl font-black text-white tracking-tight">Best Picks</h1>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="text-3xl font-black text-white tracking-tight">AI Picks</h1>
+                  <span className="px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-widest"
+                    style={{ background:'rgba(251,146,60,0.12)', border:'1px solid rgba(251,146,60,0.25)', color:'#f97316' }}>
+                    🤖 AI Generated
+                  </span>
+                </div>
                 <p className="text-cyan-400 text-sm font-semibold uppercase tracking-widest">Daily Prediction Report</p>
               </div>
               {generated && (

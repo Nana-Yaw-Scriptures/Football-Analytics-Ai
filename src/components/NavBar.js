@@ -42,9 +42,9 @@ const NAV_LINKS = [
   { id:'managers',   label:'Managers',   shortLabel:'Coaches', icon:UserIcon,     accent:'#fbbf24' },
   { id:'live',       label:'Live',       shortLabel:'Live',    icon:ActivityIcon, accent:'#f87171', live:true },
   { id:'league',     label:'Leagues',    shortLabel:'Leagues', icon:GlobeIcon,    accent:'#60a5fa', dropdown:true },
-  { id:'bestpicks',  label:'Picks',      shortLabel:'Picks',   icon:ZapIcon,      accent:'#f97316' },
+  { id:'bestpicks',  label:'AI Picks',   shortLabel:'AI',      icon:ZapIcon,      accent:'#f97316', aiOnly:true },
   { id:'history',    label:'History',     shortLabel:'History', icon:HistoryIcon,   accent:'#c084fc', more:true },
-  { id:'pickem',     label:'My Picks',    shortLabel:'Picks',   icon:TargetNavIcon, accent:'#a855f7', more:true },
+  { id:'pickem',     label:'My Picks',    shortLabel:'Picks',   icon:TargetNavIcon, accent:'#a855f7', more:true, requiresAuth:true },
   { id:'simulator',  label:'Sim',         shortLabel:'Sim',     icon:PlayIcon,      accent:'#f59e0b', more:true },
   { id:'favourites', label:'Favourites',  shortLabel:'Favs',    icon:HeartNavIcon,  accent:'#ef4444', more:true },
   { id:'leaderboard',label:'Leaderboard', shortLabel:'Ranks',   icon:TrophyNavIcon, accent:'#f59e0b', more:true },
@@ -64,7 +64,7 @@ const PAGE_LABEL = {
   home:'Home', analysis:'AI Analysis', analytics:'Analytics',
   players:'Players', managers:'Managers', live:'Live Scores',
   league:'League', simulator:'Simulator', history:'Predictions',
-  match:'Match Centre', admin:'Admin', bestpicks:'Best Picks', videolab:'Video Lab',
+  match:'Match Centre', admin:'Admin', bestpicks:'AI Picks', videolab:'Video Lab',
 };
 
 /* Pages that always snap back to a specific destination */
@@ -415,6 +415,7 @@ export default function NavBar({ currentPage, onNavigate, children }) {
           backdrop-filter: blur(24px) saturate(160%);
           -webkit-backdrop-filter: blur(24px) saturate(160%);
           transition: background 0.3s ease, box-shadow 0.3s ease;
+          padding-top: env(safe-area-inset-top);
         }
         .nb-root[data-scrolled="true"] {
           background: rgba(5,8,16,0.96);

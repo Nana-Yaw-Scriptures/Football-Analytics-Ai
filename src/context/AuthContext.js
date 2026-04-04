@@ -6,6 +6,11 @@ const AuthContext = createContext({});
 export const AuthProvider = ({ children }) => {
   const [user, setUser]       = useState(null);
   const [loading, setLoading] = useState(true);
+  const [userPlan, setUserPlan] = useState('free'); // 'free' | 'pro' — subscription-ready
+
+  // Derive plan from user metadata (future: fetch from Supabase subscriptions table)
+  const isPro = userPlan === 'pro';
+  const canSeeAIPicks = !!user; // Phase 1: auth only. Phase 2: isPro
 
   useEffect(() => {
     // Get initial session
@@ -61,7 +66,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signInWithGoogle, signInWithEmail, signUpWithEmail, signOut }}>
+    <AuthContext.Provider value={{ user, loading, userPlan, isPro, canSeeAIPicks, signInWithGoogle, signInWithEmail, signUpWithEmail, signOut }}>
       {children}
     </AuthContext.Provider>
   );
