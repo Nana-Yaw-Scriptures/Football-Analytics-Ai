@@ -1549,7 +1549,7 @@ const analysisTypes = [
     setSavedPredictions(upd);localStorage.setItem('fa-saved-predictions',JSON.stringify(upd));
     setToast('Prediction saved!'); setTimeout(() => setToast(''), 2500);
     if(activeTab==='match'&&mlData){
-      if (user) { saveToSupabase({homeTeam:mlData.home_team_name||input.split(/\s+vs\s+/i)[0]?.trim()||matchHome,awayTeam:mlData.away_team_name||input.split(/\s+vs\s+/i)[1]?.trim()||matchAway,league:selectedLeague,home_win:mlData.home_win,draw:mlData.draw,away_win:mlData.away_win,predicted_outcome:mlData.predicted_outcome,predicted_score:mlData.predicted_score}, user.id).catch(()=>{}); }
+      if (user) { saveToSupabase({homeTeam:mlData.home_team_name||input.split(/\s+vs\s+/i)[0]?.trim()||matchHome,awayTeam:mlData.away_team_name||input.split(/\s+vs\s+/i)[1]?.trim()||matchAway,league:selectedLeague,home_win:mlData.home_win,draw:mlData.draw,away_win:mlData.away_win,predicted_outcome:mlData.predicted_outcome,predicted_score:mlData.predicted_score,matchDate:new Date().toISOString(),source:'analysis'}, user.id).catch(()=>{}); }
     }
   };
 
@@ -3543,7 +3543,7 @@ const resp = await fetch(`${API_BASE}/team-fixtures?team=${encodeURIComponent(te
               )}
             </button>
           </div>
-          <h1 className="text-5xl md:text-6xl font-black tracking-tight leading-none mb-4">
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-black tracking-tight leading-none mb-4">
             {activeTab === 'match' && <>Match<br/><span className="bg-gradient-to-r from-cyan-400 via-purple-400 to-blue-400 bg-clip-text text-transparent">Prediction</span></>}
             {activeTab === 'team' && <>Team<br/><span className="bg-gradient-to-r from-purple-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent">Comparison</span></>}
             {activeTab === 'scout' && <>Scout<br/><span className="bg-gradient-to-r from-emerald-400 via-cyan-400 to-teal-400 bg-clip-text text-transparent">Report</span></>}
