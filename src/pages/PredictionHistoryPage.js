@@ -190,7 +190,7 @@ export default function PredictionHistoryPage({ onNavigate }) {
   const [sortBy,       setSortBy]       = useState('date'); // date | confidence | result
   const [sortDir,      setSortDir]      = useState('desc');
   const [activeTab,    setActiveTab]    = useState('overview');
-  const [sourceTab,    setSourceTab]    = useState('pickem'); // 'pickem' | 'analysis'
+  const [sourceTab,    setSourceTab]    = useState('all'); // 'all' | 'pickem' | 'analysis'
   const [deletingId,   setDeletingId]   = useState(null);
   const [confirmClear, setConfirmClear] = useState(false);
   const [teamSearch,   setTeamSearch]   = useState('');
@@ -217,6 +217,19 @@ export default function PredictionHistoryPage({ onNavigate }) {
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   }, [filterLeague, user]);
+
+  // Auto-resolve pending predictions on load
+  useEffect(() => {
+    if (!user) return;
+    fetchData().then(() => {
+      // Silently try to resolve any pending predictions
+      resolvePredictions(user.id, API_BASE)
+        .then(result => {
+          if (result.resolved > 0) fetchData();
+        })
+        .catch(() => {});
+    });
+  }, [user]); // eslint-disable-line
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -303,6 +316,7 @@ export default function PredictionHistoryPage({ onNavigate }) {
     return history
       .filter(p => {
         // Filter by source tab
+        if (sourceTab === 'all') return true;
         const src = p.source || 'analysis';
         if (sourceTab === 'pickem' && src !== 'pickem') return false;
         if (sourceTab === 'analysis' && src === 'pickem') return false;
@@ -732,6 +746,7 @@ export default function PredictionHistoryPage({ onNavigate }) {
                 <div className="flex gap-1 mb-4 rounded-2xl p-1 border border-white/[0.06]"
                   style={{ background:'rgba(10,14,26,0.7)' }}>
                   {[
+                    { id:'all',      label:'📋 All',             sub:'All predictions' },
                     { id:'pickem',   label:'🎯 My Picks',       sub:'Your own predictions' },
                     { id:'analysis', label:'🤖 AI Predictions',  sub:'From Analysis page' },
                   ].map(t => (
