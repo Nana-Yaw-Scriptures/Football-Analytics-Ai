@@ -176,7 +176,7 @@ def _find_result(home, away, league, fixture_id=None, match_date=None):
 
     # Method 2: Search by team names in recent finished fixtures
     try:
-        from services.data_fetcher import LEAGUE_IDS
+        from services.live_scores_service import LEAGUE_IDS
         league_id = LEAGUE_IDS.get(league)
         if not league_id:
             return None
