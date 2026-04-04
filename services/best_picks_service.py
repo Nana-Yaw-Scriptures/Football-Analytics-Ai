@@ -10,8 +10,8 @@ import time
 import threading
 from datetime import datetime, timezone, timedelta
 
-CACHE_FILE  = os.path.join('picks_only', 'best_picks_cache.json')
-CACHE_TTL   = 259200   # 72 hours — picks are weekly, no need to regenerate more often
+CACHE_FILE  = os.path.join('cache', 'best_picks_cache.json')
+CACHE_TTL   = 21600    # 6 hours — regenerate often enough to drop completed matches
 _mem_cache  = {}
 _cache_lock = threading.Lock()
 _is_running = False
@@ -81,7 +81,7 @@ def _get_val(result, key, default=None):
 
 def _save_to_file(picks: dict, generated_at: float):
     try:
-        os.makedirs('picks_only', exist_ok=True)
+        os.makedirs('cache', exist_ok=True)
         with open(CACHE_FILE, 'w', encoding='utf-8') as f:
             json.dump({'picks': picks, 'generated_at': generated_at}, f)
         print(f'[BestPicks] Cache saved to disk.')
@@ -123,13 +123,36 @@ def _generate_picks(models: dict) -> dict:
         print(f'[BestPicks] Fixture fetch error: {e}')
         return {}
 
+    now_utc = datetime.now(timezone.utc)
+    # Statuses that mean the match is finished or live (exclude from picks)
+    FINISHED_STATUSES = {'FT', 'AET', 'PEN', 'AWD', 'WO', 'CANC', 'ABD',
+                         '1H', '2H', 'HT', 'ET', 'BT', 'P', 'INT', 'LIVE'}
+
     valid_fixtures = []
     for f in all_fixtures:
         raw_league    = f.get('league', '')
         mapped_league = LEAGUE_NAME_MAP.get(raw_league)
-        if mapped_league:
-            f['league'] = mapped_league
-            valid_fixtures.append(f)
+        if not mapped_league:
+            continue
+
+        # Skip finished or live matches
+        status = f.get('status', '')
+        if status in FINISHED_STATUSES:
+            continue
+
+        # Skip matches whose kickoff was more than 2 hours ago
+        # (handles cases where status hasn't updated yet)
+        match_date = f.get('date', '')
+        if match_date:
+            try:
+                kickoff = datetime.fromisoformat(match_date.replace('Z', '+00:00'))
+                if kickoff < now_utc - timedelta(hours=2):
+                    continue
+            except Exception:
+                pass
+
+        f['league'] = mapped_league
+        valid_fixtures.append(f)
 
     # Per-league gameweek window — 3 days from each league's earliest fixture.
     # A global cutoff caused EPL fixtures to be dropped when La Liga had midweek games.
