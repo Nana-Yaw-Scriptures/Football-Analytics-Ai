@@ -139,7 +139,7 @@ export default function LeaderboardPage({ onNavigate }) {
               <p className="text-white font-bold text-sm">You're not ranked yet</p>
               <p className="text-slate-500 text-xs">Make at least 3 resolved predictions to appear on the leaderboard.</p>
             </div>
-            <button onClick={() => onNavigate('analysis')}
+            <button onClick={() => onNavigate('pickem')}
               className="text-xs font-bold px-3 py-1.5 rounded-xl border flex-shrink-0"
               style={{ background: 'rgba(34,211,238,0.1)', borderColor: 'rgba(34,211,238,0.25)', color: '#22d3ee' }}>
               Start Predicting
@@ -186,7 +186,7 @@ export default function LeaderboardPage({ onNavigate }) {
             <p className="text-slate-500 text-sm mb-6 max-w-sm mx-auto">
               Be the first on the board. Make predictions and check results to earn your rank.
             </p>
-            <button onClick={() => onNavigate('analysis')}
+            <button onClick={() => onNavigate('pickem')}
               className="px-6 py-3 rounded-xl font-bold text-sm border transition-all"
               style={{ background: 'rgba(245,158,11,0.1)', borderColor: 'rgba(245,158,11,0.25)', color: '#f59e0b' }}>
               Make a Prediction →
@@ -196,7 +196,7 @@ export default function LeaderboardPage({ onNavigate }) {
 
         {/* Top 3 podium */}
         {!loading && board.length >= 3 && (
-          <div className="grid grid-cols-3 gap-3 mb-6">
+          <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-6">
             {[board[1], board[0], board[2]].map((row, podiumIdx) => {
               const actualRank = podiumIdx === 0 ? 2 : podiumIdx === 1 ? 1 : 3;
               const medal = MEDAL[actualRank - 1];
