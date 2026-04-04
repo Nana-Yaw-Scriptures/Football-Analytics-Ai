@@ -149,7 +149,22 @@ export default function BestPicksPage({ onNavigate }) {
       const resp = await fetch(url);
       if (!resp.ok) throw new Error('Failed to load picks');
       const data = await resp.json();
-      setPicks(data.picks || {});
+      // Filter out picks for matches that have already kicked off
+      const rawPicks = data.picks || {};
+      const nowMs = Date.now();
+      const filteredPicks = {};
+      for (const [league, leaguePicks] of Object.entries(rawPicks)) {
+        const upcoming = leaguePicks.filter(pick => {
+          if (!pick.date) return true; // keep if no date
+          try {
+            const kickoff = new Date(pick.date).getTime();
+            // Remove if kickoff was more than 90 minutes ago
+            return kickoff > nowMs - 90 * 60 * 1000;
+          } catch { return true; }
+        });
+        if (upcoming.length > 0) filteredPicks[league] = upcoming;
+      }
+      setPicks(filteredPicks);
       setRegenerating(data.regenerating || false);
       setThrottled(data.throttled || false);
       if (data.generated_at) {
