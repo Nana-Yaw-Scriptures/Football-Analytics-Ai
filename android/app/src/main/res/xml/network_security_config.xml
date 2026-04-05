@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system"/>
+        </trust-anchors>
+    </base-config>
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">scorinai.com</domain>
+        <domain includeSubdomains="true">football-analytics-ai-production.up.railway.app</domain>
+        <domain includeSubdomains="true">jiykqbxmgldxbgndvnhh.supabase.co</domain>
+        <domain includeSubdomains="true">media.api-sports.io</domain>
+        <domain includeSubdomains="true">crests.football-data.org</domain>
+        <domain includeSubdomains="true">understat.com</domain>
+        <trust-anchors>
+            <certificates src="system"/>
+        </trust-anchors>
+    </domain-config>
+</network-security-config>

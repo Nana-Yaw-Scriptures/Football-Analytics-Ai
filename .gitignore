@@ -41,3 +41,5 @@ football-analyst-backend/.env
 football-analyst-backend/__pycache__/
 football-analyst-backend/cache/
 .vercel
+
+android/gradle.properties

@@ -1,3 +1,56 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ── Mobile App Feel ── */
+
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+button, a, nav, header {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+html {
+  overflow-x: hidden;
+  background-color: #050810;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  overflow-x: hidden;
+  background-color: #050810;
+  margin: 0;
+  padding: 0;
+  /* Safe area for notch phones */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Smooth touch scrolling */
+* {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Hide scrollbar visually but keep scroll working */
+::-webkit-scrollbar {
+  width: 2px;
+  height: 2px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.1);
+  border-radius: 2px;
+}
+
+/* Fix input styling on mobile */
+input, textarea, select {
+  -webkit-appearance: none;
+}

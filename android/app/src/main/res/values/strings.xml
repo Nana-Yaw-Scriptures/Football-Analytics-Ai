@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Scorina AI</string>
+    <string name="title_activity_main">Scorina AI</string>
+    <string name="package_name">com.scorinai.app</string>
+    <string name="custom_url_scheme">com.scorinai.app</string>
+</resources>
