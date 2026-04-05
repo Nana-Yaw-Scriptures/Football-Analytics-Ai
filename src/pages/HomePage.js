@@ -400,7 +400,7 @@ export default function HomePage({ onNavigate }) {
                   </div>
                 </div>
                 <ProbBar home={52} draw={24} away={24} homeTeam="Arsenal" awayTeam="Chelsea"/>
-                <div className="grid grid-cols-3 gap-2 mt-4">
+                <div className="grid grid-cols-3 gap-1.5 sm:gap-2 mt-4">
                   {[
                     { l:'xG Home', v:'1.87', c:'#22d3ee' },
                     { l:'Difficulty', v:'8/10', c:'#f59e0b' },
@@ -561,7 +561,7 @@ export default function HomePage({ onNavigate }) {
             <GlobeIcon className="w-8 h-8 text-slate-700"/>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5">
+          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-2">
             {LEAGUES.map((lg,i) => (
               <button key={i} onClick={() => onNavigate('league', lg.code)}
                 className="hp-league-card group"
@@ -729,6 +729,53 @@ export default function HomePage({ onNavigate }) {
                 <span className="relative flex rounded-full h-1.5 w-1.5 bg-red-500"/>
               </span>
             </button>
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════
+          SEO TEXT SECTION
+      ══════════════════════════════ */}
+      <section style={{ background:'rgba(5,8,16,0.95)', borderTop:'1px solid rgba(255,255,255,0.04)' }}>
+        <div className="max-w-5xl mx-auto px-6 py-16">
+          <h2 className="text-2xl font-black text-white mb-4">AI-Powered Football Predictions & Analytics</h2>
+          <p className="text-slate-500 text-sm leading-relaxed mb-8 max-w-3xl">
+            Scorina AI uses machine learning and real-time data to deliver accurate football match predictions,
+            live scores, and deep player analytics across Europe's top leagues including the Premier League,
+            La Liga, Bundesliga, Serie A, Ligue 1, and Primeira Liga.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
+            {[
+              {
+                title: 'Football Match Predictions',
+                text: 'Our AI model analyses team form, xG data, head-to-head records and Elo ratings to predict match outcomes with win probabilities and predicted scores for every fixture.'
+              },
+              {
+                title: 'Live Scores & xG Tracking',
+                text: 'Follow matches in real time with live scores, expected goals (xG), team stats and event timelines. Get instant updates across all major European leagues.'
+              },
+              {
+                title: 'Player Intelligence',
+                text: 'Browse 2,000+ players with detailed stats, radar charts, position ratings, xG analytics and performance trends across the Premier League, La Liga and more.'
+              },
+              {
+                title: 'Season Simulator',
+                text: 'Run 1,000 Monte Carlo simulations to predict final league standings, Champions League qualification chances and relegation probabilities for every team.'
+              },
+              {
+                title: 'Free Football Analytics',
+                text: 'Scorina AI is free to use. Create an account to unlock AI Picks, track your prediction accuracy and compete on the leaderboard against other football fans.'
+              },
+              {
+                title: 'Premier League Predictions',
+                text: 'Get AI-generated predictions for every Premier League match including win probabilities, predicted scores, xG forecasts and confidence ratings updated daily.'
+              },
+            ].map((item, i) => (
+              <div key={i}>
+                <h3 className="text-white font-bold text-sm mb-2">{item.title}</h3>
+                <p className="text-slate-600 text-xs leading-relaxed">{item.text}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
