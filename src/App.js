@@ -17,6 +17,7 @@ import FavouritesPage from './pages/FavouritesPage';
 import LeaderboardPage from './pages/LeaderboardPage';
 import PickemPage from './pages/PickemPage';
 import UserProfilePage from './pages/UserProfilePage';
+import SupportBot from './components/SupportBot';
 
 function App() {
   const [currentPage, setCurrentPage] = useState(() => {
@@ -77,6 +78,7 @@ function App() {
       {currentPage === 'leaderboard'  && <LeaderboardPage      onNavigate={handleNavigation} />}
       {currentPage === 'pickem'       && <PickemPage           onNavigate={handleNavigation} />}
       {currentPage === 'profile'      && <UserProfilePage      onNavigate={handleNavigation} />}
+      <SupportBot/>
     </AuthProvider>
   );
 }
