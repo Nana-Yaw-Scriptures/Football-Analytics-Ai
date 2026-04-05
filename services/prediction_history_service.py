@@ -154,6 +154,45 @@ def resolve_predictions():
     return {"resolved": resolved_count, "total": len(unresolved)}
 
 
+def _clean_team(name):
+    """Normalize team name for fuzzy matching."""
+    import re
+    name = name.lower()
+    # Remove common suffixes/prefixes
+    for pat in [' fc', ' cf', ' sc', ' afc', ' utd', 'fc ', 'club ', 'real ', 'atletico ', 'atlético ']:
+        name = name.replace(pat, ' ')
+    # Remove accents approximation
+    name = name.replace('é','e').replace('á','a').replace('ó','o').replace('ú','u').replace('í','i')
+    name = name.replace('è','e').replace('à','a').replace('ò','o').replace('ü','u')
+    # Keep only letters and spaces
+    name = re.sub(r'[^a-z ]', '', name).strip()
+    # Remove common words
+    for word in ['de', 'del', 'la', 'los', 'las', 'el', 'united', 'city', 'town']:
+        name = re.sub(rf'\b{word}\b', '', name)
+    return re.sub(r'\s+', ' ', name).strip()
+
+
+def _teams_match(pred_name, api_name):
+    """Check if two team names refer to the same team."""
+    p = _clean_team(pred_name)
+    a = _clean_team(api_name)
+    if not p or not a:
+        return False
+    # Direct match
+    if p == a:
+        return True
+    # One contains the other (min 4 chars to avoid false positives)
+    if len(p) >= 4 and len(a) >= 4:
+        if p in a or a in p:
+            return True
+    # Share significant word (5+ chars)
+    p_words = set(w for w in p.split() if len(w) >= 5)
+    a_words = set(w for w in a.split() if len(w) >= 5)
+    if p_words & a_words:
+        return True
+    return False
+
+
 def _find_result(home, away, league, fixture_id=None, match_date=None):
     """Find actual match result from API-Football."""
     # Method 1: Direct fixture ID lookup
@@ -179,29 +218,33 @@ def _find_result(home, away, league, fixture_id=None, match_date=None):
         from services.live_scores_service import LEAGUE_IDS
         league_id = LEAGUE_IDS.get(league)
         if not league_id:
+            print(f"[History] Unknown league: {league}")
             return None
 
+        # Try last 30 to catch more matches
         resp = requests.get(
             f"{BASE_URL}/fixtures",
             headers={"x-apisports-key": API_KEY},
-            params={"league": league_id, "season": 2025, "last": 20},
+            params={"league": league_id, "season": 2025, "last": 30},
             timeout=10,
         )
         data = resp.json()
-
-        home_lower = home.lower().replace(' fc', '').strip()
-        away_lower = away.lower().replace(' fc', '').strip()
+        print(f"[History] Searching {len(data.get('response',[]))} fixtures for {home} vs {away}")
 
         for fix in data.get("response", []):
+            status = fix.get("fixture", {}).get("status", {}).get("short", "")
+            if status not in ("FT", "AET", "PEN"):
+                continue
             teams = fix.get("teams", {})
-            h = teams.get("home", {}).get("name", "").lower().replace(' fc', '').strip()
-            a = teams.get("away", {}).get("name", "").lower().replace(' fc', '').strip()
+            h_api = teams.get("home", {}).get("name", "")
+            a_api = teams.get("away", {}).get("name", "")
 
-            if (home_lower in h or h in home_lower) and (away_lower in a or a in away_lower):
-                status = fix.get("fixture", {}).get("status", {}).get("short", "")
-                if status in ("FT", "AET", "PEN"):
-                    goals = fix.get("goals", {})
-                    return {"homeGoals": goals.get("home", 0), "awayGoals": goals.get("away", 0)}
+            if _teams_match(home, h_api) and _teams_match(away, a_api):
+                goals = fix.get("goals", {})
+                print(f"[History] Matched: {h_api} vs {a_api} → {goals}")
+                return {"homeGoals": goals.get("home", 0), "awayGoals": goals.get("away", 0)}
+
+        print(f"[History] No match found for {home} vs {away} in {league}")
     except Exception as e:
         print(f"[History] Search failed: {e}")
 
