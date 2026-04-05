@@ -64,40 +64,46 @@ function NotificationBell({ onNavigate }) {
       }
     } catch {}
 
-    // 2. Unresolved predictions — only for logged-in users
+    // 2. Unresolved predictions — fetch from Supabase (user's own only)
     if (user) {
       try {
-        const resp = await fetch(`${API_BASE}/predictions/accuracy`);
-        if (resp.ok) {
-          const stats = await resp.json();
-          const unresolved = stats.unresolved || 0;
-          setUnresolvedCount(unresolved);
-          if (unresolved > 0) {
-            notifs.push({
-              id: 'unresolved',
-              type: 'prediction',
-              icon: ClockIcon,
-              color: '#a855f7',
-              title: `${unresolved} Prediction${unresolved > 1 ? 's' : ''} Pending`,
-              desc: 'Click to check results against actual scores',
-              time: 'Action needed',
-              action: () => { onNavigate('history'); setOpen(false); },
-            });
-          }
-          if (stats.resolved > 0) {
-            const recent = stats.recentForm?.slice(0, 5) || [];
-            const recentCorrect = recent.filter(r => r.correct).length;
-            notifs.push({
-              id: 'accuracy',
-              type: 'accuracy',
-              icon: TargetIcon,
-              color: '#10b981',
-              title: `Model Accuracy: ${stats.accuracy}%`,
-              desc: `${stats.correct}/${stats.resolved} correct · Last 5: ${recentCorrect}/5`,
-              time: 'Updated',
-              action: () => { onNavigate('history'); setOpen(false); },
-            });
-          }
+        const { supabase } = await import('../supabaseClient');
+        const { data } = await supabase
+          .from('predictions')
+          .select('id, resolved, correct')
+          .eq('user_id', user.id);
+
+        const all = data || [];
+        const unresolved = all.filter(p => !p.resolved).length;
+        const resolved   = all.filter(p => p.resolved).length;
+        const correct    = all.filter(p => p.correct).length;
+        const accuracy   = resolved > 0 ? Math.round((correct / resolved) * 100) : 0;
+
+        setUnresolvedCount(unresolved);
+
+        if (unresolved > 0) {
+          notifs.push({
+            id: 'unresolved',
+            type: 'prediction',
+            icon: ClockIcon,
+            color: '#a855f7',
+            title: `${unresolved} Prediction${unresolved > 1 ? 's' : ''} Pending`,
+            desc: 'Open History to check results against actual scores',
+            time: 'Action needed',
+            action: () => { onNavigate('history'); setOpen(false); },
+          });
+        }
+        if (resolved > 0) {
+          notifs.push({
+            id: 'accuracy',
+            type: 'accuracy',
+            icon: TargetIcon,
+            color: '#10b981',
+            title: `Your Accuracy: ${accuracy}%`,
+            desc: `${correct}/${resolved} correct predictions`,
+            time: 'Updated',
+            action: () => { onNavigate('history'); setOpen(false); },
+          });
         }
       } catch {}
     } else {
