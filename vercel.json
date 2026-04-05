@@ -1,8 +1,9 @@
 {
-  "rewrites": [
-    {
-      "source": "/((?!sitemap\\.xml|robots\\.txt|google.*\\.html|privacy\\.html|manifest\\.json|favicon\\.ico|.*\\.svg|.*\\.png|.*\\.ico).*)",
-      "destination": "/index.html"
-    }
+  "routes": [
+    { "src": "/sitemap.xml", "dest": "/sitemap.xml" },
+    { "src": "/robots.txt", "dest": "/robots.txt" },
+    { "src": "/privacy.html", "dest": "/privacy.html" },
+    { "src": "/google(.*)\\.html", "dest": "/google$1.html" },
+    { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
