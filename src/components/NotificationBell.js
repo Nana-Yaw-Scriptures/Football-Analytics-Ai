@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useAuth } from '../context/AuthContext';
 
 const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:8000";
 
@@ -14,6 +15,7 @@ const ClockIcon = (p) => <I {...p} d={<><circle cx="12" cy="12" r="10"/><polylin
 const TrashIcon = (p) => <I {...p} d={<><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></>}/>;
 
 function NotificationBell({ onNavigate }) {
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [liveCount, setLiveCount] = useState(0);
@@ -62,51 +64,55 @@ function NotificationBell({ onNavigate }) {
       }
     } catch {}
 
-    // 2. Unresolved predictions
-    try {
-      const resp = await fetch(`${API_BASE}/predictions/accuracy`);
-      if (resp.ok) {
-        const stats = await resp.json();
-        const unresolved = stats.unresolved || 0;
-        setUnresolvedCount(unresolved);
-        if (unresolved > 0) {
-          notifs.push({
-            id: 'unresolved',
-            type: 'prediction',
-            icon: ClockIcon,
-            color: '#a855f7',
-            title: `${unresolved} Prediction${unresolved > 1 ? 's' : ''} Pending`,
-            desc: 'Click to check results against actual scores',
-            time: 'Action needed',
-            action: () => { onNavigate('history'); setOpen(false); },
-          });
+    // 2. Unresolved predictions — only for logged-in users
+    if (user) {
+      try {
+        const resp = await fetch(`${API_BASE}/predictions/accuracy`);
+        if (resp.ok) {
+          const stats = await resp.json();
+          const unresolved = stats.unresolved || 0;
+          setUnresolvedCount(unresolved);
+          if (unresolved > 0) {
+            notifs.push({
+              id: 'unresolved',
+              type: 'prediction',
+              icon: ClockIcon,
+              color: '#a855f7',
+              title: `${unresolved} Prediction${unresolved > 1 ? 's' : ''} Pending`,
+              desc: 'Click to check results against actual scores',
+              time: 'Action needed',
+              action: () => { onNavigate('history'); setOpen(false); },
+            });
+          }
+          if (stats.resolved > 0) {
+            const recent = stats.recentForm?.slice(0, 5) || [];
+            const recentCorrect = recent.filter(r => r.correct).length;
+            notifs.push({
+              id: 'accuracy',
+              type: 'accuracy',
+              icon: TargetIcon,
+              color: '#10b981',
+              title: `Model Accuracy: ${stats.accuracy}%`,
+              desc: `${stats.correct}/${stats.resolved} correct · Last 5: ${recentCorrect}/5`,
+              time: 'Updated',
+              action: () => { onNavigate('history'); setOpen(false); },
+            });
+          }
         }
-        if (stats.resolved > 0) {
-          const recent = stats.recentForm?.slice(0, 5) || [];
-          const recentCorrect = recent.filter(r => r.correct).length;
-          notifs.push({
-            id: 'accuracy',
-            type: 'accuracy',
-            icon: TargetIcon,
-            color: '#10b981',
-            title: `Model Accuracy: ${stats.accuracy}%`,
-            desc: `${stats.correct}/${stats.resolved} correct · Last 5: ${recentCorrect}/5`,
-            time: 'Updated',
-            action: () => { onNavigate('history'); setOpen(false); },
-          });
-        }
-      }
-    } catch {}
+      } catch {}
+    } else {
+      setUnresolvedCount(0);
+    }
 
     setNotifications(notifs);
   };
 
-  // Initial fetch + polling every 2 minutes
+  // Initial fetch + polling every 2 minutes — re-run when auth changes
   useEffect(() => {
     fetchNotifications();
     pollRef.current = setInterval(fetchNotifications, 120000);
     return () => clearInterval(pollRef.current);
-  }, []);
+  }, [user]); // eslint-disable-line
 
   // Close on outside click
   useEffect(() => {
