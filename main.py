@@ -1461,6 +1461,79 @@ def get_international_upcoming():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+# ══════════════════════════════════════════
+# SUPPORT BOT
+# ══════════════════════════════════════════
+
+class SupportMessage(BaseModel):
+    message: str
+    history: list = []
+
+@app.post("/support/chat")
+async def support_chat(req: SupportMessage):
+    try:
+        import anthropic
+
+        client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+
+        SYSTEM_PROMPT = """You are Rina, the friendly AI support assistant for Scorina AI — a free football analytics platform at scorinai.com.
+
+You help users with questions about the app. Be concise, friendly and helpful. Use football emojis occasionally.
+
+ABOUT SCORINA AI:
+- Free football analytics and predictions platform
+- Covers: Premier League, La Liga, Bundesliga, Serie A, Ligue 1, Primeira Liga, Champions League
+- Features:
+  * AI Match Predictions — win probabilities, predicted scores, xG forecasts, confidence ratings
+  * Live Scores — real-time scores, events, stats across all leagues
+  * Match Center — H2H history, team form, win probability shift, attack zones, lineups
+  * Players Page — 2,000+ players with radar charts, xG analytics, position ratings, stats
+  * Season Simulator — 1,000 Monte Carlo simulations for final standings, UCL/UEL/relegation probabilities
+  * AI Picks — daily AI-curated predictions (requires free account)
+  * My Picks — make your own predictions and track accuracy
+  * Leaderboard — compete against other users on prediction accuracy
+  * History — view all your past predictions and results
+  * Formation Guide — tactical formation visualizer
+  * Favourites — save your favourite teams and players
+
+ACCOUNT:
+- Free to use — no credit card required
+- Create account to unlock AI Picks and track predictions
+- Sign in with Google or email
+
+TECHNICAL:
+- Built with React frontend, Python/FastAPI backend
+- Uses Poisson model + xG data + team form + H2H + Elo ratings
+- Android app coming soon on Google Play
+- Data from API-Football and Understat
+
+If you don't know something specific, say so honestly and suggest they contact support via scorinai.com.
+Keep answers under 150 words unless the question needs more detail.
+Never make up features that don't exist."""
+
+        # Build messages history
+        messages = []
+        for msg in req.history[-6:]:  # last 6 messages for context
+            messages.append({
+                "role": msg.get("role", "user"),
+                "content": msg.get("content", "")
+            })
+        messages.append({"role": "user", "content": req.message})
+
+        response = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=300,
+            system=SYSTEM_PROMPT,
+            messages=messages
+        )
+
+        return {"reply": response.content[0].text}
+
+    except Exception as e:
+        print(f"[Support] Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

@@ -14,3 +14,4 @@ google-generativeai
 beautifulsoup4
 lxml
 python-multipart
+anthropic>=0.25.0
