@@ -1,6 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
+import emailjs from '@emailjs/browser';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+
+// EmailJS config — replace with your actual IDs
+const EMAILJS_SERVICE_ID  = process.env.REACT_APP_EMAILJS_SERVICE_ID  || '';
+const EMAILJS_TEMPLATE_ID = process.env.REACT_APP_EMAILJS_TEMPLATE_ID || '';
+const EMAILJS_PUBLIC_KEY  = process.env.REACT_APP_EMAILJS_PUBLIC_KEY  || '';
 
 const I = ({ d, className = 'w-5 h-5' }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -18,17 +24,28 @@ const QUICK_QUESTIONS = [
   'Is it free to use?',
 ];
 
+const FEEDBACK_TYPES = [
+  { id: 'bug',     emoji: '🐛', label: 'Bug Report',       color: '#ef4444' },
+  { id: 'feature', emoji: '💡', label: 'Feature Request',  color: '#f59e0b' },
+  { id: 'general', emoji: '⭐', label: 'General Feedback', color: '#10b981' },
+];
+
 export default function SupportBot() {
-  const [open,     setOpen]     = useState(false);
-  const [messages, setMessages] = useState([
+  const [open,          setOpen]          = useState(false);
+  const [messages,      setMessages]      = useState([
     {
       role: 'assistant',
       content: "Hi! I'm Rina, your AI support assistant ⚽\n\nHow can I help you today?",
     }
   ]);
-  const [input,    setInput]    = useState('');
-  const [loading,  setLoading]  = useState(false);
-  const [unread,   setUnread]   = useState(0);
+  const [input,         setInput]         = useState('');
+  const [loading,       setLoading]       = useState(false);
+  const [unread,        setUnread]        = useState(0);
+  const [feedbackMode,  setFeedbackMode]  = useState(false);  // feedback flow
+  const [feedbackType,  setFeedbackType]  = useState(null);   // bug/feature/general
+  const [feedbackText,  setFeedbackText]  = useState('');
+  const [feedbackSent,  setFeedbackSent]  = useState(false);
+  const [sendingFb,     setSendingFb]     = useState(false);
   const bottomRef  = useRef(null);
   const inputRef   = useRef(null);
 
@@ -71,6 +88,50 @@ export default function SupportBot() {
       }]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const startFeedback = () => {
+    setFeedbackMode(true);
+    setFeedbackType(null);
+    setFeedbackText('');
+    setFeedbackSent(false);
+    setMessages(prev => [...prev, {
+      role: 'assistant',
+      content: "I'd love to hear your thoughts! What type of feedback would you like to send? 😊",
+    }]);
+  };
+
+  const sendFeedback = async () => {
+    if (!feedbackText.trim() || sendingFb) return;
+    setSendingFb(true);
+    try {
+      await emailjs.send(
+        EMAILJS_SERVICE_ID,
+        EMAILJS_TEMPLATE_ID,
+        {
+          feedback_type: feedbackType || 'general',
+          message:       feedbackText,
+          from_page:     window.location.href,
+          sent_at:       new Date().toLocaleString(),
+        },
+        EMAILJS_PUBLIC_KEY
+      );
+      setFeedbackSent(true);
+      setFeedbackMode(false);
+      setFeedbackType(null);
+      setFeedbackText('');
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: "Thanks so much for your feedback! The Scorina AI team will review it. ✅\n\nIs there anything else I can help you with? ⚽",
+      }]);
+    } catch (e) {
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: "Sorry, couldn't send your feedback right now. Please try again or email us at hello@scorinai.com ⚽",
+      }]);
+    } finally {
+      setSendingFb(false);
     }
   };
 
@@ -169,8 +230,21 @@ export default function SupportBot() {
             <div ref={bottomRef}/>
           </div>
 
+          {/* Feedback type selector */}
+          {feedbackMode && !feedbackType && (
+            <div className="px-4 pb-3 flex flex-wrap gap-2">
+              {FEEDBACK_TYPES.map(t => (
+                <button key={t.id} onClick={() => setFeedbackType(t.id)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold border transition-all"
+                  style={{ borderColor: t.color+'40', color: t.color, background: t.color+'12' }}>
+                  {t.emoji} {t.label}
+                </button>
+              ))}
+            </div>
+          )}
+
           {/* Quick questions */}
-          {messages.length <= 1 && (
+          {messages.length <= 1 && !feedbackMode && (
             <div className="px-4 pb-2 flex flex-wrap gap-1.5">
               {QUICK_QUESTIONS.map((q, i) => (
                 <button key={i} onClick={() => send(q)}
@@ -179,31 +253,66 @@ export default function SupportBot() {
                   {q}
                 </button>
               ))}
+              <button onClick={startFeedback}
+                className="text-[10px] px-2.5 py-1 rounded-full border transition-all hover:border-emerald-400/50 hover:text-emerald-400"
+                style={{ borderColor: 'rgba(255,255,255,0.1)', color: '#64748b', background: 'rgba(255,255,255,0.03)' }}>
+                📝 Send Feedback
+              </button>
             </div>
           )}
 
           {/* Input */}
           <div className="px-3 py-3 border-t border-white/[0.06]">
-            <div className="flex items-center gap-2 rounded-xl px-3 py-2 border border-white/[0.08]"
-              style={{ background: 'rgba(255,255,255,0.04)' }}>
-              <input
-                ref={inputRef}
-                type="text"
-                value={input}
-                onChange={e => setInput(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send()}
-                placeholder="Ask me anything…"
-                className="flex-1 bg-transparent text-white text-xs placeholder-slate-600 outline-none"
-              />
-              <button onClick={() => send()}
-                disabled={!input.trim() || loading}
-                className="w-7 h-7 rounded-lg flex items-center justify-center transition-all"
-                style={{
-                  background: input.trim() && !loading ? 'linear-gradient(135deg,#22d3ee,#a855f7)' : 'rgba(255,255,255,0.05)',
-                }}>
-                <SendIcon className="w-3 h-3 text-white"/>
-              </button>
-            </div>
+            {feedbackMode && feedbackType ? (
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-[10px] text-slate-600">
+                    {FEEDBACK_TYPES.find(t=>t.id===feedbackType)?.emoji} {FEEDBACK_TYPES.find(t=>t.id===feedbackType)?.label}
+                  </span>
+                  <button onClick={() => setFeedbackType(null)}
+                    className="text-[10px] text-slate-700 hover:text-slate-500 ml-auto">change</button>
+                </div>
+                <textarea
+                  value={feedbackText}
+                  onChange={e => setFeedbackText(e.target.value)}
+                  placeholder="Describe your feedback…"
+                  rows={3}
+                  className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2 text-white text-xs placeholder-slate-600 outline-none resize-none"
+                />
+                <div className="flex gap-2 mt-2">
+                  <button onClick={() => { setFeedbackMode(false); setFeedbackType(null); }}
+                    className="flex-1 py-2 rounded-xl text-xs font-bold border border-white/10 text-slate-600">
+                    Cancel
+                  </button>
+                  <button onClick={sendFeedback} disabled={!feedbackText.trim() || sendingFb}
+                    className="flex-1 py-2 rounded-xl text-xs font-bold text-white transition-all"
+                    style={{ background: feedbackText.trim() ? 'linear-gradient(135deg,#10b981,#059669)' : 'rgba(255,255,255,0.05)' }}>
+                    {sendingFb ? 'Sending…' : 'Send ✓'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 rounded-xl px-3 py-2 border border-white/[0.08]"
+                style={{ background: 'rgba(255,255,255,0.04)' }}>
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={input}
+                  onChange={e => setInput(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send()}
+                  placeholder="Ask me anything…"
+                  className="flex-1 bg-transparent text-white text-xs placeholder-slate-600 outline-none"
+                />
+                <button onClick={() => send()}
+                  disabled={!input.trim() || loading}
+                  className="w-7 h-7 rounded-lg flex items-center justify-center transition-all"
+                  style={{
+                    background: input.trim() && !loading ? 'linear-gradient(135deg,#22d3ee,#a855f7)' : 'rgba(255,255,255,0.05)',
+                  }}>
+                  <SendIcon className="w-3 h-3 text-white"/>
+                </button>
+              </div>
+            )}
             <p className="text-[9px] text-slate-700 text-center mt-1.5">Rina · Powered by Claude AI</p>
           </div>
         </div>
