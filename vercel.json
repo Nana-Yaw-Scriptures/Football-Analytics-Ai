@@ -1,17 +1,8 @@
 {
-  "routes": [
-    { 
-      "src": "/sitemap.xml", 
-      "dest": "/sitemap.xml",
-      "headers": { "Content-Type": "application/xml" }
-    },
-    { 
-      "src": "/robots.txt", 
-      "dest": "/robots.txt",
-      "headers": { "Content-Type": "text/plain" }
-    },
-    { "src": "/privacy.html", "dest": "/privacy.html" },
-    { "src": "/google(.*)\\.html", "dest": "/google$1.html" },
-    { "src": "/(.*)", "dest": "/index.html" }
+  "rewrites": [
+    { "source": "/sitemap.xml", "destination": "/sitemap.xml" },
+    { "source": "/robots.txt", "destination": "/robots.txt" },
+    { "source": "/privacy.html", "destination": "/privacy.html" },
+    { "source": "/((?!static|sitemap\\.xml|robots\\.txt|.*\\..*).*)", "destination": "/index.html" }
   ]
 }
