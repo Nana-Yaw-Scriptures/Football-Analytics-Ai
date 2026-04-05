@@ -254,8 +254,13 @@ export default function SupportBot() {
                 </button>
               ))}
               <button onClick={startFeedback}
-                className="text-[10px] px-2.5 py-1 rounded-full border transition-all hover:border-emerald-400/50 hover:text-emerald-400"
-                style={{ borderColor: 'rgba(255,255,255,0.1)', color: '#64748b', background: 'rgba(255,255,255,0.03)' }}>
+                className="text-[10px] px-3 py-1.5 rounded-full font-bold transition-all"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(16,185,129,0.15), rgba(16,185,129,0.08))',
+                  border: '1px solid rgba(16,185,129,0.4)',
+                  color: '#10b981',
+                  boxShadow: '0 0 12px rgba(16,185,129,0.15)',
+                }}>
                 📝 Send Feedback
               </button>
             </div>
