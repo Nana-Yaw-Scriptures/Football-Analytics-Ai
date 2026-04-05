@@ -1,6 +1,31 @@
 import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = 'https://jiykqbxmgldxbgndvnhh.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImppeWtxYnhtZ2xkeGJnbmR2bmhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA0MDMyNTIsImV4cCI6MjA4NTk3OTI1Mn0.7LxXyl-N26b3x6e_sWtV6HhkFfjgkn4zHZyqx9PPoME';
+const SUPABASE_URL  = process.env.REACT_APP_SUPABASE_URL  || 'https://jiykqbxmgldxbgndvnhh.supabase.co';
+const SUPABASE_ANON = process.env.REACT_APP_SUPABASE_ANON || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder';
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Safe client — won't crash if key is missing
+let supabaseClient;
+try {
+  supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON);
+} catch (e) {
+  console.warn('[Supabase] Failed to initialize:', e.message);
+  // Return a safe no-op client
+  supabaseClient = {
+    auth: {
+      getSession: async () => ({ data: { session: null } }),
+      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+      signInWithOAuth: async () => ({ error: new Error('Supabase not configured') }),
+      signInWithPassword: async () => ({ error: new Error('Supabase not configured') }),
+      signUp: async () => ({ error: new Error('Supabase not configured') }),
+      signOut: async () => ({ error: null }),
+    },
+    from: () => ({
+      select: () => ({ eq: () => ({ order: () => ({ limit: () => ({ data: [], error: null }) }) }) }),
+      insert: () => ({ select: () => ({ single: () => ({ data: null, error: null }) }) }),
+      update: () => ({ eq: () => ({ data: null, error: null }) }),
+      delete: () => ({ eq: () => ({ data: null, error: null }) }),
+    }),
+  };
+}
+
+export const supabase = supabaseClient;
