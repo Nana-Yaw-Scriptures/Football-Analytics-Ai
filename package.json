@@ -64,12 +64,8 @@
     "production": [
       ">0.2%",
       "not dead",
-<<<<<<< HEAD
-      "not op_mini all"
-=======
       "not op_mini all",
       "android >= 8"
->>>>>>> 403398d (fix: add fetch timeouts and Supabase session timeout for African mobile networks)
     ],
     "development": [
       "last 1 chrome version",
