@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+import { fetchWithTimeout } from '../utils/fetchWithTimeout';
+>>>>>>> 403398d (fix: add fetch timeouts and Supabase session timeout for African mobile networks)
 import React, { useState, useEffect, useCallback } from 'react';
 import NavBar from '../components/NavBar';
 import { useAuth } from '../context/AuthContext';
@@ -146,7 +150,11 @@ export default function BestPicksPage({ onNavigate }) {
     setLoading(true); setError('');
     try {
       const url = `${API_BASE}/best-picks${forceRefresh ? '?refresh=true' : ''}`;
+<<<<<<< HEAD
       const resp = await fetch(url);
+=======
+      const resp = await fetchWithTimeout(url);
+>>>>>>> 403398d (fix: add fetch timeouts and Supabase session timeout for African mobile networks)
       if (!resp.ok) throw new Error('Failed to load picks');
       const data = await resp.json();
       // Filter out picks for matches that have already kicked off

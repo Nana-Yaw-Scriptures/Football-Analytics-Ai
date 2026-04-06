@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+import { fetchWithTimeout } from '../utils/fetchWithTimeout';
+>>>>>>> 403398d (fix: add fetch timeouts and Supabase session timeout for African mobile networks)
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import NavBar from '../components/NavBar';
 import Footer from '../components/Footer';
@@ -192,7 +196,11 @@ export default function HomePage({ onNavigate }) {
   useEffect(() => {
     const load = async () => {
       try {
+<<<<<<< HEAD
         const r = await fetch(`${API_BASE}/live/now`);
+=======
+        const r = await fetchWithTimeout(`${API_BASE}/live/now`);
+>>>>>>> 403398d (fix: add fetch timeouts and Supabase session timeout for African mobile networks)
         if (r.ok) {
           const d = await r.json();
           setLiveMatches(Array.isArray(d) ? d.slice(0,6) : []);
@@ -215,7 +223,11 @@ export default function HomePage({ onNavigate }) {
 
   /* Upcoming matches for empty live state */
   useEffect(() => {
+<<<<<<< HEAD
     fetch(`${API_BASE}/live/upcoming`)
+=======
+    fetchWithTimeout(`${API_BASE}/live/upcoming`)
+>>>>>>> 403398d (fix: add fetch timeouts and Supabase session timeout for African mobile networks)
       .then(r => r.ok ? r.json() : [])
       .then(d => setUpcomingMatches(Array.isArray(d) ? d.slice(0, 6) : []))
       .catch(() => {});
@@ -228,7 +240,11 @@ export default function HomePage({ onNavigate }) {
     if (val.length < 2) { setTeamSuggestions([]); return; }
     searchTimer.current = setTimeout(async () => {
       try {
+<<<<<<< HEAD
         const r = await fetch(`${API_BASE}/teams/search?q=${encodeURIComponent(val)}&limit=6`);
+=======
+        const r = await fetchWithTimeout(`${API_BASE}/teams/search?q=${encodeURIComponent(val)}&limit=6`);
+>>>>>>> 403398d (fix: add fetch timeouts and Supabase session timeout for African mobile networks)
         if (r.ok) setTeamSuggestions(await r.json());
       } catch { setTeamSuggestions([]); }
     }, 250);

@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+import { fetchWithTimeout } from '../utils/fetchWithTimeout';
+>>>>>>> 403398d (fix: add fetch timeouts and Supabase session timeout for African mobile networks)
 import React, { useState } from 'react';
 import NavBar from '../components/NavBar';
 import ExportButton from '../components/ExportButton';
@@ -50,7 +54,11 @@ function SeasonSimulatorPage({ onNavigate }) {
     setLoading(true); setError(''); setSimulation(null); setExpandedRow(null);
     try {
       const url = `${API_BASE}/simulate/${encodeURIComponent(selectedLeague)}${fresh ? '?fresh=1' : ''}`;
+<<<<<<< HEAD
       const resp = await fetch(url);
+=======
+      const resp = await fetchWithTimeout(url);
+>>>>>>> 403398d (fix: add fetch timeouts and Supabase session timeout for African mobile networks)
       if (!resp.ok) { const err = await resp.json(); throw new Error(err.detail || 'Simulation failed'); }
       setSimulation(await resp.json());
     } catch (e) { setError(e.message || 'Failed'); }

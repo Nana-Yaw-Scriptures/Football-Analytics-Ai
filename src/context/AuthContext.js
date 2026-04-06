@@ -13,8 +13,18 @@ export const AuthProvider = ({ children }) => {
   const canSeeAIPicks = !!user; // Phase 1: auth only. Phase 2: isPro
 
   useEffect(() => {
+<<<<<<< HEAD
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
+=======
+    // Get initial session — timeout after 6 s so slow networks never freeze the app
+    const SESSION_TIMEOUT = 6000;
+    const sessionPromise = supabase.auth.getSession();
+    const timeoutPromise = new Promise(resolve =>
+      setTimeout(() => resolve({ data: { session: null } }), SESSION_TIMEOUT)
+    );
+    Promise.race([sessionPromise, timeoutPromise]).then(({ data: { session } }) => {
+>>>>>>> 403398d (fix: add fetch timeouts and Supabase session timeout for African mobile networks)
       setUser(session?.user ?? null);
       setLoading(false);
     });

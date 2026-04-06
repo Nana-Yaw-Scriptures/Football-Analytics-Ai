@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+import { fetchWithTimeout } from './utils/fetchWithTimeout';
+>>>>>>> 403398d (fix: add fetch timeouts and Supabase session timeout for African mobile networks)
 import React, { useState, useEffect } from 'react';
 import { AuthProvider } from './context/AuthContext';
 import AdminPanel from './pages/AdminPanel';
@@ -53,9 +57,16 @@ function App() {
   };
 
   useEffect(() => {
+<<<<<<< HEAD
     const ping = () => fetch(`${process.env.REACT_APP_API_URL}/health`).catch(() => {});
     ping();
     const interval = setInterval(ping, 600000);
+=======
+    // Ping every 4 min (was 10 min) to prevent Railway cold starts on slow networks
+    const ping = () => fetchWithTimeout(`${process.env.REACT_APP_API_URL}/health`, {}, 8000).catch(() => {});
+    ping();
+    const interval = setInterval(ping, 240000);
+>>>>>>> 403398d (fix: add fetch timeouts and Supabase session timeout for African mobile networks)
     return () => clearInterval(interval);
   }, []);
 

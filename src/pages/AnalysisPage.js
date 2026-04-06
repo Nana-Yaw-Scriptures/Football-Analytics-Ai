@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+import { fetchWithTimeout } from '../utils/fetchWithTimeout';
+>>>>>>> 403398d (fix: add fetch timeouts and Supabase session timeout for African mobile networks)
 import { useAuth } from '../context/AuthContext';
 import { savePrediction as saveToSupabase } from '../services/supabaseService';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -645,7 +649,11 @@ function ScoutReportTab({ selectedLeague }) {
   useEffect(() => {
     if (poolLoaded) return;
     setLoadingPool(true);
+<<<<<<< HEAD
     fetch(`${API_BASE}/players-stats/all`)
+=======
+    fetchWithTimeout(`${API_BASE}/players-stats/all`)
+>>>>>>> 403398d (fix: add fetch timeouts and Supabase session timeout for African mobile networks)
       .then(r => r.json())
       .then(data => { setAllPlayers(Array.isArray(data) ? data : []); setPoolLoaded(true); })
       .catch(() => {})
@@ -658,7 +666,11 @@ function ScoutReportTab({ selectedLeague }) {
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(async () => {
       try {
+<<<<<<< HEAD
         const r = await fetch(`${API_BASE}/players/search?q=${encodeURIComponent(query)}&limit=30`);
+=======
+        const r = await fetchWithTimeout(`${API_BASE}/players/search?q=${encodeURIComponent(query)}&limit=30`);
+>>>>>>> 403398d (fix: add fetch timeouts and Supabase session timeout for African mobile networks)
         if (r.ok) { const d = await r.json(); setSuggestions(d); setShowDrop(d.length > 0); }
       } catch { setSuggestions([]); }
     }, 250);
@@ -691,7 +703,11 @@ function ScoutReportTab({ selectedLeague }) {
       ## Scouting Recommendation
 
       Be specific, use exact stat numbers. Max 400 words. No generic statements — this must read like a real scout report.`;
+<<<<<<< HEAD
       const resp = await fetch(`${API_BASE}/api/analyze`, {
+=======
+      const resp = await fetchWithTimeout(`${API_BASE}/api/analyze`, {
+>>>>>>> 403398d (fix: add fetch timeouts and Supabase session timeout for African mobile networks)
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] }),
       });
@@ -1153,7 +1169,11 @@ function XGLabTab({ selectedLeague }) {
 
   useEffect(()=>{
     setLoading(true);
+<<<<<<< HEAD
     fetch(`${API_BASE}/players-stats/all`).then(r=>r.json()).then(d=>setPlayers(Array.isArray(d)?d:[])).catch(()=>{}).finally(()=>setLoading(false));
+=======
+    fetchWithTimeout(`${API_BASE}/players-stats/all`).then(r=>r.json()).then(d=>setPlayers(Array.isArray(d)?d:[])).catch(()=>{}).finally(()=>setLoading(false));
+>>>>>>> 403398d (fix: add fetch timeouts and Supabase session timeout for African mobile networks)
   },[]);
 
   const qualified = players.filter(p=>{
@@ -1491,7 +1511,11 @@ function AnalysisPage({ onNavigate, navParams = {} }) {
     if (autoTimerRef.current) clearTimeout(autoTimerRef.current);
     autoTimerRef.current = setTimeout(async () => {
       try {
+<<<<<<< HEAD
         const resp = await fetch(`${API_BASE}/players/search?q=${encodeURIComponent(input)}&limit=30`);
+=======
+        const resp = await fetchWithTimeout(`${API_BASE}/players/search?q=${encodeURIComponent(input)}&limit=30`);
+>>>>>>> 403398d (fix: add fetch timeouts and Supabase session timeout for African mobile networks)
         if (resp.ok) { const data = await resp.json(); setAutoResults(data); setShowAuto(data.length > 0); }
       } catch { setAutoResults([]); }
     }, 250);
@@ -1557,7 +1581,11 @@ const analysisTypes = [
 
   const fetchH2H = async (home,away) => {
     try {
+<<<<<<< HEAD
       const resp = await fetch(`${API_BASE}/h2h/${encodeURIComponent(home)}/${encodeURIComponent(away)}?league=${encodeURIComponent(selectedLeague)}`);
+=======
+      const resp = await fetchWithTimeout(`${API_BASE}/h2h/${encodeURIComponent(home)}/${encodeURIComponent(away)}?league=${encodeURIComponent(selectedLeague)}`);
+>>>>>>> 403398d (fix: add fetch timeouts and Supabase session timeout for African mobile networks)
       if (resp.ok) {
         const data = await resp.json();
         if (data.matches && data.matches.length > 0) {
@@ -1573,7 +1601,11 @@ const analysisTypes = [
 
   const fetchTeamFixtures = async (teamName, setter) => {
     try {
+<<<<<<< HEAD
 const resp = await fetch(`${API_BASE}/team-fixtures?team=${encodeURIComponent(teamName)}&last=10&league=${encodeURIComponent(selectedLeague)}`);      if (resp.ok) { const data = await resp.json(); if (data.fixtures && data.fixtures.length > 0) setter(data); }
+=======
+const resp = await fetchWithTimeout(`${API_BASE}/team-fixtures?team=${encodeURIComponent(teamName)}&last=10&league=${encodeURIComponent(selectedLeague)}`);      if (resp.ok) { const data = await resp.json(); if (data.fixtures && data.fixtures.length > 0) setter(data); }
+>>>>>>> 403398d (fix: add fetch timeouts and Supabase session timeout for African mobile networks)
     } catch (e) { console.error('Fixtures fetch failed:', e); }
   };
 
@@ -1586,7 +1618,11 @@ const resp = await fetch(`${API_BASE}/team-fixtures?team=${encodeURIComponent(te
         {const cleanName=(n)=>n.replace(/^fc\s+/i,'').replace(/^afc\s+/i,'').replace(/\s+fc$/i,'').replace(/\s+afc$/i,'').replace(/\s+cf$/i,'').replace(/\s+sc$/i,'').trim();
         const r=await predictMatch(home,away,selectedLeague);fetchH2H(cleanName(home),cleanName(away));fetchTeamFixtures(home,setHomeFixtures);
         fetchTeamFixtures(away,setAwayFixtures);
+<<<<<<< HEAD
         fetch(`${API_BASE}/predicted-scorers/${encodeURIComponent(cleanName(home))}/${encodeURIComponent(cleanName(away))}?league=${encodeURIComponent(selectedLeague)}`).then(r => r.json()).then(setScorersData).catch(() => {});
+=======
+        fetchWithTimeout(`${API_BASE}/predicted-scorers/${encodeURIComponent(cleanName(home))}/${encodeURIComponent(cleanName(away))}?league=${encodeURIComponent(selectedLeague)}`).then(r => r.json()).then(setScorersData).catch(() => {});
+>>>>>>> 403398d (fix: add fetch timeouts and Supabase session timeout for African mobile networks)
         return r;}}
       if(activeTab==='team'){
         const tA = compTeamA || input.split(/\s+vs\s+/i)[0]?.trim();
@@ -1641,7 +1677,11 @@ const resp = await fetch(`${API_BASE}/team-fixtures?team=${encodeURIComponent(te
     DO NOT show bias toward any team — analyze BOTH sides fairly\n- Give EQUAL attention to both teams' strengths AND weaknesses\n-
      If data suggests the away team is stronger, say so clearly\n-
       Base your analysis on the statistical data provided below\n\nLeague: ${selectedLeague}\nTask: ${activeType.prompt}: ${input}\n${mlContext}${managerContext}\nWrite a focused, confident analysis. Keep it concise but insightful. Use specific player names. Format with markdown headers. MAX 500 words.\n\n${activeTab === 'match' ? `Cover:\n## Form Analysis (both teams equally)\n## Key Matchups (3-4 critical player battles)\n## Tactical Setup (each manager's likely approach)\n## Prediction (specific scoreline with reasoning)` : ''}${activeTab === 'player' ? `Cover:\n## Current Form & Stats\n## Strengths & Weaknesses\n## Tactical Role\n## Verdict` : ''}${activeTab === 'team' ? `Cover:\n## Squad Comparison\n## Tactical Identity\n## Key Advantage\n## Verdict` : ''}${activeTab === 'tactical' ? `Cover:\n## Formation Structure\n## Key Player Roles\n## Strengths & Vulnerabilities\n## Counter-Tactics` : ''}\n\nBe opinionated. If one team is clearly better, say so.`;
+<<<<<<< HEAD
     const resp = await fetch(`${API_BASE}/api/analyze`, {method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages: [{ role: "user", content: prompt }], tools: [{ type: "google_search" }] }) });
+=======
+    const resp = await fetchWithTimeout(`${API_BASE}/api/analyze`, {method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages: [{ role: "user", content: prompt }], tools: [{ type: "google_search" }] }) });
+>>>>>>> 403398d (fix: add fetch timeouts and Supabase session timeout for African mobile networks)
     const data = await resp.json();
     let full = '';
     if (data?.content && Array.isArray(data.content)) full = data.content.filter(i => i?.type === 'text').map(i => i.text).join('\n');

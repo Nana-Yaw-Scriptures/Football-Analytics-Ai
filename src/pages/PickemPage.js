@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+import { fetchWithTimeout } from '../utils/fetchWithTimeout';
+>>>>>>> 403398d (fix: add fetch timeouts and Supabase session timeout for African mobile networks)
 import React, { useState, useEffect } from 'react';
 import NavBar from '../components/NavBar';
 import Footer from '../components/Footer';
@@ -87,7 +91,11 @@ export default function PickemPage({ onNavigate }) {
     const load = async () => {
       setLoading(true);
       try {
+<<<<<<< HEAD
         const r = await fetch(`${API_BASE}/live/upcoming?days=14`);
+=======
+        const r = await fetchWithTimeout(`${API_BASE}/live/upcoming?days=14`);
+>>>>>>> 403398d (fix: add fetch timeouts and Supabase session timeout for African mobile networks)
         const data = await r.json();
         const arr = Array.isArray(data) ? data : [];
         setFixtures(arr);

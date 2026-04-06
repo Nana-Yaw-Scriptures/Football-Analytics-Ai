@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+import { fetchWithTimeout } from '../utils/fetchWithTimeout';
+>>>>>>> 403398d (fix: add fetch timeouts and Supabase session timeout for African mobile networks)
 import { useAuth } from '../context/AuthContext';
 import { addFavourite, removeFavourite, getFavourites } from '../services/supabaseService';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -725,7 +729,11 @@ export default function PlayersPage({ onNavigate }) {
   const searchRef = useRef(null);
 
   useEffect(() => {
+<<<<<<< HEAD
     fetch(`${API_BASE}/players/search?q=&limit=9999`)
+=======
+    fetchWithTimeout(`${API_BASE}/players/search?q=&limit=9999`)
+>>>>>>> 403398d (fix: add fetch timeouts and Supabase session timeout for African mobile networks)
       .then(r => r.json())
       .then(d => { setPlayers(Array.isArray(d) ? d : []); setLoading(false); })
       .catch(() => setLoading(false));
@@ -758,7 +766,11 @@ export default function PlayersPage({ onNavigate }) {
     const map = {};
     Promise.allSettled(
       LEAGUES_LIST.map(lg =>
+<<<<<<< HEAD
         fetch(`${API_BASE}/injuries/${encodeURIComponent(lg)}`)
+=======
+        fetchWithTimeout(`${API_BASE}/injuries/${encodeURIComponent(lg)}`)
+>>>>>>> 403398d (fix: add fetch timeouts and Supabase session timeout for African mobile networks)
           .then(r => r.json())
           .then(data => {
             if (Array.isArray(data)) {

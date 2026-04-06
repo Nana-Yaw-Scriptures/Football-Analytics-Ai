@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+import { fetchWithTimeout } from '../utils/fetchWithTimeout';
+>>>>>>> 403398d (fix: add fetch timeouts and Supabase session timeout for African mobile networks)
 import React, { useState, useEffect, useMemo } from 'react';
 import PlayerProfileCard from '../components/PlayerProfileCard';
 import NavBar from '../components/NavBar';
@@ -285,8 +289,13 @@ function LeagueDashboard({ league, onNavigate }) {
   useEffect(() => {
     setLoading(true);
     Promise.allSettled([
+<<<<<<< HEAD
       fetch(`${API_BASE}/players/search?q=&league=${encodeURIComponent(league)}&limit=9999`).then(r => r.json()),
       fetch(`${API_BASE}/standings/${encodeURIComponent(league)}`).then(r => r.json()),
+=======
+      fetchWithTimeout(`${API_BASE}/players/search?q=&league=${encodeURIComponent(league)}&limit=9999`).then(r => r.json()),
+      fetchWithTimeout(`${API_BASE}/standings/${encodeURIComponent(league)}`).then(r => r.json()),
+>>>>>>> 403398d (fix: add fetch timeouts and Supabase session timeout for African mobile networks)
     ]).then(([pR, sR]) => {
       if (pR.status === 'fulfilled') setPlayers(Array.isArray(pR.value) ? pR.value : []);
       if (sR.status === 'fulfilled') setStandings(Array.isArray(sR.value) ? sR.value : []);
@@ -299,8 +308,13 @@ function LeagueDashboard({ league, onNavigate }) {
     if (activeTab !== 'fixtures') return;
     setFixturesLoading(true);
     Promise.allSettled([
+<<<<<<< HEAD
       fetch(`${API_BASE}/league/results?league=${encodeURIComponent(league)}`).then(r => r.json()),
       fetch(`${API_BASE}/live/upcoming?league=${encodeURIComponent(league)}`).then(r => r.json()),
+=======
+      fetchWithTimeout(`${API_BASE}/league/results?league=${encodeURIComponent(league)}`).then(r => r.json()),
+      fetchWithTimeout(`${API_BASE}/live/upcoming?league=${encodeURIComponent(league)}`).then(r => r.json()),
+>>>>>>> 403398d (fix: add fetch timeouts and Supabase session timeout for African mobile networks)
     ]).then(([rR, uR]) => {
       const results  = rR.status === 'fulfilled' && Array.isArray(rR.value)  ? rR.value  : [];
       const upcoming = uR.status === 'fulfilled' && Array.isArray(uR.value)  ? uR.value  : [];
@@ -316,7 +330,11 @@ function LeagueDashboard({ league, onNavigate }) {
     if (predictions[key] || loadingPred[key]) return;
     setLoadingPred(p => ({ ...p, [key]: true }));
     try {
+<<<<<<< HEAD
       const r = await fetch(`${API_BASE}/predict/match`, {
+=======
+      const r = await fetchWithTimeout(`${API_BASE}/predict/match`, {
+>>>>>>> 403398d (fix: add fetch timeouts and Supabase session timeout for African mobile networks)
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ homeTeam: fix.homeTeam, awayTeam: fix.awayTeam, league }),
       });

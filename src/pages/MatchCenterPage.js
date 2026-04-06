@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+import { fetchWithTimeout } from '../utils/fetchWithTimeout';
+>>>>>>> 403398d (fix: add fetch timeouts and Supabase session timeout for African mobile networks)
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import NavBar from '../components/NavBar';
 
@@ -92,7 +96,11 @@ function MatchCenterPage({ fixtureId, onNavigate }) {
       const url = force
         ? `${API_BASE}/live/fixture/${fixtureId}?fresh=1`
         : `${API_BASE}/live/fixture/${fixtureId}`;
+<<<<<<< HEAD
       const resp = await fetch(url);
+=======
+      const resp = await fetchWithTimeout(url);
+>>>>>>> 403398d (fix: add fetch timeouts and Supabase session timeout for African mobile networks)
       if (!resp.ok) throw new Error('Fixture not found');
       const data = await resp.json();
       const newScore = `${data.homeGoals}-${data.awayGoals}`;
@@ -132,7 +140,11 @@ function MatchCenterPage({ fixtureId, onNavigate }) {
     if (match.league && !SUPPORTED.includes(match.league)) return;
     (async () => {
       try {
+<<<<<<< HEAD
         const r = await fetch(`${API_BASE}/predict/match`, {
+=======
+        const r = await fetchWithTimeout(`${API_BASE}/predict/match`, {
+>>>>>>> 403398d (fix: add fetch timeouts and Supabase session timeout for African mobile networks)
           method:'POST', headers:{'Content-Type':'application/json'},
           body: JSON.stringify({home_team:match.homeTeam, away_team:match.awayTeam, league:match.league||'Premier League'}),
         });
@@ -151,8 +163,13 @@ function MatchCenterPage({ fixtureId, onNavigate }) {
 
         // Fetch backend predictions + real player stats for both teams in parallel
         const [predResp, statsResp] = await Promise.allSettled([
+<<<<<<< HEAD
           fetch(`${API_BASE}/predicted-scorers/${ht}/${at}?league=${encodeURIComponent(match.league||'Premier League')}`),
           fetch(`${API_BASE}/players/search?q=&league=${encodeURIComponent(match.league||'Premier League')}&limit=9999`),
+=======
+          fetchWithTimeout(`${API_BASE}/predicted-scorers/${ht}/${at}?league=${encodeURIComponent(match.league||'Premier League')}`),
+          fetchWithTimeout(`${API_BASE}/players/search?q=&league=${encodeURIComponent(match.league||'Premier League')}&limit=9999`),
+>>>>>>> 403398d (fix: add fetch timeouts and Supabase session timeout for African mobile networks)
         ]);
 
         if (predResp.status !== 'fulfilled' || !predResp.value.ok) return;
@@ -238,7 +255,11 @@ function MatchCenterPage({ fixtureId, onNavigate }) {
       const goals = (match.events||[]).filter(e=>e.type==='Goal'&&e.detail!=='Missed Penalty');
       const goalStr = goals.map(g=>`${g.player} (${g.time}')`).join(', ') || 'No goals yet';
       const prompt = `You are a professional football commentator. Write a punchy 3-paragraph match summary for ${match.homeTeam} ${match.homeGoals??0}-${match.awayGoals??0} ${match.awayTeam} (${STATUS_LABELS[match.status]||match.status}). Goals: ${goalStr}. Be specific, use player names, reference the scoreline. Max 150 words.`;
+<<<<<<< HEAD
       const r = await fetch(`${API_BASE}/api/analyze`, {
+=======
+      const r = await fetchWithTimeout(`${API_BASE}/api/analyze`, {
+>>>>>>> 403398d (fix: add fetch timeouts and Supabase session timeout for African mobile networks)
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({messages:[{role:'user',content:prompt}]}),
       });

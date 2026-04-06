@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+import { fetchWithTimeout } from '../utils/fetchWithTimeout';
+>>>>>>> 403398d (fix: add fetch timeouts and Supabase session timeout for African mobile networks)
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import NavBar from '../components/NavBar';
 import { useAuth } from '../context/AuthContext';
@@ -212,7 +216,11 @@ export default function PredictionHistoryPage({ onNavigate }) {
       setHistory(Array.isArray(data) ? data : []);
       // Accuracy still from backend
       const lqOnly = filterLeague ? `?league=${encodeURIComponent(filterLeague)}` : '';
+<<<<<<< HEAD
       const sR = await fetch(`${API_BASE}/predictions/accuracy${lqOnly}`).then(r => r.json()).catch(() => null);
+=======
+      const sR = await fetchWithTimeout(`${API_BASE}/predictions/accuracy${lqOnly}`).then(r => r.json()).catch(() => null);
+>>>>>>> 403398d (fix: add fetch timeouts and Supabase session timeout for African mobile networks)
       if (sR) setStats(sR);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
