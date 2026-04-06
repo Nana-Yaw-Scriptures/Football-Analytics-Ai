@@ -1,7 +1,4 @@
-<<<<<<< HEAD
-=======
 import { fetchWithTimeout } from '../utils/fetchWithTimeout';
->>>>>>> 403398d (fix: add fetch timeouts and Supabase session timeout for African mobile networks)
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import NavBar from '../components/NavBar';
 
@@ -667,11 +664,7 @@ export default function ManagersPage({ onNavigate }) {
   const loadManagers = useCallback(() => {
     setLoading(true);
     setError(null);
-<<<<<<< HEAD
-    fetch(`${API_BASE}/managers/live`)
-=======
     fetchWithTimeout(`${API_BASE}/managers/live`)
->>>>>>> 403398d (fix: add fetch timeouts and Supabase session timeout for African mobile networks)
       .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then(data => {
         // Deduplicate by name + team

@@ -1,7 +1,4 @@
-<<<<<<< HEAD
-=======
 import { fetchWithTimeout } from '../utils/fetchWithTimeout';
->>>>>>> 403398d (fix: add fetch timeouts and Supabase session timeout for African mobile networks)
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import NavBar from '../components/NavBar';
 
@@ -191,27 +188,16 @@ function LiveScoresPage({ onNavigate }) {
       const leagueQ  = filterLeague ? `league=${encodeURIComponent(filterLeague)}` : '';
       const leagueSep= leagueQ ? '&' : '';
       if (activeView === 'live') {
-<<<<<<< HEAD
-        const resp = await fetch(`${API_BASE}/live/now`).then(r => r.json());
-        setLiveFixtures(Array.isArray(resp) ? resp : []);
-      } else if (activeView === 'upcoming') {
-        const resp = await fetch(`${API_BASE}/live/upcoming${leagueQ?'?'+leagueQ:''}`).then(r => r.json());
-=======
         const resp = await fetchWithTimeout(`${API_BASE}/live/now`).then(r => r.json());
         setLiveFixtures(Array.isArray(resp) ? resp : []);
       } else if (activeView === 'upcoming') {
         const resp = await fetchWithTimeout(`${API_BASE}/live/upcoming${leagueQ?'?'+leagueQ:''}`).then(r => r.json());
->>>>>>> 403398d (fix: add fetch timeouts and Supabase session timeout for African mobile networks)
         setUpcomingFixtures(Array.isArray(resp) ? resp : []);
       } else {
         const base = dateOffset !== 0
           ? `${API_BASE}/live/date?date=${getDateStr(dateOffset)}${leagueSep}${leagueQ}`
           : `${API_BASE}/live/today${leagueQ?'?'+leagueQ:''}`;
-<<<<<<< HEAD
-        const resp = await fetch(base).then(r => r.json());
-=======
         const resp = await fetchWithTimeout(base).then(r => r.json());
->>>>>>> 403398d (fix: add fetch timeouts and Supabase session timeout for African mobile networks)
         const arr  = Array.isArray(resp) ? resp : [];
         // Goal change detection → toasts
         arr.forEach(f => {
@@ -252,11 +238,7 @@ function LiveScoresPage({ onNavigate }) {
       const url = activeView === 'upcoming'
         ? `${API_BASE}/live/international/upcoming`
         : `${API_BASE}/live/international?date=${dateStr}`;
-<<<<<<< HEAD
-      const resp = await fetch(url).then(r => r.json());
-=======
       const resp = await fetchWithTimeout(url).then(r => r.json());
->>>>>>> 403398d (fix: add fetch timeouts and Supabase session timeout for African mobile networks)
       setIntlFixtures(Array.isArray(resp) ? resp : []);
     } catch {
       setIntlFixtures([]);
@@ -274,11 +256,7 @@ function LiveScoresPage({ onNavigate }) {
     if (!toPredict.length) return;
     toPredict.forEach(async (f) => {
       try {
-<<<<<<< HEAD
-        const r = await fetch(`${API_BASE}/predict/match`, {
-=======
         const r = await fetchWithTimeout(`${API_BASE}/predict/match`, {
->>>>>>> 403398d (fix: add fetch timeouts and Supabase session timeout for African mobile networks)
           method:'POST', headers:{'Content-Type':'application/json'},
           body: JSON.stringify({homeTeam:f.homeTeam, awayTeam:f.awayTeam, league:f.league||'Premier League'}),
         });
@@ -293,11 +271,7 @@ function LiveScoresPage({ onNavigate }) {
     if (h2hCache[key] !== undefined) return;
     setH2hCache(prev => ({...prev, [key]:null})); // mark loading
     try {
-<<<<<<< HEAD
-      const r = await fetch(`${API_BASE}/h2h/${encodeURIComponent(fix.homeTeam)}/${encodeURIComponent(fix.awayTeam)}`);
-=======
       const r = await fetchWithTimeout(`${API_BASE}/h2h/${encodeURIComponent(fix.homeTeam)}/${encodeURIComponent(fix.awayTeam)}`);
->>>>>>> 403398d (fix: add fetch timeouts and Supabase session timeout for African mobile networks)
       if (r.ok) { const d = await r.json(); setH2hCache(prev => ({...prev, [key]:d.matches||[]})); }
     } catch {}
   };

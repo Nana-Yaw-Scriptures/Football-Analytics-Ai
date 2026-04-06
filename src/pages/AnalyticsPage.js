@@ -1,7 +1,4 @@
-<<<<<<< HEAD
-=======
 import { fetchWithTimeout } from '../utils/fetchWithTimeout';
->>>>>>> 403398d (fix: add fetch timeouts and Supabase session timeout for African mobile networks)
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ScatterChart, Scatter, ZAxis, Cell } from 'recharts';
 import PerformanceTimeline from '../components/PerformanceTimeline';
@@ -2460,11 +2457,7 @@ function AnalyticsPage({ onNavigate }) {
     const fetchPlayers = async () => {
       setLoading(true);
       try {
-<<<<<<< HEAD
-        const resp = await fetch(`${API_BASE}/players-stats/all`);
-=======
         const resp = await fetchWithTimeout(`${API_BASE}/players-stats/all`);
->>>>>>> 403398d (fix: add fetch timeouts and Supabase session timeout for African mobile networks)
         const data = await resp.json();
         setAllPlayers(data);
       } catch (err) {
