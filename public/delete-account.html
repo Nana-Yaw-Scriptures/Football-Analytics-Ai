@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Delete Account — Scorina AI</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #050810;
+      color: #f1f5f9;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .card {
+      background: #0f172a;
+      border: 1px solid rgba(34,211,238,0.15);
+      border-radius: 16px;
+      padding: 40px;
+      max-width: 520px;
+      width: 100%;
+      text-align: center;
+    }
+    .icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+    h1 {
+      font-size: 24px;
+      font-weight: 800;
+      color: #f1f5f9;
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      color: #64748b;
+      font-size: 14px;
+      margin-bottom: 32px;
+      line-height: 1.6;
+    }
+    .steps {
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 24px;
+      text-align: left;
+      margin-bottom: 28px;
+    }
+    .steps h2 {
+      font-size: 14px;
+      font-weight: 700;
+      color: #22d3ee;
+      margin-bottom: 16px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .step {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 12px;
+      font-size: 14px;
+      color: #cbd5e1;
+      line-height: 1.5;
+    }
+    .step-num {
+      background: rgba(34,211,238,0.15);
+      color: #22d3ee;
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      min-width: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .warning {
+      background: rgba(239,68,68,0.08);
+      border: 1px solid rgba(239,68,68,0.2);
+      border-radius: 10px;
+      padding: 16px;
+      font-size: 13px;
+      color: #fca5a5;
+      margin-bottom: 28px;
+      line-height: 1.6;
+      text-align: left;
+    }
+    .btn {
+      display: inline-block;
+      padding: 14px 28px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #22d3ee, #0891b2);
+      color: white;
+      font-weight: 700;
+      font-size: 15px;
+      text-decoration: none;
+      transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .footer {
+      margin-top: 24px;
+      font-size: 12px;
+      color: #334155;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">⚽</div>
+    <h1>Delete Your Account</h1>
+    <p class="subtitle">
+      We're sorry to see you go. You can request deletion of your Scorina AI account and all associated data by emailing us below.
+    </p>
+
+    <div class="steps">
+      <h2>How it works</h2>
+      <div class="step">
+        <div class="step-num">1</div>
+        <div>Send an email to <strong style="color:#f1f5f9">hello@scorinai.com</strong> with the subject line <strong style="color:#f1f5f9">"Account Deletion Request"</strong></div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div>Include the email address associated with your Scorina AI account</div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div>We will process your request and confirm deletion within <strong style="color:#f1f5f9">7 business days</strong></div>
+      </div>
+    </div>
+
+    <div class="warning">
+      ⚠️ Account deletion is permanent. All your data including prediction history, favourites, and picks will be permanently removed and cannot be recovered.
+    </div>
+
+    <a class="btn" href="mailto:hello@scorinai.com?subject=Account Deletion Request">
+      Send Deletion Request
+    </a>
+
+    <p class="footer">scorinai.com &nbsp;·&nbsp; hello@scorinai.com</p>
+  </div>
+</body>
+</html>
