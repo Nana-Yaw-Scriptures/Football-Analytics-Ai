@@ -32,7 +32,7 @@ function initPDF(title, subtitle) {
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(14);
   doc.setTextColor(...COLORS.cyan);
-  doc.text('Football Analyst AI', 15, 14);
+  doc.text('Scorina AI', 15, 14);
 
   doc.setFontSize(8);
   doc.setTextColor(...COLORS.slate500);
@@ -62,7 +62,7 @@ function addFooter(doc) {
     doc.rect(0, 285, w, 12, 'F');
     doc.setFontSize(7);
     doc.setTextColor(...COLORS.slate600);
-    doc.text('Football Analyst AI — Confidential', 15, 291);
+    doc.text('Scorina AI — scorinai.com', 15, 291);
     doc.text(`Page ${i} of ${pages}`, w - 15, 291, { align: 'right' });
   }
 }
@@ -363,11 +363,14 @@ export function exportMatchPrediction(mlData, h2hData, homeFixtures, awayFixture
   doc.setFontSize(7);
   doc.setTextColor(...COLORS.slate500);
   doc.text(`${home.split(' ')[0]} (last 5)`, 22, y);
-  doc.text(`${away.split(' ')[0]} (last 5)`, w / 2 + 5, y);
   y += 5;
-
   y = formRow(doc, y, home, mlData.home_form_sequence);
-  formRow(doc, y - 8, away, mlData.away_form_sequence);
+  y += 2;
+  doc.setFontSize(7);
+  doc.setTextColor(...COLORS.slate500);
+  doc.text(`${away.split(' ')[0]} (last 5)`, 22, y);
+  y += 5;
+  y = formRow(doc, y, away, mlData.away_form_sequence);
   y += 2;
 
   // Recent fixtures
@@ -437,12 +440,12 @@ export function exportMatchPrediction(mlData, h2hData, homeFixtures, awayFixture
     const max   = form.reduce((s,_,i) => s+3*Math.pow(0.85,form.length-1-i), 0);
     const fs    = max > 0 ? (pts/max)*100 : 50;
     return [
-      { l: 'Attack',    v: Math.min(100, Math.round(xg * 38)),                                  c: COLORS.red },
-      { l: 'Press',     v: Math.min(100, Math.round(Math.max(0,(3.0-oppXg)/3.0*100))),          c: COLORS.orange },
-      { l: 'Tempo',     v: Math.min(100, Math.round(fs)),                                        c: COLORS.yellow },
-      { l: 'Defend',    v: Math.min(100, Math.round(Math.max(0,(1.8-oppXg)/1.8*100))),          c: COLORS.emerald },
-      { l: 'Vertical',  v: Math.min(100, Math.round(Math.max(20, xg*35))),                      c: COLORS.cyan },
-      { l: 'Dominance', v: Math.min(100, Math.round(wp*130)),                                   c: COLORS.purple },
+      { l: 'Attack',    v: Math.min(100, Math.max(10, Math.round(xg * 38))),                                      c: COLORS.red },
+      { l: 'Press',     v: Math.min(100, Math.max(10, Math.round((3.5 - oppXg) / 3.5 * 100))),                    c: COLORS.orange },
+      { l: 'Tempo',     v: Math.min(100, Math.max(15, Math.round(fs > 0 ? fs : (wp * 80)))),                      c: COLORS.yellow },
+      { l: 'Defend',    v: Math.min(100, Math.max(10, Math.round((2.8 - oppXg) / 2.8 * 100))),                    c: COLORS.emerald },
+      { l: 'Vertical',  v: Math.min(100, Math.max(20, Math.round(xg * 35))),                                      c: COLORS.cyan },
+      { l: 'Dominance', v: Math.min(100, Math.max(10, Math.round(wp * 130))),                                     c: COLORS.purple },
     ];
   };
 
@@ -615,7 +618,7 @@ export function exportMatchPrediction(mlData, h2hData, homeFixtures, awayFixture
     doc.setFontSize(8);
     doc.setTextColor(...COLORS.slate300);
     doc.setFont('helvetica', 'normal');
-    const lines = doc.splitTextToSize(analysisText.replace(/[#*]/g, '').substring(0, 1200), w - 37);
+    const lines = doc.splitTextToSize(analysisText.replace(/[#*]/g, '').substring(0, 5000), w - 37);
     lines.forEach(line => {
       y = checkPage(doc, y, 5);
       doc.text(line, 22, y);
@@ -836,4 +839,280 @@ export function exportLeagueStandings(league, standings) {
 
   addFooter(doc);
   doc.save(`${league.replace(/\s/g, '_')}_standings.pdf`);
+}
+
+// ══════════════════════════════════════════
+// EXPORT: Social Media Share Card (PNG)
+// ══════════════════════════════════════════
+
+export function exportShareCard(mlData, h2hData) {
+  const home = mlData.home_team_name || 'Home';
+  const away = mlData.away_team_name || 'Away';
+  const homeWin = ((mlData.home_win || 0) * 100).toFixed(0);
+  const draw    = ((mlData.draw    || 0) * 100).toFixed(0);
+  const awayWin = ((mlData.away_win || 0) * 100).toFixed(0);
+  const predicted = mlData.predicted_score || '?-?';
+  const conf    = ((mlData.confidence || 0) * 100).toFixed(0);
+  const confLevel = mlData.confidence_level || 'Medium';
+  const hXg     = (mlData.home_expected_goals || 0).toFixed(2);
+  const aXg     = (mlData.away_expected_goals || 0).toFixed(2);
+  const outcome = mlData.predicted_outcome || '';
+
+  // Canvas: 1080×1080 (Instagram square, also works for Twitter/WhatsApp)
+  const SIZE = 1080;
+  const canvas = document.createElement('canvas');
+  canvas.width  = SIZE;
+  canvas.height = SIZE;
+  const ctx = canvas.getContext('2d');
+
+  // ── Background ──
+  const bg = ctx.createLinearGradient(0, 0, SIZE, SIZE);
+  bg.addColorStop(0, '#050810');
+  bg.addColorStop(0.5, '#0a0f1f');
+  bg.addColorStop(1, '#060c1a');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, SIZE, SIZE);
+
+  // Grid lines (subtle)
+  ctx.strokeStyle = 'rgba(34,211,238,0.04)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < SIZE; i += 80) {
+    ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, SIZE); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(SIZE, i); ctx.stroke();
+  }
+
+  // Top accent bar
+  const topBar = ctx.createLinearGradient(0, 0, SIZE, 0);
+  topBar.addColorStop(0, '#22d3ee');
+  topBar.addColorStop(0.5, '#a855f7');
+  topBar.addColorStop(1, '#22d3ee');
+  ctx.fillStyle = topBar;
+  ctx.fillRect(0, 0, SIZE, 6);
+
+  // ── Brand ──
+  ctx.font = '800 48px Arial, sans-serif';
+  ctx.fillStyle = '#ffffff';
+  ctx.textAlign = 'left';
+  ctx.fillText('Scorina', 60, 90);
+
+  // AI badge
+  const aiGrad = ctx.createLinearGradient(0, 60, 0, 100);
+  aiGrad.addColorStop(0, '#22d3ee');
+  aiGrad.addColorStop(1, '#a855f7');
+  ctx.fillStyle = aiGrad;
+  const aiX = 60 + ctx.measureText('Scorina').width + 12;
+  roundRect(ctx, aiX, 58, 72, 38, 10);
+  ctx.fill();
+  ctx.font = '900 28px Arial, sans-serif';
+  ctx.fillStyle = '#ffffff';
+  ctx.textAlign = 'center';
+  ctx.fillText('AI', aiX + 36, 83);
+
+  ctx.font = '600 28px Arial, sans-serif';
+  ctx.fillStyle = 'rgba(100,116,139,0.8)';
+  ctx.textAlign = 'right';
+  ctx.fillText('Match Prediction', SIZE - 60, 90);
+
+  // ── VS Header ──
+  const vsY = 200;
+  // Home team
+  ctx.font = '900 56px Arial, sans-serif';
+  ctx.fillStyle = '#22d3ee';
+  ctx.textAlign = 'center';
+  const homeShort = home.replace(/ FC$| AFC$| United$/, '').split(' ').slice(0, 2).join(' ');
+  const awayShort = away.replace(/ FC$| AFC$| United$/, '').split(' ').slice(0, 2).join(' ');
+  ctx.fillText(homeShort, SIZE / 4, vsY);
+  // VS
+  ctx.font = '700 36px Arial, sans-serif';
+  ctx.fillStyle = 'rgba(100,116,139,0.6)';
+  ctx.fillText('VS', SIZE / 2, vsY);
+  // Away team
+  ctx.font = '900 56px Arial, sans-serif';
+  ctx.fillStyle = '#a855f7';
+  ctx.fillText(awayShort, (SIZE / 4) * 3, vsY);
+
+  // Full names below
+  ctx.font = '500 26px Arial, sans-serif';
+  ctx.fillStyle = 'rgba(148,163,184,0.7)';
+  ctx.fillText(home, SIZE / 4, vsY + 42);
+  ctx.fillText(away, (SIZE / 4) * 3, vsY + 42);
+
+  // Divider
+  const divGrad = ctx.createLinearGradient(60, 0, SIZE - 60, 0);
+  divGrad.addColorStop(0, 'transparent');
+  divGrad.addColorStop(0.3, 'rgba(34,211,238,0.3)');
+  divGrad.addColorStop(0.7, 'rgba(168,85,247,0.3)');
+  divGrad.addColorStop(1, 'transparent');
+  ctx.strokeStyle = divGrad;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(60, 290); ctx.lineTo(SIZE - 60, 290); ctx.stroke();
+
+  // ── Predicted Score Box ──
+  const boxY = 330;
+  ctx.fillStyle = 'rgba(17,24,39,0.95)';
+  roundRect(ctx, SIZE/2 - 160, boxY, 320, 110, 20);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(34,211,238,0.4)';
+  ctx.lineWidth = 2;
+  roundRect(ctx, SIZE/2 - 160, boxY, 320, 110, 20);
+  ctx.stroke();
+
+  ctx.font = '700 22px Arial, sans-serif';
+  ctx.fillStyle = 'rgba(100,116,139,0.8)';
+  ctx.textAlign = 'center';
+  ctx.fillText('PREDICTED SCORE', SIZE / 2, boxY + 32);
+
+  ctx.font = '900 72px Arial, sans-serif';
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(predicted, SIZE / 2, boxY + 95);
+
+  // Confidence badge
+  const cColor = confLevel === 'High' ? '#10b981' : confLevel === 'Medium' ? '#f59e0b' : '#ef4444';
+  ctx.fillStyle = cColor + '22';
+  roundRect(ctx, SIZE/2 - 100, boxY + 115, 200, 38, 10);
+  ctx.fill();
+  ctx.strokeStyle = cColor + '66';
+  ctx.lineWidth = 1.5;
+  roundRect(ctx, SIZE/2 - 100, boxY + 115, 200, 38, 10);
+  ctx.stroke();
+  ctx.font = '800 22px Arial, sans-serif';
+  ctx.fillStyle = cColor;
+  ctx.textAlign = 'center';
+  ctx.fillText(`${confLevel.toUpperCase()} CONFIDENCE • ${conf}%`, SIZE / 2, boxY + 140);
+
+  // ── Win Probability Bar ──
+  const barY = 560;
+  ctx.font = '600 24px Arial, sans-serif';
+  ctx.fillStyle = 'rgba(100,116,139,0.7)';
+  ctx.fillText('WIN PROBABILITIES', SIZE / 2, barY - 16);
+
+  const barX = 60;
+  const barW = SIZE - 120;
+  const barH = 28;
+  const hw = parseFloat(homeWin) / 100;
+  const dw = parseFloat(draw) / 100;
+  const aw = parseFloat(awayWin) / 100;
+
+  ctx.fillStyle = 'rgba(255,255,255,0.05)';
+  roundRect(ctx, barX, barY, barW, barH, 14);
+  ctx.fill();
+
+  if (hw > 0) {
+    ctx.fillStyle = '#22d3ee';
+    ctx.beginPath();
+    ctx.roundRect ? ctx.roundRect(barX, barY, barW * hw, barH, [14, 0, 0, 14]) : roundRectPartial(ctx, barX, barY, barW * hw, barH, 14, 0, 0, 14);
+    ctx.fill();
+  }
+  if (dw > 0) {
+    ctx.fillStyle = '#64748b';
+    ctx.fillRect(barX + barW * hw, barY, barW * dw, barH);
+  }
+  if (aw > 0) {
+    ctx.fillStyle = '#a855f7';
+    ctx.beginPath();
+    ctx.roundRect ? ctx.roundRect(barX + barW * (hw + dw), barY, barW * aw, barH, [0, 14, 14, 0]) : roundRectPartial(ctx, barX + barW * (hw + dw), barY, barW * aw, barH, 0, 14, 14, 0);
+    ctx.fill();
+  }
+
+  const labelY = barY + barH + 30;
+  ctx.font = '800 30px Arial, sans-serif';
+  ctx.fillStyle = '#22d3ee';
+  ctx.textAlign = 'left';
+  ctx.fillText(`${homeShort} ${homeWin}%`, barX, labelY);
+  ctx.fillStyle = '#64748b';
+  ctx.textAlign = 'center';
+  ctx.fillText(`Draw ${draw}%`, SIZE / 2, labelY);
+  ctx.fillStyle = '#a855f7';
+  ctx.textAlign = 'right';
+  ctx.fillText(`${awayShort} ${awayWin}%`, barX + barW, labelY);
+
+  // ── xG Stats ──
+  const xgY = 720;
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(60, xgY - 20); ctx.lineTo(SIZE - 60, xgY - 20); ctx.stroke();
+
+  ctx.font = '600 22px Arial, sans-serif';
+  ctx.fillStyle = 'rgba(100,116,139,0.7)';
+  ctx.textAlign = 'center';
+  ctx.fillText('EXPECTED GOALS (xG)', SIZE / 2, xgY + 10);
+
+  ctx.font = '900 54px Arial, sans-serif';
+  ctx.fillStyle = '#22d3ee';
+  ctx.textAlign = 'center';
+  ctx.fillText(hXg, SIZE / 4, xgY + 75);
+  ctx.fillStyle = 'rgba(100,116,139,0.5)';
+  ctx.font = '700 36px Arial, sans-serif';
+  ctx.fillText('—', SIZE / 2, xgY + 75);
+  ctx.font = '900 54px Arial, sans-serif';
+  ctx.fillStyle = '#a855f7';
+  ctx.fillText(aXg, (SIZE / 4) * 3, xgY + 75);
+
+  // ── Outcome label ──
+  if (outcome) {
+    const outY = 890;
+    ctx.fillStyle = 'rgba(17,24,39,0.8)';
+    roundRect(ctx, 60, outY, SIZE - 120, 64, 14);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(245,158,11,0.4)';
+    ctx.lineWidth = 1.5;
+    roundRect(ctx, 60, outY, SIZE - 120, 64, 14);
+    ctx.stroke();
+    ctx.font = '700 22px Arial, sans-serif';
+    ctx.fillStyle = 'rgba(100,116,139,0.7)';
+    ctx.textAlign = 'center';
+    ctx.fillText('VERDICT', SIZE / 2, outY + 24);
+    ctx.font = '900 30px Arial, sans-serif';
+    ctx.fillStyle = '#f59e0b';
+    ctx.fillText(outcome, SIZE / 2, outY + 52);
+  }
+
+  // ── Footer ──
+  ctx.fillStyle = 'rgba(100,116,139,0.4)';
+  ctx.font = '500 22px Arial, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('scorinai.com  •  AI-Powered Football Analytics', SIZE / 2, SIZE - 36);
+
+  // Bottom accent line
+  const bottomBar = ctx.createLinearGradient(0, 0, SIZE, 0);
+  bottomBar.addColorStop(0, '#a855f7');
+  bottomBar.addColorStop(0.5, '#22d3ee');
+  bottomBar.addColorStop(1, '#a855f7');
+  ctx.fillStyle = bottomBar;
+  ctx.fillRect(0, SIZE - 6, SIZE, 6);
+
+  // ── Download ──
+  const link = document.createElement('a');
+  link.download = `${homeShort}_vs_${awayShort}_ScorinaAI.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+// Helper: roundRect polyfill
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function roundRectPartial(ctx, x, y, w, h, tl, tr, br, bl) {
+  ctx.beginPath();
+  ctx.moveTo(x + tl, y);
+  ctx.lineTo(x + w - tr, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + tr);
+  ctx.lineTo(x + w, y + h - br);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - br, y + h);
+  ctx.lineTo(x + bl, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - bl);
+  ctx.lineTo(x, y + tl);
+  ctx.quadraticCurveTo(x, y, x + tl, y);
+  ctx.closePath();
 }
