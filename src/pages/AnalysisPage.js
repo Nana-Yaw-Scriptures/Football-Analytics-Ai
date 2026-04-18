@@ -9,6 +9,7 @@ import ExportButton from '../components/ExportButton';
 import { exportMatchPrediction } from '../utils/exportPDF';
 import { FormMomentum, TacticalDNA } from '../components/MatchInsights';
 import TacticalSimulation from '../components/TacticalSimulation';
+import { exportShareCard } from '../utils/exportPDF';
 
 const I = ({ d, className = "w-5 h-5" }) => (<svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{d}</svg>);
 const SearchIcon = (p) => <I {...p} d={<><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></>}/>;
@@ -3808,32 +3809,39 @@ const resp = await fetchWithTimeout(`${API_BASE}/team-fixtures?team=${encodeURIC
 
         {/* ── TEAM COMPARISON ── */}
         {!loading && activeTab === 'team' && compData && renderTeamComparison()}  
-
-        {/* ── MATCH ACTION BAR (Share / Export / Save) — MATCH ONLY ── */}
-        {!loading && activeTab === 'match' && (mlData || analysis) && (
-          <div className="flex items-center justify-end gap-2 mb-5">
-            <button
-              onClick={()=>{
-                const homeN = mlData?.home_team_name||'', awayN = mlData?.away_team_name||'';
-                const text = `Football Analyst AI\n${homeN} vs ${awayN}\n${homeN} ${(mlData?.home_win*100||0).toFixed(1)}% | Draw ${(mlData?.draw*100||0).toFixed(1)}% | ${awayN} ${(mlData?.away_win*100||0).toFixed(1)}%\nPrediction: ${mlData?.predicted_outcome||''} (${((mlData?.confidence||0)*100).toFixed(0)}%)\n\nfootballanalyst.ai`;
-                if(navigator.share) navigator.share({title:'Football Analyst AI',text}).catch(()=>{});
-                else navigator.clipboard.writeText(text).then(()=>alert('Copied!'));
-              }}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-base font-semibold border transition-all hover:border-purple-500/30 hover:text-purple-400"
-              style={{background:'rgba(255,255,255,0.03)',borderColor:'rgba(255,255,255,0.08)',color:'#64748b'}}>
-              <ShareIcon className="w-3.5 h-3.5"/>Share
-            </button>
-            {mlData && (
-              <ExportButton label="Export PDF" onClick={()=>exportMatchPrediction(mlData,h2hData,homeFixtures,awayFixtures,analysis,scorersData)}/>
-            )}
-            <button
-              onClick={savePrediction}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-base font-semibold border transition-all hover:border-cyan-500/30 hover:text-cyan-400"
-              style={{background:'rgba(255,255,255,0.03)',borderColor:'rgba(255,255,255,0.08)',color:'#64748b'}}>
-              <SaveIcon className="w-3.5 h-3.5"/>Save
-            </button>
-          </div>
-        )}
+{/* ── MATCH ACTION BAR (Share / Export / Save) — MATCH ONLY ── */}
+{!loading && activeTab === 'match' && (mlData || analysis) && (
+  <div className="flex items-center justify-end gap-2 mb-5 flex-wrap">
+    <button
+      onClick={()=>{
+        const homeN = mlData?.home_team_name||'', awayN = mlData?.away_team_name||'';
+        const text = `Scorina AI ⚽\n${homeN} vs ${awayN}\n${homeN} ${(mlData?.home_win*100||0).toFixed(1)}% | Draw ${(mlData?.draw*100||0).toFixed(1)}% | ${awayN} ${(mlData?.away_win*100||0).toFixed(1)}%\nPrediction: ${mlData?.predicted_outcome||''} (${((mlData?.confidence||0)*100).toFixed(0)}%)\n\nscorainai.com`;
+        if(navigator.share) navigator.share({title:'Scorina AI',text}).catch(()=>{});
+        else navigator.clipboard.writeText(text).then(()=>alert('Copied to clipboard!'));
+      }}
+      className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border transition-all hover:border-purple-500/30 hover:text-purple-400"
+      style={{background:'rgba(255,255,255,0.03)',borderColor:'rgba(255,255,255,0.08)',color:'#64748b'}}>
+      <ShareIcon className="w-3.5 h-3.5"/>Share
+    </button>
+    {mlData && (
+      <button
+        onClick={()=>exportShareCard(mlData,h2hData)}
+        className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border transition-all hover:border-pink-500/30 hover:text-pink-400"
+        style={{background:'rgba(255,255,255,0.03)',borderColor:'rgba(255,255,255,0.08)',color:'#64748b'}}>
+        📲 Card
+      </button>
+    )}
+    {mlData && (
+      <ExportButton label="PDF" onClick={()=>exportMatchPrediction(mlData,h2hData,homeFixtures,awayFixtures,analysis,scorersData)}/>
+    )}
+    <button
+      onClick={savePrediction}
+      className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border transition-all hover:border-cyan-500/30 hover:text-cyan-400"
+      style={{background:'rgba(255,255,255,0.03)',borderColor:'rgba(255,255,255,0.08)',color:'#64748b'}}>
+      <SaveIcon className="w-3.5 h-3.5"/>Save
+    </button>
+  </div>
+)}
 
         {/* ── AI ANALYSIS BLOCK — MATCH ONLY ── */}
         {!loading && activeTab === 'match' && analysis && (
