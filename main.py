@@ -294,6 +294,7 @@ def predict_match(req: MatchPredictionRequest):
                     print(f"[cache] match prediction served from file: {req.home_team} vs {req.away_team}")
                     return json.load(f)
 
+        load_models()  # Ensure models are loaded before prediction
         result = get_match_prediction(req, models.get("match_predictor"))
         os.makedirs("cache", exist_ok=True)
         with open(cache_path, "w") as f:
@@ -1414,8 +1415,12 @@ def get_injuries(league: str):
         except Exception as e2:
             raise HTTPException(status_code=500, detail=str(e2))
         
-@app.on_event("startup")
+_models_loaded = False
 def load_models():
+    global _models_loaded
+    if _models_loaded:
+        return
+    _models_loaded = True
     model_dir = "trained_models"
     if os.path.exists(model_dir):
         for f in os.listdir(model_dir):
