@@ -1490,6 +1490,10 @@ def wc_predict(home: str, away: str):
     from services.world_cup_service import predict_wc_match
     return predict_wc_match(home, away)
 
+@app.get("/wc/assists")
+def wc_assists():
+    from services.world_cup_service import get_wc_assists
+    return get_wc_assists()
 # ══════════════════════════════════════════
 # SUPPORT BOT
 # ══════════════════════════════════════════

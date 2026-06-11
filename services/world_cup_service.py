@@ -188,6 +188,35 @@ def get_wc_scorers():
     return out
 
 
+def get_wc_assists():
+    """Top assist providers for the tournament."""
+    cached = _read_cache("assists", 600)
+    if cached is not None:
+        return cached
+    data = _get("players/topassists", {"league": WC_LEAGUE_ID, "season": WC_SEASON})
+    out = []
+    try:
+        for item in (data.get("response") or [])[:25]:
+            player = item.get("player", {}) or {}
+            stats = (item.get("statistics") or [{}])[0] or {}
+            goals = stats.get("goals", {}) or {}
+            games = stats.get("games", {}) or {}
+            team = stats.get("team", {}) or {}
+            out.append({
+                "name": player.get("name"),
+                "photo": player.get("photo"),
+                "team": team.get("name"),
+                "teamLogo": team.get("logo"),
+                "assists": goals.get("assists"),
+                "goals": goals.get("total"),
+                "apps": games.get("appearences"),
+            })
+    except Exception as e:
+        print(f"[WorldCup] assists parse error: {e}")
+    _write_cache("assists", out)
+    return out
+
+
 # ══════════════════════════════════════════
 # MATCH PREDICTIONS (national-team Poisson model)
 # Not the club xG engine — built from recent national-team form only.
@@ -229,6 +258,7 @@ def _team_form(team_id, last=10):
         return cached
     data = _get("fixtures", {"team": team_id, "last": last})
     gf = ga = n = 0
+    seq = []
     for fx in (data.get("response") or []):
         goals = fx.get("goals", {}) or {}
         teams = fx.get("teams", {}) or {}
@@ -237,13 +267,15 @@ def _team_form(team_id, last=10):
             continue
         home_id = (teams.get("home", {}) or {}).get("id")
         if home_id == team_id:
-            gf += hg; ga += ag
+            scored, conceded = hg, ag
         else:
-            gf += ag; ga += hg
-        n += 1
-    result = None if n == 0 else {"att": gf / n, "def": ga / n, "n": n}
-    if result is not None:
-        _write_cache(f"form_{team_id}", result)
+            scored, conceded = ag, hg
+        gf += scored; ga += conceded; n += 1
+        seq.append("W" if scored > conceded else ("D" if scored == conceded else "L"))
+    if n == 0:
+        return None
+    result = {"att": gf / n, "def": ga / n, "n": n, "form": list(reversed(seq[:5]))}
+    _write_cache(f"form_{team_id}", result)
     return result
 
 
@@ -289,17 +321,34 @@ def predict_wc_match(home_name, away_name):
     total = p_home + p_draw + p_away or 1.0
     scores.sort(key=lambda x: -x[2])
 
+    ph_home, ph_draw, ph_away = p_home / total, p_draw / total, p_away / total
+    topp = max(ph_home, ph_draw, ph_away)
+    min_n = min(hf.get("n", 0), af.get("n", 0))
+    conf = topp * (0.8 if min_n < 4 else 1.0)
+    conf_val = round(conf * 100)
+    level = "High" if conf_val >= 55 else ("Medium" if conf_val >= 40 else "Low")
+
     return {
         "home": {"name": h["name"], "logo": h["logo"]},
         "away": {"name": a["name"], "logo": a["logo"]},
         "expGoals": {"home": round(lam_h, 2), "away": round(lam_a, 2)},
         "prob": {
-            "home": round(100 * p_home / total, 1),
-            "draw": round(100 * p_draw / total, 1),
-            "away": round(100 * p_away / total, 1),
+            "home": round(100 * ph_home, 1),
+            "draw": round(100 * ph_draw, 1),
+            "away": round(100 * ph_away, 1),
+        },
+        "doubleChance": {
+            "home": round(100 * (ph_home + ph_draw), 1),
+            "away": round(100 * (ph_away + ph_draw), 1),
+        },
+        "cleanSheet": {
+            "home": round(100 * ph[0], 1),
+            "away": round(100 * pa[0], 1),
         },
         "topScores": [{"score": f"{i}-{j}", "prob": round(100 * p, 1)} for i, j, p in scores[:3]],
         "over25": round(100 * over25, 1),
         "btts": round(100 * btts, 1),
+        "form": {"home": hf.get("form", []), "away": af.get("form", [])},
+        "confidence": {"level": level, "value": conf_val},
         "samples": {"home": hf["n"], "away": af["n"]},
     }
