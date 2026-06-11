@@ -1464,6 +1464,26 @@ def get_international_upcoming():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# ── World Cup 2026 ──
+@app.get("/wc/standings")
+def wc_standings():
+    from services.world_cup_service import get_wc_standings
+    return get_wc_standings()
+
+@app.get("/wc/fixtures")
+def wc_fixtures(stage: str = None):
+    from services.world_cup_service import get_wc_fixtures
+    return get_wc_fixtures(stage)
+
+@app.get("/wc/live")
+def wc_live():
+    from services.world_cup_service import get_wc_live
+    return get_wc_live()
+
+@app.get("/wc/scorers")
+def wc_scorers():
+    from services.world_cup_service import get_wc_scorers
+    return get_wc_scorers()
 
 # ══════════════════════════════════════════
 # SUPPORT BOT
