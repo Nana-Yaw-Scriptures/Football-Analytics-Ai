@@ -10,8 +10,9 @@ async function apiCall(endpoint, data) {
     body: JSON.stringify(data),
   });
   if (!resp.ok) {
-    const err = await resp.json();
-    throw new Error(err.detail || 'API request failed');
+    let detail = `API request failed (${resp.status})`;
+    try { const err = await resp.json(); if (err && err.detail) detail = err.detail; } catch (_) { /* error body was not JSON */ }
+    throw new Error(detail);
   }
   return resp.json();
 }
