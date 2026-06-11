@@ -8,6 +8,7 @@ import requests
 import json
 import os
 import time
+import math
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -185,3 +186,120 @@ def get_wc_scorers():
         print(f"[WorldCup] scorers parse error: {e}")
     _write_cache("scorers", out)
     return out
+
+
+# ══════════════════════════════════════════
+# MATCH PREDICTIONS (national-team Poisson model)
+# Not the club xG engine — built from recent national-team form only.
+# ══════════════════════════════════════════
+
+WC_BASELINE_GPG = 1.25   # avg goals per side in international football
+_MAXG = 8                # scoreline grid cap
+
+
+def _poisson_pmf(k, lam):
+    try:
+        return (lam ** k) * math.exp(-lam) / math.factorial(k)
+    except Exception:
+        return 0.0
+
+
+def get_wc_teams():
+    """name(lowercase) -> {id, name, logo} for the 48 teams. Cached 24h."""
+    cached = _read_cache("teams", 86400)
+    if cached is not None:
+        return cached
+    data = _get("teams", {"league": WC_LEAGUE_ID, "season": WC_SEASON})
+    out = {}
+    for item in (data.get("response") or []):
+        t = item.get("team", {}) or {}
+        name = t.get("name")
+        if name:
+            out[name.lower()] = {"id": t.get("id"), "name": name, "logo": t.get("logo")}
+    _write_cache("teams", out)
+    return out
+
+
+def _team_form(team_id, last=10):
+    """Average goals scored / conceded over a team's recent matches."""
+    if not team_id:
+        return None
+    cached = _read_cache(f"form_{team_id}", 3600)
+    if cached is not None:
+        return cached
+    data = _get("fixtures", {"team": team_id, "last": last})
+    gf = ga = n = 0
+    for fx in (data.get("response") or []):
+        goals = fx.get("goals", {}) or {}
+        teams = fx.get("teams", {}) or {}
+        hg, ag = goals.get("home"), goals.get("away")
+        if hg is None or ag is None:
+            continue
+        home_id = (teams.get("home", {}) or {}).get("id")
+        if home_id == team_id:
+            gf += hg; ga += ag
+        else:
+            gf += ag; ga += hg
+        n += 1
+    result = None if n == 0 else {"att": gf / n, "def": ga / n, "n": n}
+    if result is not None:
+        _write_cache(f"form_{team_id}", result)
+    return result
+
+
+def _shrink(value, n, k=5):
+    """Pull rates toward the baseline when a team has few recent games."""
+    w = n / (n + k) if (n + k) else 0
+    return w * value + (1 - w) * WC_BASELINE_GPG
+
+
+def predict_wc_match(home_name, away_name):
+    teams = get_wc_teams()
+    h = teams.get((home_name or "").strip().lower())
+    a = teams.get((away_name or "").strip().lower())
+    if not h or not a:
+        return {"error": "team_not_found", "home": home_name, "away": away_name}
+
+    hf = _team_form(h["id"]) or {"att": WC_BASELINE_GPG, "def": WC_BASELINE_GPG, "n": 0}
+    af = _team_form(a["id"]) or {"att": WC_BASELINE_GPG, "def": WC_BASELINE_GPG, "n": 0}
+
+    h_att = _shrink(hf["att"], hf["n"]); h_def = _shrink(hf["def"], hf["n"])
+    a_att = _shrink(af["att"], af["n"]); a_def = _shrink(af["def"], af["n"])
+
+    # Expected goals: own attack blended with opponent's defensive concession
+    lam_h = max(0.2, (h_att + a_def) / 2)
+    lam_a = max(0.2, (a_att + h_def) / 2)
+
+    ph = [_poisson_pmf(i, lam_h) for i in range(_MAXG + 1)]
+    pa = [_poisson_pmf(j, lam_a) for j in range(_MAXG + 1)]
+
+    p_home = p_draw = p_away = 0.0
+    over25 = btts = 0.0
+    scores = []
+    for i in range(_MAXG + 1):
+        for j in range(_MAXG + 1):
+            p = ph[i] * pa[j]
+            if i > j: p_home += p
+            elif i == j: p_draw += p
+            else: p_away += p
+            if i + j >= 3: over25 += p
+            if i >= 1 and j >= 1: btts += p
+            scores.append((i, j, p))
+
+    total = p_home + p_draw + p_away or 1.0
+    scores.sort(key=lambda x: -x[2])
+
+    return {
+        "home": {"name": h["name"], "logo": h["logo"]},
+        "away": {"name": a["name"], "logo": a["logo"]},
+        "expGoals": {"home": round(lam_h, 2), "away": round(lam_a, 2)},
+        "prob": {
+            "home": round(100 * p_home / total, 1),
+            "draw": round(100 * p_draw / total, 1),
+            "away": round(100 * p_away / total, 1),
+        },
+        "topScores": [{"score": f"{i}-{j}", "prob": round(100 * p, 1)} for i, j, p in scores[:3]],
+        "over25": round(100 * over25, 1),
+        "btts": round(100 * btts, 1),
+        "samples": {"home": hf["n"], "away": af["n"]},
+    }
