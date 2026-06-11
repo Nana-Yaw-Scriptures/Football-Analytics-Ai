@@ -309,6 +309,7 @@ def predict_match(req: MatchPredictionRequest):
 def analyze_player(req: PlayerRatingRequest):
     try:
         from services.player_service import get_player_rating
+        load_models()  # Ensure models are loaded before prediction
         return get_player_rating(req, models.get("player_rater"))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -317,6 +318,7 @@ def analyze_player(req: PlayerRatingRequest):
 def estimate_value(req: ValueEstimateRequest):
     try:
         from services.value_service import get_value_estimate
+        load_models()  # Ensure models are loaded before prediction
         return get_value_estimate(req, models.get("value_estimator"))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -1364,6 +1366,7 @@ async def analyze_with_gemini(request: dict):
 def get_best_picks_endpoint(refresh: bool = False):
     try:
         from services.best_picks_service import get_best_picks
+        load_models()
         return get_best_picks(models, force_refresh=refresh)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
