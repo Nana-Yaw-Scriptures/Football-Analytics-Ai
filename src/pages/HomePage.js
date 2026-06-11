@@ -317,47 +317,27 @@ export default function HomePage({ onNavigate }) {
                 AI-powered predictions, live scores, player analytics, tactical intelligence and league simulation — all in one place.
               </p>
 
-              {/* Quick analysis input */}
+              {/* World Cup notice */}
               <div className="relative mb-8 max-w-lg"
                 style={{ animation: visible ? 'hpFadeUp 0.5s 0.3s ease-out both' : 'none' }}>
-                <div className="hp-search-wrap">
-                  <SearchIcon className="w-4 h-4 text-slate-500 flex-shrink-0"/>
-                  <input
-                    type="text"
-                    value={matchInput}
-                    onChange={e => handleMatchInput(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && handleAnalyse()}
-                    placeholder="Arsenal vs Chelsea — analyse any match…"
-                    className="hp-search-input"
-                  />
-                  {matchInput && (
-                    <button onClick={() => { setMatchInput(''); setTeamSuggestions([]); }} className="text-slate-600 hover:text-slate-400 transition-colors flex-shrink-0">
-                      <XCircleIcon className="w-4 h-4"/>
-                    </button>
-                  )}
-                  <button onClick={handleAnalyse}
-                    className="hp-search-btn flex-shrink-0">
-                    <ZapIcon className="w-3.5 h-3.5"/>
-                    <span>Analyse</span>
-                  </button>
-                </div>
-                {/* Suggestions */}
-                {teamSuggestions.length > 0 && (
-                  <div className="hp-suggestions">
-                    {teamSuggestions.map((t, i) => (
-                      <button key={i} onClick={() => {
-                        const name = t.name || t;
-                        setMatchInput(name);
-                        setTeamSuggestions([]);
-                        onNavigate('analysis', { prefillQuery: name });
-                          }}
-                        className="hp-suggestion-row">
-                        {t.logo && <img src={t.logo} alt="" className="w-5 h-5 object-contain flex-shrink-0"/>}
-                        <span className="text-sm text-slate-300">{t.name || t}</span>
-                      </button>
-                    ))}
+                <button onClick={() => onNavigate('worldcup')}
+                  className="w-full flex items-center gap-4 rounded-2xl p-4 border text-left transition-all hover:-translate-y-0.5"
+                  style={{ background:'linear-gradient(120deg, rgba(45,212,255,0.13), rgba(155,124,255,0.13) 60%, rgba(255,255,255,0.02))', borderColor:'rgba(45,212,255,0.28)' }}>
+                  <div className="w-12 h-12 rounded-xl grid place-items-center p-1.5 flex-shrink-0" style={{ background:'rgba(255,255,255,0.94)' }}>
+                    <img src="https://media.api-sports.io/football/leagues/1.png" alt="FIFA World Cup" className="w-full h-full object-contain"/>
                   </div>
-                )}
+                  <div className="flex-1 min-w-0">
+                    <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-red-400">
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"/>Live now
+                    </span>
+                    <p className="text-white font-black text-base leading-tight mt-0.5">FIFA World Cup 2026</p>
+                    <p className="text-slate-400 text-sm leading-snug">Groups, live scores, top scorers and AI predictions</p>
+                  </div>
+                  <span className="flex-shrink-0 flex items-center gap-1 px-4 py-2.5 rounded-xl font-bold text-sm"
+                    style={{ background:'linear-gradient(135deg,#2dd4ff,#62e3ff)', color:'#06101f' }}>
+                    Open <span aria-hidden="true">→</span>
+                  </span>
+                </button>
               </div>
 
               {/* Quick nav buttons */}

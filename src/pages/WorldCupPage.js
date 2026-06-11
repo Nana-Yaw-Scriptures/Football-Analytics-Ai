@@ -3,274 +3,402 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import NavBar from '../components/NavBar';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+const WC_BADGE = 'https://media.api-sports.io/football/leagues/1.png';
 
-/* ── Icons ── */
-const I = ({ d, className = 'w-5 h-5' }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{d}</svg>
-);
-const TrophyIcon   = (p) => <I {...p} d={<><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></>}/>;
-const CalendarIcon = (p) => <I {...p} d={<><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></>}/>;
-const GridIcon     = (p) => <I {...p} d={<><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></>}/>;
-const TargetIcon   = (p) => <I {...p} d={<><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></>}/>;
-const GitBranchIcon= (p) => <I {...p} d={<><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></>}/>;
-
-/* ── Match status styling (mirrors LiveScoresPage) ── */
 const LIVE = new Set(['1H', '2H', 'ET', 'BT', 'P', 'LIVE', 'INT']);
 const FINISHED = new Set(['FT', 'AET', 'PEN']);
+const KO_ORDER = ['Round of 32', 'Round of 16', 'Quarter', 'Semi', '3rd Place', 'Final'];
 
-const fmtKickoff = (iso) => {
-  if (!iso) return '';
-  try {
-    const d = new Date(iso);
-    return d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-  } catch { return ''; }
-};
+const fmtKick = (iso) => { if (!iso) return ''; try { return new Date(iso).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); } catch { return ''; } };
+const fmtDay = (iso) => { if (!iso) return 'TBD'; try { return new Date(iso).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' }); } catch { return 'TBD'; } };
 
-const StatusBadge = ({ m }) => {
-  if (LIVE.has(m.status)) {
-    return (
-      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-bold"
-        style={{ background: 'rgba(239,68,68,0.14)', color: '#ef4444' }}>
-        <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: '#ef4444' }} />
-        {m.minute ? `${m.minute}'` : 'LIVE'}
-      </span>
-    );
-  }
-  if (m.status === 'HT') return <span className="px-2 py-0.5 rounded-full text-[11px] font-bold" style={{ background: 'rgba(245,158,11,0.14)', color: '#f59e0b' }}>HT</span>;
-  if (FINISHED.has(m.status)) return <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold" style={{ background: 'rgba(100,116,139,0.12)', color: '#94a3b8' }}>{m.status}</span>;
-  return <span className="px-2 py-0.5 rounded-full text-[11px] font-medium" style={{ background: 'rgba(34,211,238,0.10)', color: '#22d3ee' }}>{fmtKickoff(m.date)}</span>;
-};
+const STYLES = `
+.wc-root{min-height:100vh;color:#eef2fb;font-family:'Inter',system-ui,sans-serif;position:relative;background:#080b16;-webkit-font-smoothing:antialiased}
+.wc-bg{position:absolute;inset:0;pointer-events:none;background:
+  radial-gradient(620px 460px at 8% 2%, rgba(155,124,255,.32), transparent 60%),
+  radial-gradient(620px 460px at 95% 6%, rgba(45,212,255,.24), transparent 58%),
+  radial-gradient(720px 520px at 72% 100%, rgba(219,39,119,.20), transparent 60%)}
+.wc-wrap{position:relative;max-width:1180px;margin:0 auto;padding:0 18px 90px}
+.wc-disp{font-family:'Oswald',sans-serif}
+.wc-glass{background:rgba(255,255,255,.055);backdrop-filter:blur(18px) saturate(150%);-webkit-backdrop-filter:blur(18px) saturate(150%);border:1px solid rgba(255,255,255,.12);border-radius:20px}
+.wc-hero{display:flex;align-items:center;gap:18px;padding:24px 26px;margin-top:14px;flex-wrap:wrap}
+.wc-badge{width:62px;height:62px;border-radius:18px;background:rgba(255,255,255,.94);display:grid;place-items:center;padding:9px;flex-shrink:0}
+.wc-badge img{width:100%;height:100%;object-fit:contain}
+.wc-eyebrow{font-family:'Oswald';letter-spacing:.26em;text-transform:uppercase;font-size:12px;color:#2dd4ff;font-weight:600}
+.wc-h1{font-family:'Oswald';font-weight:700;font-size:38px;line-height:.98;text-transform:uppercase;margin:5px 0 6px}
+.wc-sub{color:#9aa4bd;font-size:14px;font-weight:500}
+.wc-lv{margin-left:auto;display:flex;align-items:center;gap:8px;font-family:'Oswald';text-transform:uppercase;letter-spacing:.1em;font-size:13px;color:#fff;padding:8px 14px;border-radius:999px;background:rgba(255,59,92,.16);border:1px solid rgba(255,59,92,.4)}
+.wc-pulse{width:8px;height:8px;border-radius:50%;background:#ff3b5c;animation:wcpulse 1.4s infinite}
+@keyframes wcpulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.7)}}
+.wc-tabbar{display:flex;gap:6px;margin:18px 0 22px;padding:7px;width:fit-content;max-width:100%;overflow-x:auto}
+.wc-tab{display:flex;align-items:center;gap:8px;padding:10px 18px;border-radius:13px;font-family:'Oswald';text-transform:uppercase;letter-spacing:.07em;font-size:14px;font-weight:600;color:#9aa4bd;cursor:pointer;border:none;background:transparent;white-space:nowrap}
+.wc-tab.on{color:#06101f;background:linear-gradient(135deg,#2dd4ff,#62e3ff)}
+.wc-ggrid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.wc-group{overflow:hidden}
+.wc-ghead{font-family:'Oswald';text-transform:uppercase;letter-spacing:.12em;font-size:14px;font-weight:600;padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.12);color:#2dd4ff}
+.wc-tbl{width:100%;border-collapse:collapse;font-size:14px}
+.wc-tbl thead th{font-size:11px;color:#9aa4bd;font-weight:500;text-transform:uppercase;letter-spacing:.05em;padding:8px 6px;text-align:center}
+.wc-tbl thead th.l{text-align:left;padding-left:16px}
+.wc-tbl tbody td{padding:10px 6px;text-align:center;font-variant-numeric:tabular-nums;border-top:1px solid rgba(255,255,255,.06)}
+.wc-tbl tbody td.tm{text-align:left;padding-left:16px}
+.wc-tbl tbody tr.q td{background:rgba(45,212,255,.06)}
+.wc-tbl tbody tr.q td:first-child{box-shadow:inset 3px 0 0 #2dd4ff}
+.wc-tcell{display:flex;align-items:center;gap:9px}
+.wc-tcell img{width:21px;height:14px;border-radius:2px;object-fit:cover}
+.wc-tcell .r{color:#9aa4bd;font-size:12px;width:12px}
+.wc-tcell .nm{font-family:'Oswald';font-weight:500;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px}
+.wc-pts{font-family:'Oswald';font-weight:700;color:#fff}
+.wc-legend{color:#9aa4bd;font-size:12px;font-style:italic;margin:16px 4px 0}
+.wc-dayhdr{font-family:'Oswald';text-transform:uppercase;letter-spacing:.16em;font-size:13px;color:#9aa4bd;font-weight:600;margin:18px 4px 12px}
+.wc-fxgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.wc-card{padding:15px 18px;overflow:hidden}
+.wc-card.live{border-color:rgba(255,59,92,.4)}
+.wc-cgrid{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center}
+.wc-teams{display:flex;flex-direction:column;gap:10px}
+.wc-team{display:flex;align-items:center;gap:11px}
+.wc-team img{width:28px;height:20px;border-radius:3px;object-fit:cover;box-shadow:0 0 0 1px rgba(255,255,255,.08)}
+.wc-team .nm{font-family:'Oswald';font-weight:600;font-size:18px}
+.wc-team.lose .nm{color:#9aa4bd}
+.wc-score{font-family:'Oswald';font-weight:700;font-size:24px;line-height:1.3;text-align:center;min-width:22px;font-variant-numeric:tabular-nums}
+.wc-pill{font-family:'Oswald';text-transform:uppercase;letter-spacing:.1em;font-size:12px;font-weight:600;padding:5px 11px;border-radius:999px;white-space:nowrap}
+.wc-pill.lv{color:#fff;background:rgba(255,59,92,.18);border:1px solid rgba(255,59,92,.42);display:flex;align-items:center;gap:7px}
+.wc-pill.tm{color:#2dd4ff;background:rgba(45,212,255,.12);border:1px solid rgba(45,212,255,.28)}
+.wc-tbd{font-family:'Inter';font-weight:500;font-size:14px;font-style:italic;color:#9aa4bd}
+.wc-scgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.wc-lead{overflow:hidden}
+.wc-lhead{font-family:'Oswald';text-transform:uppercase;letter-spacing:.1em;font-size:14px;font-weight:600;padding:13px 18px;border-bottom:1px solid rgba(255,255,255,.12)}
+.wc-lhead.g{color:#ffce5c}.wc-lhead.a{color:#2dd4ff}
+.wc-lrow{display:flex;align-items:center;gap:12px;padding:11px 18px;border-top:1px solid rgba(255,255,255,.05)}
+.wc-lrow:first-of-type{border-top:none}
+.wc-lr{font-family:'Oswald';color:#9aa4bd;font-size:15px;width:18px;text-align:center}
+.wc-av{width:34px;height:34px;border-radius:50%;object-fit:cover;flex-shrink:0;background:#1a2138}
+.wc-linfo{flex:1;min-width:0}
+.wc-lname{font-family:'Oswald';font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wc-lteam{display:flex;align-items:center;gap:7px;color:#9aa4bd;font-size:12px;margin-top:1px}
+.wc-lteam img{width:16px;height:11px;border-radius:2px;object-fit:cover}
+.wc-lbig{font-family:'Oswald';font-weight:700;font-size:22px;text-align:center}
+.wc-lbig.g{color:#ffce5c}.wc-lbig.a{color:#2dd4ff}
+.wc-lsub{font-size:10px;color:#9aa4bd;text-transform:uppercase;text-align:center}
+.wc-basis{display:flex;align-items:center;gap:8px;color:#9aa4bd;font-size:12px;font-style:italic;margin:0 4px 16px}
+.wc-pfeat{padding:22px 24px;margin-bottom:14px}
+.wc-pmatch{display:flex;align-items:center;justify-content:center;gap:18px;margin-bottom:20px}
+.wc-pside{display:flex;flex-direction:column;align-items:center;gap:8px;width:130px}
+.wc-pside img{width:46px;height:32px;border-radius:4px;object-fit:cover;box-shadow:0 0 0 1px rgba(255,255,255,.12)}
+.wc-pside .pn{font-family:'Oswald';font-weight:600;font-size:16px;text-align:center}
+.wc-pvs{font-family:'Oswald';color:#9aa4bd;font-size:13px}
+.wc-ptop{display:grid;grid-template-columns:auto 1fr;gap:26px;align-items:center;margin-bottom:18px}
+.wc-ring{width:144px;height:144px;border-radius:50%;display:grid;place-items:center;position:relative}
+.wc-ring .hole{position:absolute;width:102px;height:102px;border-radius:50%;background:#0c1120}
+.wc-ring .rc{position:relative;text-align:center}
+.wc-ring .rp{font-family:'Oswald';font-weight:700;font-size:28px;line-height:1}
+.wc-ring .rl{font-size:11px;color:#2dd4ff;text-transform:uppercase;letter-spacing:.08em;margin-top:3px}
+.wc-plegend{display:flex;flex-direction:column;gap:9px}
+.wc-plg{display:flex;align-items:center;gap:9px;font-size:13px}
+.wc-plg .sw{width:11px;height:11px;border-radius:3px}.wc-plg b{font-family:'Oswald';font-weight:600;margin-left:auto;font-size:15px}
+.wc-conf{margin-top:13px}
+.wc-confhead{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#9aa4bd;margin-bottom:6px}
+.wc-conftag{font-family:'Oswald';text-transform:uppercase;letter-spacing:.07em;font-weight:600}
+.wc-confbar{height:8px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden}
+.wc-confbar i{display:block;height:100%;background:linear-gradient(90deg,#2dd4ff,#27e0a3)}
+.wc-pforms{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:4px 0 16px}
+.wc-fl{font-size:11px;color:#9aa4bd;text-transform:uppercase;letter-spacing:.06em;margin-bottom:7px}
+.wc-fbs{display:flex;gap:6px}
+.wc-fb{width:23px;height:23px;border-radius:7px;display:grid;place-items:center;font-family:'Oswald';font-weight:600;font-size:12px}
+.wc-fb.W{background:rgba(39,224,163,.18);color:#27e0a3}.wc-fb.D{background:rgba(250,204,21,.18);color:#facc15}.wc-fb.L{background:rgba(255,107,130,.18);color:#ff6b82}
+.wc-pstats{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:16px}
+.wc-pstat{padding:10px 6px;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);text-align:center}
+.wc-pstat .v{font-family:'Oswald';font-weight:700;font-size:16px}
+.wc-pstat .k{font-size:9px;color:#9aa4bd;text-transform:uppercase;letter-spacing:.03em;margin-top:3px}
+.wc-pscores{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.wc-pscores .sl{font-size:11px;color:#9aa4bd;text-transform:uppercase;letter-spacing:.06em;margin-right:2px}
+.wc-psc{font-family:'Oswald';font-size:13px;padding:5px 11px;border-radius:999px;background:rgba(45,212,255,.1);border:1px solid rgba(45,212,255,.24);color:#2dd4ff}
+.wc-pmini{display:flex;align-items:center;gap:14px;padding:13px 18px;margin-bottom:10px;cursor:pointer;border:1px solid transparent}
+.wc-pmini.sel{border-color:rgba(45,212,255,.35)}
+.wc-pmini .mt{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.wc-pmini .mteam{display:flex;align-items:center;gap:9px;font-family:'Oswald';font-weight:500;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wc-pmini .mteam img{width:22px;height:15px;border-radius:2px;object-fit:cover;flex-shrink:0}
+.wc-mbar{width:148px;flex-shrink:0}
+.wc-mbar .b{display:flex;height:9px;border-radius:999px;overflow:hidden}
+.wc-mbar .b i{display:block}.wc-mbar .h{background:#2dd4ff}.wc-mbar .d{background:#46506a}.wc-mbar .a{background:#9b7cff}
+.wc-mbar .pct{display:flex;justify-content:space-between;font-family:'Oswald';font-size:11px;margin-top:5px;color:#9aa4bd}
+.wc-skel{height:64px;border-radius:16px;background:rgba(255,255,255,.04);animation:wcpulse2 1.5s infinite}
+@keyframes wcpulse2{0%,100%{opacity:.5}50%{opacity:.9}}
+.wc-empty{text-align:center;padding:60px 20px;color:#9aa4bd;font-size:14px}
+@media(max-width:980px){.wc-ggrid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:760px){.wc-fxgrid,.wc-scgrid{grid-template-columns:1fr}}
+@media(max-width:560px){.wc-ggrid{grid-template-columns:1fr}.wc-h1{font-size:30px}.wc-ptop{grid-template-columns:1fr}.wc-pstats{grid-template-columns:repeat(3,1fr)}.wc-pmini{flex-wrap:wrap}.wc-mbar{width:100%}}
+@media (prefers-reduced-motion:reduce){.wc-pulse,.wc-skel{animation:none}}
+`;
 
-/* ── A single match row ── */
+const FormBadges = ({ form }) => (
+  <div className="wc-fbs">
+    {(form && form.length ? form : ['—', '—', '—', '—', '—']).map((r, i) => (
+      <span key={i} className={`wc-fb ${r}`}>{r}</span>
+    ))}
+  </div>
+);
+
 const MatchRow = ({ m }) => {
   const played = LIVE.has(m.status) || FINISHED.has(m.status) || m.status === 'HT';
-  const Side = ({ name, logo, score, win }) => (
-    <div className="flex items-center gap-2 flex-1 min-w-0">
-      {logo && <img src={logo} alt="" width="22" height="22" loading="lazy" className="w-[22px] h-[22px] object-contain flex-shrink-0" />}
-      <span className={`truncate text-sm ${win ? 'font-bold text-white' : 'text-white/85'}`}>{name || 'TBD'}</span>
-    </div>
-  );
+  const badge = LIVE.has(m.status)
+    ? <span className="wc-pill lv"><span className="wc-pulse" />{m.minute ? `${m.minute}'` : 'LIVE'}</span>
+    : m.status === 'HT' ? <span className="wc-pill lv">HT</span>
+    : FINISHED.has(m.status) ? <span className="wc-pill tm">{m.status}</span>
+    : <span className="wc-pill tm">{fmtKick(m.date)}</span>;
   return (
-    <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-white/[0.06]" style={{ background: 'rgba(255,255,255,0.02)' }}>
-      <div className="flex flex-col gap-1.5 flex-1 min-w-0">
-        <Side name={m.homeTeam} logo={m.homeLogo} win={m.homeWin} />
-        <Side name={m.awayTeam} logo={m.awayLogo} win={m.awayWin} />
+    <div className={`wc-card wc-glass ${LIVE.has(m.status) ? 'live' : ''}`}>
+      <div className="wc-cgrid">
+        <div className="wc-teams">
+          <div className={`wc-team ${played && m.awayScore > m.homeScore ? 'lose' : ''}`}>
+            {m.homeLogo && <img src={m.homeLogo} alt="" loading="lazy" />}<span className="nm">{m.homeTeam || 'TBD'}</span>
+          </div>
+          <div className={`wc-team ${played && m.homeScore > m.awayScore ? 'lose' : ''}`}>
+            {m.awayLogo && <img src={m.awayLogo} alt="" loading="lazy" />}<span className="nm">{m.awayTeam || 'TBD'}</span>
+          </div>
+        </div>
+        {played
+          ? <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div><div className="wc-score">{m.homeScore ?? 0}</div><div className="wc-score">{m.awayScore ?? 0}</div></div>{badge}
+            </div>
+          : badge}
       </div>
-      <div className="flex flex-col items-end gap-1.5">
-        {played ? (
-          <>
-            <span className="text-sm font-bold tabular-nums text-white">{m.homeScore ?? 0}</span>
-            <span className="text-sm font-bold tabular-nums text-white">{m.awayScore ?? 0}</span>
-          </>
-        ) : (
-          <StatusBadge m={m} />
-        )}
-      </div>
-      {played && <div className="pl-2"><StatusBadge m={m} /></div>}
     </div>
   );
 };
 
-const KNOCKOUT_ORDER = ['Round of 32', 'Round of 16', 'Quarter-finals', 'Quarter-final', 'Semi-finals', 'Semi-final', '3rd Place Final', 'Final'];
+const Leaderboard = ({ title, kind, rows, loading }) => (
+  <div className="wc-lead wc-glass">
+    <div className={`wc-lhead ${kind === 'a' ? 'a' : 'g'}`}>{title}</div>
+    {loading ? <div style={{ padding: 16 }}><div className="wc-skel" /></div>
+      : rows.length === 0 ? <div className="wc-empty">No data yet.</div>
+      : rows.slice(0, 10).map((p, i) => (
+        <div className="wc-lrow" key={`${p.name}-${i}`}>
+          <span className="wc-lr">{i + 1}</span>
+          <img className="wc-av" src={p.photo || ''} alt="" loading="lazy" />
+          <div className="wc-linfo">
+            <div className="wc-lname">{p.name}</div>
+            <div className="wc-lteam">{p.teamLogo && <img src={p.teamLogo} alt="" loading="lazy" />}{p.team}</div>
+          </div>
+          <div><div className={`wc-lbig ${kind === 'a' ? 'a' : 'g'}`}>{(kind === 'a' ? p.assists : p.goals) ?? 0}</div><div className="wc-lsub">{kind === 'a' ? 'assists' : 'goals'}</div></div>
+        </div>
+      ))}
+  </div>
+);
+
+const PredFeatured = ({ pr }) => {
+  if (pr === 'loading') return <div className="wc-pfeat wc-glass"><div className="wc-skel" style={{ height: 220 }} /></div>;
+  if (!pr || pr === 'error' || pr.error) return <div className="wc-pfeat wc-glass"><div className="wc-empty">Not enough recent data to predict this match yet.</div></div>;
+  const { home, away, prob, expGoals, doubleChance, cleanSheet, topScores = [], over25, btts, form, confidence } = pr;
+  const h = prob.home, d = prob.draw, a = prob.away;
+  const lead = h >= d && h >= a ? { p: h, l: home.name } : (a >= d ? { p: a, l: away.name } : { p: d, l: 'Draw' });
+  const cTag = confidence?.level === 'High' ? '#27e0a3' : confidence?.level === 'Medium' ? '#facc15' : '#9aa4bd';
+  return (
+    <div className="wc-pfeat wc-glass">
+      <div className="wc-pmatch">
+        <div className="wc-pside">{home.logo && <img src={home.logo} alt="" />}<span className="pn">{home.name}</span></div>
+        <span className="wc-pvs">vs</span>
+        <div className="wc-pside">{away.logo && <img src={away.logo} alt="" />}<span className="pn">{away.name}</span></div>
+      </div>
+      <div className="wc-ptop">
+        <div className="wc-ring" style={{ background: `conic-gradient(#2dd4ff 0 ${h}%, #46506a ${h}% ${h + d}%, #9b7cff ${h + d}% 100%)` }}>
+          <div className="hole" /><div className="rc"><div className="rp">{lead.p}%</div><div className="rl">{lead.l}</div></div>
+        </div>
+        <div>
+          <div className="wc-plegend">
+            <div className="wc-plg"><span className="sw" style={{ background: '#2dd4ff' }} />{home.name} win <b>{h}%</b></div>
+            <div className="wc-plg"><span className="sw" style={{ background: '#46506a' }} />Draw <b>{d}%</b></div>
+            <div className="wc-plg"><span className="sw" style={{ background: '#9b7cff' }} />{away.name} win <b>{a}%</b></div>
+          </div>
+          {confidence && (
+            <div className="wc-conf">
+              <div className="wc-confhead"><span>Model confidence</span><span className="wc-conftag" style={{ color: cTag }}>{confidence.level}</span></div>
+              <div className="wc-confbar"><i style={{ width: `${confidence.value}%` }} /></div>
+            </div>
+          )}
+        </div>
+      </div>
+      {form && (
+        <div className="wc-pforms">
+          <div><div className="wc-fl">{home.name} · last 5</div><FormBadges form={form.home} /></div>
+          <div><div className="wc-fl">{away.name} · last 5</div><FormBadges form={form.away} /></div>
+        </div>
+      )}
+      <div className="wc-pstats">
+        <div className="wc-pstat"><div className="v">{expGoals.home} – {expGoals.away}</div><div className="k">Exp goals</div></div>
+        <div className="wc-pstat"><div className="v">{over25}%</div><div className="k">Over 2.5</div></div>
+        <div className="wc-pstat"><div className="v">{btts}%</div><div className="k">Both score</div></div>
+        <div className="wc-pstat"><div className="v">{doubleChance?.home}%</div><div className="k">1X dbl chance</div></div>
+        <div className="wc-pstat"><div className="v">{cleanSheet?.home}%</div><div className="k">Home clean sheet</div></div>
+      </div>
+      {topScores.length > 0 && (
+        <div className="wc-pscores"><span className="sl">Likely scores</span>
+          {topScores.map((s, i) => <span key={i} className="wc-psc">{s.score} · {s.prob}%</span>)}
+        </div>
+      )}
+    </div>
+  );
+};
 
 export default function WorldCupPage({ onNavigate }) {
   const [tab, setTab] = useState('groups');
   const [standings, setStandings] = useState([]);
   const [fixtures, setFixtures] = useState([]);
   const [scorers, setScorers] = useState([]);
+  const [assists, setAssists] = useState([]);
   const [live, setLive] = useState([]);
-  const [loading, setLoading] = useState({ standings: true, fixtures: true, scorers: true });
+  const [loading, setLoading] = useState({ standings: true, fixtures: true, scorers: true, assists: true });
+  const [preds, setPreds] = useState({});
+  const [featuredId, setFeaturedId] = useState(null);
 
   useEffect(() => {
-    fetchWithTimeout(`${API_BASE}/wc/standings`).then(r => r.ok ? r.json() : []).then(d => setStandings(Array.isArray(d) ? d : [])).catch(() => {}).finally(() => setLoading(s => ({ ...s, standings: false })));
-    fetchWithTimeout(`${API_BASE}/wc/fixtures`).then(r => r.ok ? r.json() : []).then(d => setFixtures(Array.isArray(d) ? d : [])).catch(() => {}).finally(() => setLoading(s => ({ ...s, fixtures: false })));
-    fetchWithTimeout(`${API_BASE}/wc/scorers`).then(r => r.ok ? r.json() : []).then(d => setScorers(Array.isArray(d) ? d : [])).catch(() => {}).finally(() => setLoading(s => ({ ...s, scorers: false })));
+    const get = (path, set, key) => fetchWithTimeout(`${API_BASE}${path}`).then(r => r.ok ? r.json() : []).then(d => set(Array.isArray(d) ? d : [])).catch(() => {}).finally(() => setLoading(s => ({ ...s, [key]: false })));
+    get('/wc/standings', setStandings, 'standings');
+    get('/wc/fixtures', setFixtures, 'fixtures');
+    get('/wc/scorers', setScorers, 'scorers');
+    get('/wc/assists', setAssists, 'assists');
   }, []);
 
-  // Live poll
   const loadLive = useCallback(() => {
     fetchWithTimeout(`${API_BASE}/wc/live`).then(r => r.ok ? r.json() : []).then(d => setLive(Array.isArray(d) ? d : [])).catch(() => {});
   }, []);
-  useEffect(() => {
-    loadLive();
-    const t = setInterval(loadLive, 45000);
-    return () => clearInterval(t);
-  }, [loadLive]);
+  useEffect(() => { loadLive(); const t = setInterval(loadLive, 45000); return () => clearInterval(t); }, [loadLive]);
 
   const knockout = useMemo(() => {
     const ko = fixtures.filter(f => f.stage === 'knockout');
-    const byRound = {};
-    ko.forEach(f => { (byRound[f.round] = byRound[f.round] || []).push(f); });
-    const order = (r) => { const i = KNOCKOUT_ORDER.findIndex(k => r.toLowerCase().includes(k.toLowerCase())); return i === -1 ? 99 : i; };
-    return Object.keys(byRound).sort((a, b) => order(a) - order(b)).map(r => ({ round: r, matches: byRound[r] }));
+    const by = {};
+    ko.forEach(f => { (by[f.round] = by[f.round] || []).push(f); });
+    const ord = (r) => { const i = KO_ORDER.findIndex(k => (r || '').toLowerCase().includes(k.toLowerCase())); return i === -1 ? 99 : i; };
+    return Object.keys(by).sort((a, b) => ord(a) - ord(b)).map(r => ({ round: r, matches: by[r] }));
   }, [fixtures]);
 
   const fixturesByDay = useMemo(() => {
     const days = {};
-    fixtures.forEach(f => {
-      const key = f.date ? new Date(f.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }) : 'TBD';
-      (days[key] = days[key] || []).push(f);
-    });
+    fixtures.forEach(f => { const k = fmtDay(f.date); (days[k] = days[k] || []).push(f); });
     return Object.entries(days);
   }, [fixtures]);
 
-  const TABS = [
-    { id: 'groups', label: 'Groups', icon: GridIcon },
-    { id: 'fixtures', label: 'Fixtures', icon: CalendarIcon },
-    { id: 'bracket', label: 'Bracket', icon: GitBranchIcon },
-    { id: 'scorers', label: 'Scorers', icon: TargetIcon },
-  ];
+  const upcoming = useMemo(() => fixtures.filter(f => f.status === 'NS' || f.status === 'TBD').slice(0, 30), [fixtures]);
+  useEffect(() => { if (featuredId == null && upcoming.length) setFeaturedId(upcoming[0].id); }, [upcoming, featuredId]);
+  const featured = useMemo(() => upcoming.find(f => f.id === featuredId) || upcoming[0], [upcoming, featuredId]);
+
+  const loadPred = useCallback((f) => {
+    if (!f) return;
+    setPreds(prev => prev[f.id] ? prev : { ...prev, [f.id]: 'loading' });
+    fetchWithTimeout(`${API_BASE}/wc/predict?home=${encodeURIComponent(f.homeTeam || '')}&away=${encodeURIComponent(f.awayTeam || '')}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => setPreds(prev => ({ ...prev, [f.id]: (d && !d.error) ? d : 'error' })))
+      .catch(() => setPreds(prev => ({ ...prev, [f.id]: 'error' })));
+  }, []);
+  useEffect(() => { if (tab === 'predict' && featured && !preds[featured.id]) loadPred(featured); }, [tab, featured, preds, loadPred]);
+
+  const TABS = ['groups', 'fixtures', 'bracket', 'scorers', 'predict'];
+  const LABELS = { groups: 'Groups', fixtures: 'Fixtures', bracket: 'Bracket', scorers: 'Scorers', predict: 'Predict' };
 
   return (
-    <div className="min-h-screen bg-[#050810] text-white overflow-x-hidden" style={{ fontFamily: "'Outfit', sans-serif" }}>
-      <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <div className="wc-root">
+      <style>{STYLES}</style>
+      <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+      <div className="wc-bg" />
       <NavBar currentPage="worldcup" onNavigate={onNavigate} />
 
-      <div className="max-w-3xl mx-auto px-4 pt-5 pb-24">
-        {/* Hero */}
-        <div className="rounded-2xl border border-white/[0.07] p-5 mb-5 relative overflow-hidden"
-          style={{ background: 'linear-gradient(135deg, rgba(34,211,238,0.10), rgba(155,108,245,0.10), rgba(5,8,16,0.9))' }}>
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(255,255,255,0.06)' }}>
-              <TrophyIcon className="w-6 h-6" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-extrabold leading-tight">FIFA World Cup 2026</h1>
-              <p className="text-sm text-white/60">USA · Canada · Mexico — Jun 11 to Jul 19, 2026</p>
-            </div>
+      <div className="wc-wrap">
+        <div className="wc-hero wc-glass">
+          <div className="wc-badge"><img src={WC_BADGE} alt="FIFA World Cup" /></div>
+          <div>
+            <div className="wc-eyebrow">Now playing · Group stage</div>
+            <h1 className="wc-h1">FIFA World Cup 2026</h1>
+            <div className="wc-sub">USA · Canada · Mexico — June 11 to July 19</div>
           </div>
+          {live.length > 0 && <div className="wc-lv"><span className="wc-pulse" />{live.length} live</div>}
         </div>
 
-        {/* Live strip */}
-        {live.length > 0 && (
-          <div className="mb-5">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: '#ef4444' }} />
-              <span className="text-xs font-bold uppercase tracking-wide" style={{ color: '#ef4444' }}>Live now</span>
-            </div>
-            <div className="flex flex-col gap-2">
-              {live.map(m => <MatchRow key={m.id} m={m} />)}
-            </div>
-          </div>
-        )}
-
-        {/* Tabs */}
-        <div className="flex gap-1.5 mb-5 rounded-2xl p-1.5 border border-white/[0.06] overflow-x-auto" style={{ background: 'rgba(10,14,26,0.6)' }}>
-          {TABS.map(t => {
-            const Icon = t.icon;
-            const active = tab === t.id;
-            return (
-              <button key={t.id} onClick={() => setTab(t.id)}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-colors"
-                style={active ? { background: 'rgba(34,211,238,0.15)', color: '#22d3ee' } : { color: 'rgba(255,255,255,0.6)' }}>
-                <Icon className="w-4 h-4" />{t.label}
-              </button>
-            );
-          })}
+        <div className="wc-tabbar wc-glass">
+          {TABS.map(t => <button key={t} className={`wc-tab ${tab === t ? 'on' : ''}`} onClick={() => setTab(t)}>{LABELS[t]}</button>)}
         </div>
 
-        {/* GROUPS */}
         {tab === 'groups' && (
-          loading.standings ? <Loading /> :
-          standings.length === 0 ? <Empty text="Group tables will appear once the tournament data is published." /> :
-          <div className="grid sm:grid-cols-2 gap-4">
-            {standings.map(g => (
-              <div key={g.group} className="rounded-2xl border border-white/[0.06] overflow-hidden" style={{ background: 'rgba(17,24,39,0.4)' }}>
-                <div className="px-4 py-2.5 text-sm font-bold" style={{ background: 'rgba(255,255,255,0.04)' }}>{g.group}</div>
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-[11px] text-white/40">
-                      <th className="text-left font-medium px-3 py-1.5">Team</th>
-                      <th className="font-medium px-1.5">P</th><th className="font-medium px-1.5">GD</th><th className="font-medium px-2">Pts</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {g.table.map((r, i) => (
-                      <tr key={r.team} className="border-t border-white/[0.04]" style={i < 2 ? { background: 'rgba(34,211,238,0.05)' } : {}}>
-                        <td className="px-3 py-2">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <span className="text-white/35 text-xs w-3">{r.rank}</span>
-                            {r.logo && <img src={r.logo} alt="" width="18" height="18" loading="lazy" className="w-[18px] h-[18px] object-contain" />}
-                            <span className="truncate">{r.team}</span>
-                          </div>
-                        </td>
-                        <td className="text-center text-white/70 px-1.5">{r.played}</td>
-                        <td className="text-center text-white/70 px-1.5">{r.gd > 0 ? `+${r.gd}` : r.gd}</td>
-                        <td className="text-center font-bold px-2">{r.points}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ))}
-          </div>
+          loading.standings ? <div className="wc-ggrid">{[0,1,2,3,4,5].map(i => <div key={i} className="wc-skel" style={{ height: 180 }} />)}</div>
+          : standings.length === 0 ? <div className="wc-empty">Group tables will appear once the data is published.</div>
+          : <>
+            <div className="wc-ggrid">
+              {standings.map(g => (
+                <div className="wc-group wc-glass" key={g.group}>
+                  <div className="wc-ghead">{g.group}</div>
+                  <table className="wc-tbl">
+                    <thead><tr><th className="l">Team</th><th>P</th><th>GD</th><th>Pts</th></tr></thead>
+                    <tbody>
+                      {g.table.map((r, i) => (
+                        <tr key={r.team} className={i < 2 ? 'q' : ''}>
+                          <td className="tm"><div className="wc-tcell"><span className="r">{r.rank}</span>{r.logo && <img src={r.logo} alt="" loading="lazy" />}<span className="nm">{r.team}</span></div></td>
+                          <td>{r.played ?? 0}</td><td>{r.gd > 0 ? `+${r.gd}` : (r.gd ?? 0)}</td><td className="wc-pts">{r.points ?? 0}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ))}
+            </div>
+            <div className="wc-legend">Top two per group (cyan edge) advance, plus the eight best third-placed teams.</div>
+          </>
         )}
 
-        {/* FIXTURES */}
         {tab === 'fixtures' && (
-          loading.fixtures ? <Loading /> :
-          fixtures.length === 0 ? <Empty text="The match schedule will appear here." /> :
-          <div className="flex flex-col gap-5">
-            {fixturesByDay.map(([day, matches]) => (
-              <div key={day}>
-                <div className="text-xs font-bold uppercase tracking-wide text-white/40 mb-2">{day}</div>
-                <div className="flex flex-col gap-2">{matches.map(m => <MatchRow key={m.id} m={m} />)}</div>
-              </div>
-            ))}
-          </div>
+          loading.fixtures ? <div className="wc-fxgrid">{[0,1,2,3].map(i => <div key={i} className="wc-skel" />)}</div>
+          : fixtures.length === 0 ? <div className="wc-empty">The match schedule will appear here.</div>
+          : fixturesByDay.map(([day, ms]) => (
+            <div key={day}>
+              <div className="wc-dayhdr">{day}</div>
+              <div className="wc-fxgrid">{ms.map(m => <MatchRow key={m.id} m={m} />)}</div>
+            </div>
+          ))
         )}
 
-        {/* BRACKET */}
         {tab === 'bracket' && (
-          loading.fixtures ? <Loading /> :
-          knockout.length === 0 ? <Empty text="The knockout bracket appears once the group stage ends." /> :
-          <div className="flex flex-col gap-5">
-            {knockout.map(({ round, matches }) => (
-              <div key={round}>
-                <div className="text-xs font-bold uppercase tracking-wide mb-2" style={{ color: '#22d3ee' }}>{round}</div>
-                <div className="flex flex-col gap-2">{matches.map(m => <MatchRow key={m.id} m={m} />)}</div>
-              </div>
-            ))}
-          </div>
+          loading.fixtures ? <div className="wc-fxgrid">{[0,1].map(i => <div key={i} className="wc-skel" />)}</div>
+          : knockout.length === 0 ? <div className="wc-empty">The knockout bracket appears once the group stage ends.</div>
+          : knockout.map(({ round, matches }) => (
+            <div key={round}>
+              <div className="wc-dayhdr" style={{ color: '#2dd4ff' }}>{round}</div>
+              <div className="wc-fxgrid">{matches.map(m => <MatchRow key={m.id} m={m} />)}</div>
+            </div>
+          ))
         )}
 
-        {/* SCORERS */}
         {tab === 'scorers' && (
-          loading.scorers ? <Loading /> :
-          scorers.length === 0 ? <Empty text="Top scorers will appear once matches are played." /> :
-          <div className="rounded-2xl border border-white/[0.06] overflow-hidden" style={{ background: 'rgba(17,24,39,0.4)' }}>
-            {scorers.map((p, i) => (
-              <div key={`${p.name}-${i}`} className="flex items-center gap-3 px-4 py-2.5 border-t border-white/[0.04] first:border-t-0">
-                <span className="text-white/35 text-sm w-5 text-center">{i + 1}</span>
-                {p.photo && <img src={p.photo} alt="" width="32" height="32" loading="lazy" className="w-8 h-8 rounded-full object-cover" />}
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-semibold truncate">{p.name}</div>
-                  <div className="text-xs text-white/50 flex items-center gap-1.5">
-                    {p.teamLogo && <img src={p.teamLogo} alt="" width="14" height="14" loading="lazy" className="w-3.5 h-3.5 object-contain" />}
-                    {p.team}
+          <>
+            <div className="wc-scgrid">
+              <Leaderboard title="Top scorers" kind="g" rows={scorers} loading={loading.scorers} />
+              <Leaderboard title="Top assists" kind="a" rows={assists} loading={loading.assists} />
+            </div>
+            <div className="wc-legend">Goals and assists leaders across the tournament.</div>
+          </>
+        )}
+
+        {tab === 'predict' && (
+          loading.fixtures ? <div className="wc-skel" style={{ height: 220 }} />
+          : upcoming.length === 0 ? <div className="wc-empty">Predictions show for upcoming matches.</div>
+          : <>
+            <div className="wc-basis">Form-based estimate from recent national-team results — not the club xG model.</div>
+            {featured && <PredFeatured pr={preds[featured.id]} />}
+            {upcoming.filter(f => !featured || f.id !== featured.id).slice(0, 12).map(f => {
+              const pr = preds[f.id];
+              const hasP = pr && typeof pr === 'object' && !pr.error;
+              return (
+                <div key={f.id} className={`wc-pmini wc-glass ${featured && f.id === featured.id ? 'sel' : ''}`}
+                  onClick={() => { setFeaturedId(f.id); loadPred(f); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
+                  <div className="mt">
+                    <div className="mteam">{f.homeLogo && <img src={f.homeLogo} alt="" loading="lazy" />}{f.homeTeam}</div>
+                    <div className="mteam">{f.awayLogo && <img src={f.awayLogo} alt="" loading="lazy" />}{f.awayTeam}</div>
                   </div>
+                  {hasP
+                    ? <div className="wc-mbar"><div className="b"><i className="h" style={{ width: `${pr.prob.home}%` }} /><i className="d" style={{ width: `${pr.prob.draw}%` }} /><i className="a" style={{ width: `${pr.prob.away}%` }} /></div><div className="pct"><span>{pr.prob.home}%</span><span>{pr.prob.draw}%</span><span>{pr.prob.away}%</span></div></div>
+                    : <span className="wc-pill tm">Predict</span>}
                 </div>
-                <div className="text-right">
-                  <div className="text-base font-extrabold" style={{ color: '#22d3ee' }}>{p.goals ?? 0}</div>
-                  <div className="text-[10px] text-white/40 uppercase">goals</div>
-                </div>
-              </div>
-            ))}
-          </div>
+              );
+            })}
+          </>
         )}
       </div>
     </div>
   );
 }
-
-const Loading = () => (
-  <div className="flex flex-col gap-2">
-    {[0, 1, 2, 3].map(i => <div key={i} className="h-16 rounded-xl animate-pulse" style={{ background: 'rgba(255,255,255,0.04)' }} />)}
-  </div>
-);
-
-const Empty = ({ text }) => (
-  <div className="text-center py-16 rounded-2xl border border-white/[0.06]" style={{ background: 'rgba(17,24,39,0.4)' }}>
-    <p className="text-white/50 text-sm px-6">{text}</p>
-  </div>
-);
