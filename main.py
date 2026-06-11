@@ -1421,8 +1421,11 @@ def load_models():
         for f in os.listdir(model_dir):
             if f.endswith(".pkl"):
                 name = f.replace(".pkl", "")
-                models[name] = joblib.load(os.path.join(model_dir, f))
-                print(f"Loaded model: {name}")
+                try:
+                    models[name] = joblib.load(os.path.join(model_dir, f))
+                    print(f"Loaded model: {name}")
+                except Exception as e:
+                    print(f"WARNING: skipped model '{name}' — failed to load: {e}")
     
     # Pre-warm best picks cache in background
     import threading
