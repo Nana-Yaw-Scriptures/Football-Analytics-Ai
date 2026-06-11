@@ -41,6 +41,7 @@ const NAV_LINKS = [
   { id:'players',    label:'Players',    shortLabel:'Players', icon:UsersIcon,    accent:'#34d399' },
   { id:'managers',   label:'Managers',   shortLabel:'Coaches', icon:UserIcon,     accent:'#fbbf24' },
   { id:'live',       label:'Live',       shortLabel:'Live',    icon:ActivityIcon, accent:'#f87171', live:true },
+  { id:'worldcup',   label:'World Cup',  shortLabel:'WC',      icon:TrophyNavIcon, accent:'#22d3ee' },
   { id:'league',     label:'Leagues',    shortLabel:'Leagues', icon:GlobeIcon,    accent:'#60a5fa', dropdown:true },
   { id:'bestpicks',  label:'AI Picks',   shortLabel:'AI',      icon:ZapIcon,      accent:'#f97316', aiOnly:true },
   { id:'history',    label:'History',     shortLabel:'History', icon:HistoryIcon,   accent:'#c084fc', more:true },
@@ -64,7 +65,7 @@ const PAGE_LABEL = {
   home:'Home', analysis:'AI Analysis', analytics:'Analytics',
   players:'Players', managers:'Managers', live:'Live Scores',
   league:'League', simulator:'Simulator', history:'Predictions',
-  match:'Match Centre', admin:'Admin', bestpicks:'AI Picks', videolab:'Video Lab',
+  match:'Match Centre', admin:'Admin', bestpicks:'AI Picks', videolab:'Video Lab', worldcup:'World Cup',
 };
 
 /* Pages that always snap back to a specific destination */

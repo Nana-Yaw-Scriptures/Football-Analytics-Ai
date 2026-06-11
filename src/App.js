@@ -24,6 +24,7 @@ const FavouritesPage        = lazy(() => import('./pages/FavouritesPage'));
 const LeaderboardPage       = lazy(() => import('./pages/LeaderboardPage'));
 const PickemPage            = lazy(() => import('./pages/PickemPage'));
 const UserProfilePage       = lazy(() => import('./pages/UserProfilePage'));
+const WorldCupPage          = lazy(() => import('./pages/WorldCupPage'));
 
 // Shown only for the brief moment a page chunk is downloading.
 const PageLoader = () => (
@@ -94,6 +95,7 @@ function App() {
         {currentPage === 'leaderboard'  && <LeaderboardPage      onNavigate={handleNavigation} />}
         {currentPage === 'pickem'       && <PickemPage           onNavigate={handleNavigation} />}
         {currentPage === 'profile'      && <UserProfilePage      onNavigate={handleNavigation} />}
+        {currentPage === 'worldcup'     && <WorldCupPage         onNavigate={handleNavigation} />}
       </Suspense>
       <SupportBot/>
     </AuthProvider>
