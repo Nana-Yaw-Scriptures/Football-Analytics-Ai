@@ -1487,12 +1487,8 @@ def wc_scorers():
 
 @app.get("/wc/predict")
 def wc_predict(home: str, away: str):
-    try:
-        from services.world_cup_service import predict_wc_match
-        return predict_wc_match(home, away)
-    except Exception as e:
-        import traceback
-        return {"error": str(e), "type": type(e).__name__, "trace": traceback.format_exc().splitlines()[-6:]}
+    from services.world_cup_service import predict_wc_match
+    return predict_wc_match(home, away)
 
 # ══════════════════════════════════════════
 # SUPPORT BOT
