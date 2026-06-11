@@ -139,7 +139,7 @@ const LivePill = ({ match }) => {
       <div className="hp-live-pill-inner">
         {/* Home */}
         <div className="flex items-center gap-2 min-w-0">
-          {match.homeLogo && <img src={match.homeLogo} alt="" className="w-5 h-5 object-contain flex-shrink-0"/>}
+          {match.homeLogo && <img src={match.homeLogo} alt="" width="20" height="20" loading="lazy" decoding="async" className="w-5 h-5 object-contain flex-shrink-0"/>}
           <span className="text-sm font-bold text-white truncate">{match.homeTeam?.replace(' FC','')}</span>
         </div>
         {/* Score */}
@@ -160,7 +160,7 @@ const LivePill = ({ match }) => {
         {/* Away */}
         <div className="flex items-center gap-2 min-w-0 justify-end">
           <span className="text-sm font-bold text-white truncate">{match.awayTeam?.replace(' FC','')}</span>
-          {match.awayLogo && <img src={match.awayLogo} alt="" className="w-5 h-5 object-contain flex-shrink-0"/>}
+          {match.awayLogo && <img src={match.awayLogo} alt="" width="20" height="20" loading="lazy" decoding="async" className="w-5 h-5 object-contain flex-shrink-0"/>}
         </div>
       </div>
       {isLive && <div className="hp-live-pill-glow"/>}
@@ -548,7 +548,7 @@ export default function HomePage({ onNavigate }) {
                 className="hp-league-card group"
                 style={{ '--lc': lg.color, animationDelay:`${i*0.05}s` }}>
                 <div className="hp-league-glow"/>
-                <img src={lg.img} alt={lg.name} className="hp-league-img"/>
+                <img src={lg.img} alt={lg.name} loading="lazy" decoding="async" className="hp-league-img"/>
                 <p className="text-sm font-bold text-white leading-tight text-center">{lg.name}</p>
                 <p className="text-[10px] text-slate-600 mt-0.5">{lg.country}</p>
                 <div className="hp-league-bar"/>
