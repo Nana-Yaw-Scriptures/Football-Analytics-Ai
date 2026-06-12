@@ -64,6 +64,8 @@ def get_international_fixtures(date=None, upcoming=False):
 
     all_fixtures = []
 
+    all_fixtures = []
+
     # Determine season dynamically — try primary then fallback if no results.
     # API-Football seasons: Friendlies use calendar year (2026), tournaments use start year (2025 for 2025-26).
     current_year = datetime.now(timezone.utc).year
@@ -159,10 +161,9 @@ def _get(endpoint, params=None):
             if data.get("errors"):
                 err = str(data["errors"])
                 if "rateLimit" in err:
-                    # Fail fast — never block a user request for 60s.
-                    # The endpoint-level cache serves the last good data instead.
-                    print(f"[LiveScores] Rate limited — returning without blocking")
-                    return {"response": []}
+                    print(f"[LiveScores] Rate limited, waiting 60s...")
+                    time.sleep(60)
+                    continue
                 print(f"[LiveScores] API error: {err}")
             return data
         except Exception as e:
@@ -261,57 +262,53 @@ def get_todays_fixtures(league=None):
 
 
 def get_live_fixtures():
-    """Fetch only currently live fixtures across the tracked leagues — one API call."""
+    """Fetch only currently live fixtures across all top 5 leagues."""
     cache_name = "live_now"
     cached = _read_cache(cache_name, max_age_seconds=180)  # 3 min
     if cached is not None:
         return cached
 
-    # One call for ALL live matches worldwide, then filter to our leagues locally.
-    id_to_name = {v: k for k, v in LEAGUE_IDS.items()}
-    data = _get("fixtures", {"live": "all"})
-
     all_live = []
-    for fix in data.get("response", []):
-        league_info = fix.get("league", {})
-        league_id = league_info.get("id")
-        if league_id not in id_to_name:
-            continue
-        league_name = id_to_name[league_id]
-
-        fixture = fix.get("fixture", {})
-        teams = fix.get("teams", {})
-        goals = fix.get("goals", {})
-        events = fix.get("events", [])
-        status = fixture.get("status", {})
-
-        formatted_events = []
-        for evt in events[:20]:  # Last 20 events
-            formatted_events.append({
-                "time": evt.get("time", {}).get("elapsed"),
-                "extra": evt.get("time", {}).get("extra"),
-                "team": evt.get("team", {}).get("name"),
-                "teamLogo": evt.get("team", {}).get("logo"),
-                "player": evt.get("player", {}).get("name"),
-                "assist": evt.get("assist", {}).get("name"),
-                "type": evt.get("type"),
-                "detail": evt.get("detail"),
-            })
-
-        all_live.append({
-            "id": fixture.get("id"),
-            "date": fixture.get("date"),
-            "league": league_name,
-            "status": status.get("short"),
-            "elapsed": status.get("elapsed"),
-            "homeTeam": teams.get("home", {}).get("name"),
-            "homeLogo": teams.get("home", {}).get("logo"),
-            "awayTeam": teams.get("away", {}).get("name"),
-            "awayLogo": teams.get("away", {}).get("logo"),
-            "homeGoals": goals.get("home"),
-            "awayGoals": goals.get("away"),
-            "events": formatted_events,
+    for league_name, league_id in LEAGUE_IDS.items():
+        data = _get("fixtures", {
+            "league": league_id,
+            "season": SEASON,
+            "live": "all",
         })
+        for fix in data.get("response", []):
+            fixture = fix.get("fixture", {})
+            teams = fix.get("teams", {})
+            goals = fix.get("goals", {})
+            events = fix.get("events", [])
+            status = fixture.get("status", {})
+
+            formatted_events = []
+            for evt in events[:20]:  # Last 20 events
+                formatted_events.append({
+                    "time": evt.get("time", {}).get("elapsed"),
+                    "extra": evt.get("time", {}).get("extra"),
+                    "team": evt.get("team", {}).get("name"),
+                    "teamLogo": evt.get("team", {}).get("logo"),
+                    "player": evt.get("player", {}).get("name"),
+                    "assist": evt.get("assist", {}).get("name"),
+                    "type": evt.get("type"),
+                    "detail": evt.get("detail"),
+                })
+
+            all_live.append({
+                "id": fixture.get("id"),
+                "date": fixture.get("date"),
+                "league": league_name,
+                "status": status.get("short"),
+                "elapsed": status.get("elapsed"),
+                "homeTeam": teams.get("home", {}).get("name"),
+                "homeLogo": teams.get("home", {}).get("logo"),
+                "awayTeam": teams.get("away", {}).get("name"),
+                "awayLogo": teams.get("away", {}).get("logo"),
+                "homeGoals": goals.get("home"),
+                "awayGoals": goals.get("away"),
+                "events": formatted_events,
+            })
 
     _write_cache(cache_name, all_live)
     return all_live

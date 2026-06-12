@@ -245,32 +245,14 @@ export default function HomePage({ onNavigate }) {
     <div className="min-h-screen bg-[#050810] text-white overflow-x-hidden" style={{ fontFamily:"'Outfit',sans-serif" }}>
       <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
 
-      {/* ── AMBIENT BACKGROUND ── */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        {/* Radial glows */}
-        <div className="absolute -top-40 left-1/4 w-[800px] h-[800px] rounded-full blur-[180px]"
-          style={{ background:'radial-gradient(circle,rgba(34,211,238,0.055) 0%,transparent 65%)' }}/>
-        <div className="absolute top-1/2 right-0 w-[600px] h-[600px] rounded-full blur-[140px]"
-          style={{ background:'radial-gradient(circle,rgba(168,85,247,0.04) 0%,transparent 65%)' }}/>
-        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] rounded-full blur-[120px]"
-          style={{ background:'radial-gradient(circle,rgba(16,185,129,0.035) 0%,transparent 65%)' }}/>
-        {/* Grid */}
-        <div className="absolute inset-0 opacity-[0.022]"
-          style={{ backgroundImage:'linear-gradient(rgba(255,255,255,0.5) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.5) 1px,transparent 1px)', backgroundSize:'64px 64px' }}/>
-        {/* Pitch overlay */}
-        <div className="absolute inset-0 flex items-start justify-center pointer-events-none opacity-[0.025] pt-12">
-          <svg width="900" height="580" viewBox="0 0 900 580">
-            <rect x="60" y="40" width="780" height="500" fill="none" stroke="white" strokeWidth="1.5"/>
-            <line x1="450" y1="40" x2="450" y2="540" stroke="white" strokeWidth="1"/>
-            <circle cx="450" cy="290" r="75" fill="none" stroke="white" strokeWidth="1.5"/>
-            <circle cx="450" cy="290" r="3" fill="white"/>
-            <rect x="60" y="195" width="120" height="190" fill="none" stroke="white" strokeWidth="1"/>
-            <rect x="780" y="195" width="120" height="190" fill="none" stroke="white" strokeWidth="1"/>
-            <rect x="60" y="240" width="50" height="100" fill="none" stroke="white" strokeWidth="0.8"/>
-            <rect x="790" y="240" width="50" height="100" fill="none" stroke="white" strokeWidth="0.8"/>
-          </svg>
-        </div>
-      </div>
+     {/* ── AMBIENT BACKGROUND (flat gradient — no blur filters) ── */}
+      <div className="fixed inset-0 pointer-events-none" style={{
+        background:
+          'radial-gradient(820px 620px at 25% -8%, rgba(34,211,238,0.05), transparent 60%),' +
+          'radial-gradient(620px 520px at 100% 45%, rgba(168,85,247,0.04), transparent 60%),' +
+          'radial-gradient(520px 520px at 0% 100%, rgba(16,185,129,0.035), transparent 60%)'
+      }}/>
+      
 
       <NavBar currentPage="home" onNavigate={onNavigate}/>
 
@@ -299,7 +281,7 @@ export default function HomePage({ onNavigate }) {
                 <div className="flex items-baseline gap-1 mb-1">
                   <h1 className="text-7xl sm:text-8xl lg:text-9xl font-black tracking-tight leading-none text-white">
                     Scorina
-                  </h1>
+                  </h1> 
                   {/* IQ styled as a score badge */}
                   <div className="hp-iq-badge">
                     <span>Ai</span>
