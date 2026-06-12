@@ -2,13 +2,13 @@ import { fetchWithTimeout } from './utils/fetchWithTimeout';
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { AuthProvider } from './context/AuthContext';
 import SupportBot from './components/SupportBot';
+import HomePage from './pages/HomePage';  // entry route — eager so it paints immediately, no spinner/extra chunk on first load
 
 // Route components are code-split: each page is downloaded only the first time
 // it is opened, instead of shipping every page in the initial bundle. This
 // shrinks the first load (helps slow connections) without changing any
 // page behaviour, props, or routing.
 const AdminPanel            = lazy(() => import('./pages/AdminPanel'));
-const HomePage              = lazy(() => import('./pages/HomePage'));
 const AnalysisPage          = lazy(() => import('./pages/AnalysisPage'));
 const PlayersPage           = lazy(() => import('./pages/PlayersPage'));
 const ManagersPage          = lazy(() => import('./pages/ManagersPage'));
@@ -24,7 +24,6 @@ const FavouritesPage        = lazy(() => import('./pages/FavouritesPage'));
 const LeaderboardPage       = lazy(() => import('./pages/LeaderboardPage'));
 const PickemPage            = lazy(() => import('./pages/PickemPage'));
 const UserProfilePage       = lazy(() => import('./pages/UserProfilePage'));
-const WorldCupPage          = lazy(() => import('./pages/WorldCupPage'));
 
 // Shown only for the brief moment a page chunk is downloading.
 const PageLoader = () => (
@@ -95,7 +94,6 @@ function App() {
         {currentPage === 'leaderboard'  && <LeaderboardPage      onNavigate={handleNavigation} />}
         {currentPage === 'pickem'       && <PickemPage           onNavigate={handleNavigation} />}
         {currentPage === 'profile'      && <UserProfilePage      onNavigate={handleNavigation} />}
-        {currentPage === 'worldcup'     && <WorldCupPage         onNavigate={handleNavigation} />}
       </Suspense>
       <SupportBot/>
     </AuthProvider>
