@@ -109,16 +109,16 @@ def dt(iso):
     except Exception: return None
 
 def human(iso):
-    d = dt(iso); return d.strftime("%A, %-d %B %Y") if d else ""
+    d = dt(iso); return (d.strftime("%A, ") + str(d.day) + d.strftime(" %B %Y")) if d else ""
 
 def short(iso):
-    d = dt(iso); return d.strftime("%a %-d %b") if d else "TBD"
+    d = dt(iso); return (d.strftime("%a ") + str(d.day) + d.strftime(" %b")) if d else "TBD"
 
 def gameweek(iso):
     d = dt(iso)
     if not d: return ("Upcoming", "0000")
     mon = d - timedelta(days=d.weekday()); sun = mon + timedelta(days=6)
-    return (f"{mon.strftime('%-d')}\u2013{sun.strftime('%-d %b')}", mon.strftime("%Y%m%d"))
+    return (f"{mon.day}\u2013{sun.day} {sun.strftime('%b')}", mon.strftime("%Y%m%d"))
 
 def pct(x):
     try: return round(float(x) * 100)
@@ -429,7 +429,7 @@ def build_match(fx, pred, p):
         '<a class="cta" href="__SITE__/#/analysis"><span><span class="t">Want the live version?</span><br><span class="s">See the up-to-the-minute prediction on Scorina AI.</span></span><span class="go">Open →</span></a>'
         '<p class="disc">Predictions are model estimates for analysis and entertainment, not betting advice.</p></article></main>',
         {"__CL__": p["cls"], "__LEAGUE__": p["league"], "__KICKF__": p["kickf"], "__HOME__": p["home"], "__AWAY__": p["away"],
-         "__PUB__": datetime.now(timezone.utc).strftime("%-d %B %Y"), "__HL__": p["hl"], "__AL__": p["al"],
+         "__PUB__": (str(datetime.now(timezone.utc).day) + datetime.now(timezone.utc).strftime(" %B %Y")), "__HL__": p["hl"], "__AL__": p["al"],
          "__ARTICLE__": article,  # Sonnet write-up
          "__HW__": p["hw"], "__DR__": p["dr"], "__AW__": p["aw"], "__XGH__": p["xgh"], "__XGA__": p["xga"],
          "__SCORE__": p["score"], "__CONF__": p["conf"], "__FH__": form_badges(pred.get("home_form_sequence")),
