@@ -6,7 +6,6 @@ import { useAuth } from '../context/AuthContext';
 import { getPredictions } from '../services/supabaseService';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000';
-const WC_BADGE = 'https://media.api-sports.io/football/leagues/1.png';
 
 /* Minimal inline icons (no icon library, keeps the bundle small) */
 const Icon = ({ d, c = 'w-4 h-4' }) => (
@@ -164,19 +163,19 @@ export default function HomePage({ onNavigate }) {
             AI-powered predictions, live scores, player analytics and league simulation — all in one place.
           </p>
 
-          {/* World Cup notice */}
-          <button onClick={() => onNavigate('worldcup')}
+          {/* AI Picks promo */}
+          <button onClick={() => onNavigate('bestpicks')}
             className="w-full max-w-lg mx-auto flex items-center gap-3.5 rounded-2xl p-4 border text-left transition-transform hover:-translate-y-0.5 mb-7"
-            style={{ background:'linear-gradient(120deg, rgba(45,212,255,0.12), rgba(155,124,255,0.12) 60%, rgba(255,255,255,0.02))', borderColor:'rgba(45,212,255,0.28)' }}>
-            <span className="w-12 h-12 rounded-xl grid place-items-center p-1.5 flex-shrink-0" style={{ background:'rgba(255,255,255,0.94)' }}>
-              <img src={WC_BADGE} alt="FIFA World Cup" width="36" height="36" className="w-full h-full object-contain"/>
+            style={{ background:'linear-gradient(120deg, rgba(34,211,238,0.12), rgba(168,85,247,0.12) 60%, rgba(255,255,255,0.02))', borderColor:'rgba(34,211,238,0.28)' }}>
+            <span className="w-12 h-12 rounded-xl grid place-items-center flex-shrink-0" style={{ background:'linear-gradient(135deg,#22d3ee,#a855f7)' }}>
+              <TargetIcon c="w-6 h-6 text-white"/>
             </span>
             <span className="flex-1 min-w-0">
-              <span className="block text-[10px] font-bold uppercase tracking-wider text-red-400">Live now</span>
-              <span className="block text-white font-black text-base leading-tight">FIFA World Cup 2026</span>
-              <span className="block text-slate-400 text-sm leading-snug">Groups, live scores, scorers and AI predictions</span>
+              <span className="block text-[10px] font-bold uppercase tracking-wider text-cyan-400">Updated daily</span>
+              <span className="block text-white font-black text-base leading-tight">AI Picks</span>
+              <span className="block text-slate-400 text-sm leading-snug">Our highest-confidence predictions, picked for you every day</span>
             </span>
-            <span className="flex-shrink-0 px-4 py-2.5 rounded-xl font-bold text-sm" style={{ background:'linear-gradient(135deg,#2dd4ff,#62e3ff)', color:'#06101f' }}>Open →</span>
+            <span className="flex-shrink-0 px-4 py-2.5 rounded-xl font-bold text-sm" style={{ background:'linear-gradient(135deg,#2dd4ff,#62e3ff)', color:'#06101f' }}>View →</span>
           </button>
 
           {/* Quick nav */}
