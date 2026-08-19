@@ -48,7 +48,7 @@ const LEAGUE_COLOR = {
 };
 const INTL_LEAGUES = [
   { name: 'All International',          key: '' },
-  {/* name: 'World Cup',                   key: 'World Cup',                    logo: 'https://media.api-sports.io/football/leagues/1.png' */},
+  //{/* name: 'World Cup',                   key: 'World Cup',                    logo: 'https://media.api-sports.io/football/leagues/1.png' */},
   { name: 'UEFA Nations League',         key: 'UEFA Nations League',          logo: 'https://media.api-sports.io/football/leagues/5.png'  },
   { name: 'World Cup Qualifiers - UEFA', key: 'World Cup Qualifiers - UEFA',  logo: 'https://media.api-sports.io/football/leagues/9.png'  },
   { name: 'World Cup Qualifiers - CAF',  key: 'World Cup Qualifiers - CAF',   logo: 'https://media.api-sports.io/football/leagues/29.png' },
