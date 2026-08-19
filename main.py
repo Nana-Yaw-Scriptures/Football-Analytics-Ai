@@ -1571,11 +1571,11 @@ Keep answers under 150 words. Never make up features. Be warm and helpful ⚽"""
         messages.append({"role": "user", "content": req.message})
 
         response = client.messages.create(
-            model="claude-sonnet-4-20250514",
-            max_tokens=300,
-            system=SYSTEM_PROMPT,
-            messages=messages
-        )
+    model="claude-sonnet-5",
+    max_tokens=300,
+    system=SYSTEM_PROMPT,
+    messages=messages
+)
 
         return {"reply": response.content[0].text}
 

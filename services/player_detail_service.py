@@ -8,6 +8,7 @@ import json
 import os
 import time
 from dotenv import load_dotenv
+from services.season import SEASON
 
 load_dotenv()
 
@@ -92,7 +93,9 @@ def search_players_cache(query, league=None, position=None, limit=20):
     return results[:limit]
 
 
-def get_player_fixtures(player_id, season=2025):
+def get_player_fixtures(player_id, season=None):
+    if season is None:
+        season = SEASON
     """
     Fetch match-by-match stats for a specific player from API-Football.
     Endpoint: /players/fixtures?id={player_id}&season={season}
