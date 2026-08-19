@@ -211,6 +211,7 @@ export default function Footer({ onNavigate }) {
         { label: 'Season Simulator',action: () => onNavigate('simulator')   },
         { label: 'My Picks',        action: () => onNavigate('pickem')      },
         { label: 'Leaderboard',     action: () => onNavigate('leaderboard') },
+        { label: 'Blog',            href: '/blog/'                          },
       ],
     },
     {
