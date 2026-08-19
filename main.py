@@ -7,7 +7,8 @@ import re
 import requests
 import time
 from dotenv import load_dotenv
-
+from services.season import SEASON
+from services.blog_preview import router as blog_router   # ← line 1 here, with imports
 load_dotenv()
 
 # ── API keys ──
@@ -17,7 +18,7 @@ API_BASE           = "https://v3.football.api-sports.io"
 API_HEADERS        = {"x-apisports-key": API_KEY}
 FDORG_BASE         = "https://api.football-data.org/v4"
 FDORG_HEADERS      = {"X-Auth-Token": FOOTBALL_DATA_KEY}
-from services.season import SEASON
+
 
 app = FastAPI(title="Football Analyst AI - Backend")
 
@@ -50,6 +51,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(blog_router)  
+
 # ── In-memory cache for teams ──
 _teams_cache = {}
 
@@ -71,6 +75,7 @@ API_FOOTBALL_LEAGUE_IDS = {
     "Eredivisie":           88,
     "Scottish Premiership": 179,
 }
+
 
 
 # ── normalize_team_name MUST be defined before _get_team_id_by_league ──

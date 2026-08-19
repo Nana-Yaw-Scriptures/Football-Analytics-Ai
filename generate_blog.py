@@ -74,9 +74,32 @@ def api_post(p, body):
     except Exception as e:
         print(f"  ! POST {p}: {e}"); return None
 
+WRITE_UPS = True  # call the Sonnet write-up endpoint for each match page
+
 def slugify(t):
     t = re.sub(r"[^a-zA-Z0-9]+", "-", t.lower()).strip("-")
     return re.sub(r"-{2,}", "-", t)
+
+def get_preview(p, pred):
+    """Fetch the Sonnet-written preview for one match; returns article HTML or ''."""
+    if not WRITE_UPS:
+        return ""
+    payload = {
+        "home": p["home"], "away": p["away"], "league": p["league"],
+        "home_win": pred.get("home_win", 0), "draw": pred.get("draw", 0), "away_win": pred.get("away_win", 0),
+        "home_expected_goals": pred.get("home_expected_goals"), "away_expected_goals": pred.get("away_expected_goals"),
+        "most_likely_score": pred.get("most_likely_score") or pred.get("predicted_score"),
+        "confidence_level": pred.get("confidence_level"),
+        "home_form_sequence": pred.get("home_form_sequence") or [],
+        "away_form_sequence": pred.get("away_form_sequence") or [],
+        "key_factors": pred.get("key_factors") or [],
+    }
+    data = api_post("/blog/preview", payload)
+    text = (data or {}).get("preview", "").strip()
+    if not text:
+        return ""
+    paras = [x.strip() for x in re.split(r"\n\s*\n", text) if x.strip()]
+    return '<h2>The preview</h2>' + "".join(f"<p>{x}</p>" for x in paras)
 
 def lmeta(league):
     return LEAGUE_META.get(league, (slugify(league or "football"), "pl"))
@@ -379,6 +402,7 @@ def build_team(team, slug, posts, all_posts):
         f"{SITE}/blog/team/{slug}.html", body))
 
 def build_match(fx, pred, p):
+    article = get_preview(p, pred)
     factors = pred.get("key_factors") or []
     fx_html = ""
     if factors:
@@ -406,7 +430,7 @@ def build_match(fx, pred, p):
         '<p class="disc">Predictions are model estimates for analysis and entertainment, not betting advice.</p></article></main>',
         {"__CL__": p["cls"], "__LEAGUE__": p["league"], "__KICKF__": p["kickf"], "__HOME__": p["home"], "__AWAY__": p["away"],
          "__PUB__": datetime.now(timezone.utc).strftime("%-d %B %Y"), "__HL__": p["hl"], "__AL__": p["al"],
-         "__ARTICLE__": "",  # Sonnet write-up goes here next step
+         "__ARTICLE__": article,  # Sonnet write-up
          "__HW__": p["hw"], "__DR__": p["dr"], "__AW__": p["aw"], "__XGH__": p["xgh"], "__XGA__": p["xga"],
          "__SCORE__": p["score"], "__CONF__": p["conf"], "__FH__": form_badges(pred.get("home_form_sequence")),
          "__FA__": form_badges(pred.get("away_form_sequence")), "__FX__": fx_html, "__SLUG__": p["slug"], "__SITE__": SITE})
