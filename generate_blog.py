@@ -14,7 +14,7 @@ Run:  python generate_blog.py
 Standard library only.
 """
 
-import json, os, re, time, urllib.request
+import json, math, os, re, time, urllib.request
 from datetime import datetime, timezone, timedelta
 
 # ---------------------------------------------------------------- config
@@ -220,27 +220,42 @@ footer{border-top:1px solid var(--line);}
 footer .in{max-width:1200px;margin:0 auto;padding:32px 40px 64px;color:var(--muted);font-size:13px;display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;}
 footer a{font-weight:600;}footer a:hover{color:var(--text);}footer .sep{flex:1;}
 /* match page */
-.read{max-width:720px;margin:0 auto;padding:0 40px;}
-article{padding:48px 0 8px;}
-.matchbar{display:flex;align-items:center;justify-content:center;gap:20px;border:1px solid var(--line);background:var(--surface);border-radius:16px;padding:22px;margin:8px 0 26px;}
-.matchbar .t{display:flex;flex-direction:column;align-items:center;gap:9px;flex:1;}.matchbar .t img{width:56px;height:56px;object-fit:contain;}.matchbar .t span{font-weight:600;font-size:15px;text-align:center;}.matchbar .vs{font-family:var(--mono);color:var(--muted);font-size:13px;}
-article h1{font-family:var(--disp);font-weight:700;font-size:38px;line-height:1.08;letter-spacing:-.02em;margin-bottom:16px;}
-.abyline{color:var(--faint);font-family:var(--mono);font-size:12.5px;padding-bottom:22px;border-bottom:1px solid var(--line);}
-.lead{font-family:var(--read);font-size:21px;line-height:1.6;color:var(--soft);margin:26px 0;}
-article p{font-family:var(--read);font-size:19px;line-height:1.72;color:var(--soft);margin:0 0 20px;}
-article h2{font-family:var(--disp);font-weight:600;font-size:25px;margin:40px 0 14px;}
-.verdict{border:1px solid var(--line);background:var(--surface);border-radius:18px;padding:24px;margin:26px 0;}
-.verdict .cap{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:16px;}
-.vbar{display:flex;height:14px;border-radius:999px;overflow:hidden;gap:3px;}.vbar span{display:block;height:100%;}
-.vlabels{display:flex;justify-content:space-between;margin-top:14px;gap:8px;}.vlabels>div{display:flex;flex-direction:column;gap:2px;}.vlabels .m{align-items:center;}.vlabels .r{align-items:flex-end;}
-.vlabels b{font-family:var(--mono);font-weight:700;font-size:20px;}.vlabels span{font-size:12px;color:var(--muted);}
-.vstats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:22px;border-top:1px solid var(--line);padding-top:18px;}
-.vstats>div{text-align:center;}.vstats span{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:5px;}.vstats b{font-family:var(--mono);font-weight:700;font-size:16px;}
-.forms{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:6px 0 8px;}
-.fl{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;}.fbs{display:flex;gap:7px;}
-.fb{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;font-family:var(--mono);font-weight:700;font-size:12px;}
-.fb.W{background:rgba(56,224,166,.15);color:var(--green);}.fb.D{background:rgba(246,195,68,.15);color:var(--amber);}.fb.L{background:rgba(255,112,137,.15);color:var(--red);}
-.poll{border:1px solid var(--line);background:linear-gradient(180deg,var(--raise),var(--surface));border-radius:18px;padding:22px;margin:36px 0;}
+.mpage{max-width:1180px;margin:0 auto;padding:0 40px;}
+.mhead h1{font-family:var(--disp);font-weight:700;font-size:44px;line-height:1.05;letter-spacing:-.025em;margin:14px 0 12px;max-width:20ch;}
+.abyline{font-family:var(--mono);font-size:12.5px;color:var(--faint);padding-bottom:24px;border-bottom:1px solid var(--line);}
+.matchbar{display:flex;align-items:center;justify-content:center;gap:44px;border:1px solid var(--line);background:linear-gradient(160deg,var(--raise),var(--surface));border-radius:18px;padding:32px;margin:26px 0;}
+.matchbar .t{display:flex;flex-direction:column;align-items:center;gap:11px;}
+.matchbar .t img{width:64px;height:64px;object-fit:contain;}
+.matchbar .t span{font-family:var(--disp);font-weight:600;font-size:18px;}
+.matchbar .vs{font-family:var(--mono);color:var(--muted);font-size:14px;}
+.lead{font-family:var(--read);font-size:21px;line-height:1.6;color:var(--soft);margin:26px 0;max-width:70ch;}
+.mh{font-family:var(--disp);font-weight:600;font-size:26px;margin:44px 0 20px;letter-spacing:-.01em;}
+.igrid{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+@media(max-width:820px){.igrid{grid-template-columns:1fr;}}
+.fig{border:1px solid var(--line);background:var(--surface);border-radius:18px;padding:24px;}
+.fig .cap{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:20px;}
+.fig .note{font-size:12px;color:var(--faint);margin-top:16px;line-height:1.5;}
+.pbar{display:flex;height:16px;border-radius:999px;overflow:hidden;gap:3px;margin-bottom:14px;}.pbar span{display:block;height:100%;}
+.plabs{display:flex;justify-content:space-between;}.plabs>div{display:flex;flex-direction:column;gap:2px;}.plabs .m{align-items:center;}.plabs .r{align-items:flex-end;}
+.plabs b{font-family:var(--mono);font-weight:700;font-size:21px;}.plabs span{font-size:12px;color:var(--muted);}
+.xgc{display:grid;gap:14px;}.xgc .row{display:grid;grid-template-columns:100px 1fr 40px;align-items:center;gap:12px;}.xgc .nm{font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}.xgc .track{height:16px;border-radius:999px;background:rgba(255,255,255,.05);overflow:hidden;}.xgc .track>i{display:block;height:100%;border-radius:999px;}.xgc .v{font-family:var(--mono);font-size:14px;text-align:right;}
+.fg-row{margin-bottom:18px;}.fg-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;}.fg-top .nm{font-size:14px;font-weight:600;}.fg-top .pts{font-family:var(--mono);font-size:12px;color:var(--muted);}
+.fg-cells{display:flex;gap:6px;}.fgc{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;font-family:var(--mono);font-weight:700;font-size:12px;}
+.fgc.W{background:rgba(56,224,166,.16);color:var(--green);}.fgc.D{background:rgba(246,195,68,.16);color:var(--amber);}.fgc.L{background:rgba(255,112,137,.16);color:var(--red);}
+.fg-bar{display:flex;height:8px;border-radius:999px;overflow:hidden;margin-top:16px;background:rgba(255,255,255,.05);}.fg-bar i{display:block;height:100%;}
+.heat{display:grid;grid-template-columns:auto repeat(4,1fr);gap:5px;font-family:var(--mono);}
+.heat .h{font-size:10.5px;color:var(--muted);display:grid;place-items:center;padding:3px;}
+.heat .cell{aspect-ratio:1.7;border-radius:7px;display:grid;place-items:center;font-size:11.5px;font-weight:700;}
+.mstats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:24px;}
+.mstats>div{border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:18px;text-align:center;}
+.mstats span{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:6px;}.mstats b{font-family:var(--mono);font-weight:700;font-size:18px;}
+.article-body{max-width:72ch;}
+.article-body h2{font-family:var(--disp);font-weight:600;font-size:26px;margin:0 0 16px;letter-spacing:-.01em;}
+.article-body p{font-family:var(--read);font-size:19px;line-height:1.72;color:var(--soft);margin:0 0 20px;}
+.factors{list-style:none;padding:0;margin:4px 0 20px;max-width:72ch;}
+.factors li{position:relative;padding-left:22px;margin-bottom:12px;font-family:var(--read);font-size:18px;color:var(--soft);}
+.factors li::before{content:"";position:absolute;left:0;top:11px;width:7px;height:7px;border-radius:50%;background:var(--cyan);}
+.poll{border:1px solid var(--line);background:linear-gradient(180deg,var(--raise),var(--surface));border-radius:18px;padding:24px;margin:36px 0;max-width:640px;}
 .poll-q{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:16px;}.poll-q .t{font-weight:700;font-size:16px;}.poll-total{font-family:var(--mono);font-size:12px;color:var(--muted);}
 .poll-opt{position:relative;display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:transparent;border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:10px;cursor:pointer;color:var(--text);font-family:var(--sans);overflow:hidden;}
 .poll.open .poll-opt:hover{border-color:rgba(45,212,238,.45);background:rgba(45,212,238,.05);}
@@ -248,10 +263,11 @@ article h2{font-family:var(--disp);font-weight:600;font-size:25px;margin:40px 0 
 .poll-opt .pc{font-family:var(--mono);font-weight:700;font-size:14px;color:var(--muted);z-index:2;opacity:0;transition:.3s;}
 .poll.done .poll-opt .pc{opacity:1;}.poll.done .poll-opt.mine{border-color:rgba(45,212,238,.55);}.poll.done .poll-opt.mine .pc{color:var(--cyan);}
 .poll-foot{font-size:12px;color:var(--faint);margin-top:12px;}
-.cta{display:flex;align-items:center;justify-content:space-between;gap:16px;border:1px solid rgba(45,212,238,.3);border-radius:16px;padding:22px 24px;margin:36px 0 8px;background:linear-gradient(120deg,rgba(45,212,238,.08),rgba(169,139,255,.06));}
+.cta{display:flex;align-items:center;justify-content:space-between;gap:16px;border:1px solid rgba(45,212,238,.3);border-radius:16px;padding:24px 26px;margin:36px 0 8px;background:linear-gradient(120deg,rgba(45,212,238,.08),rgba(169,139,255,.06));max-width:820px;}
 .cta .t{font-weight:700;font-size:16px;}.cta .s{font-size:13.5px;color:var(--muted);margin-top:3px;}.cta .go{font-family:var(--mono);font-weight:700;color:var(--cyan);}
-.disc{font-size:13px;color:var(--faint);border-top:1px solid var(--line);padding-top:20px;margin-top:36px;}
-@media(max-width:600px){.read{padding:0 22px;}article h1{font-size:30px;}.lead{font-size:19px;}article p{font-size:18px;}}
+.disc{font-size:13px;color:var(--faint);border-top:1px solid var(--line);padding-top:20px;margin:36px 0 60px;max-width:72ch;}
+@media(max-width:600px){.mpage{padding:0 20px;}.mhead h1{font-size:31px;}.lead{font-size:19px;}.matchbar{gap:24px;padding:24px;}.cta{flex-direction:column;align-items:flex-start;}}
+
 """
 
 POLL_JS = """(function(){var URL="__U__",KEY="__K__";var box=document.querySelector('.poll');if(!box)return;var slug=box.getAttribute('data-slug');var opts=box.querySelectorAll('.poll-opt');var tot=box.querySelector('.poll-total');var voted=null;try{voted=localStorage.getItem('poll_'+slug);}catch(e){}function H(x){return Object.assign({apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json'},x||{});}function ap(res){var m={home:(res&&res.home)||0,draw:(res&&res.draw)||0,away:(res&&res.away)||0};var t=m.home+m.draw+m.away;if(tot)tot.textContent=t+(t===1?' vote':' votes');if(!voted){box.classList.add('open');return;}box.classList.add('done');opts.forEach(function(o){var p=o.getAttribute('data-pick'),pc=t?Math.round(m[p]*100/t):0;var i=o.querySelector('.bar>i');if(i)i.style.width=pc+'%';var pe=o.querySelector('.pc');if(pe)pe.textContent=pc+'%';if(voted===p)o.classList.add('mine');});}function load(){fetch(URL+'/rest/v1/rpc/get_poll_results',{method:'POST',headers:H(),body:JSON.stringify({p_slug:slug})}).then(function(r){return r.json();}).then(function(rows){ap(rows&&rows[0]);}).catch(function(){box.classList.add('open');});}function vote(p){if(voted)return;voted=p;try{localStorage.setItem('poll_'+slug,p);}catch(e){}fetch(URL+'/rest/v1/poll_votes',{method:'POST',headers:H({Prefer:'return=minimal'}),body:JSON.stringify({match_slug:slug,pick:p})}).then(load).catch(load);}opts.forEach(function(o){o.addEventListener('click',function(){vote(o.getAttribute('data-pick'));});});load();})();"""
@@ -401,42 +417,100 @@ def build_team(team, slug, posts, all_posts):
         f"AI predictions and match previews featuring {team} — win probabilities, expected goals and scorelines.",
         f"{SITE}/blog/team/{slug}.html", body))
 
+def form_points(seq):
+    return sum(3 if r == "W" else 1 if r == "D" else 0 for r in (seq or [])[-5:])
+
+def form_cells(seq):
+    seq = (seq or [])[-5:]
+    if not seq:
+        return '<span style="color:var(--muted)">No recent data</span>'
+    return "".join(f'<span class="fgc {r}">{r}</span>' for r in seq)
+
+def _poisson(k, lam):
+    return math.exp(-lam) * (lam ** k) / math.factorial(k)
+
+def xg_html(hxg, axg, home, away):
+    try:
+        h, a = float(hxg), float(axg)
+    except Exception:
+        return '<div style="color:var(--muted)">Expected goals unavailable.</div>'
+    m = max(h, a, 0.1)
+    return (f'<div class="xgc"><div class="row"><span class="nm">{home}</span><span class="track"><i style="width:{round(h/m*100)}%;background:var(--cyan)"></i></span><span class="v">{h}</span></div>'
+            f'<div class="row"><span class="nm">{away}</span><span class="track"><i style="width:{round(a/m*100)}%;background:var(--purple)"></i></span><span class="v">{a}</span></div></div>')
+
+def form_guide_html(p, pred):
+    hs = pred.get("home_form_sequence") or []
+    aw = pred.get("away_form_sequence") or []
+    hp, ap = form_points(hs), form_points(aw)
+    tot = (hp + ap) or 1
+    return (f'<div class="fg-row"><div class="fg-top"><span class="nm">{p["home"]}</span><span class="pts">{hp}/15 pts</span></div><div class="fg-cells">{form_cells(hs)}</div></div>'
+            f'<div class="fg-row"><div class="fg-top"><span class="nm">{p["away"]}</span><span class="pts">{ap}/15 pts</span></div><div class="fg-cells">{form_cells(aw)}</div></div>'
+            f'<div class="fg-bar"><i style="width:{round(hp/tot*100)}%;background:var(--cyan)"></i><i style="width:{round(ap/tot*100)}%;background:var(--purple)"></i></div>')
+
+def scoreline_html(hxg, axg, home, away, maxg=3):
+    try:
+        h, a = float(hxg), float(axg)
+    except Exception:
+        return '<div style="color:var(--muted)">Scoreline model unavailable.</div>'
+    grid = [[_poisson(i, h) * _poisson(j, a) for j in range(maxg + 1)] for i in range(maxg + 1)]
+    mx = max(max(row) for row in grid) or 1
+    ha, aa = home[:3].upper(), away[:3].upper()
+    cells = '<div class="h"></div>' + "".join(f'<div class="h">{aa} {j}</div>' for j in range(maxg + 1))
+    for i in range(maxg + 1):
+        cells += f'<div class="h">{ha} {i}</div>'
+        for j in range(maxg + 1):
+            pv = grid[i][j]
+            op = round(pv / mx, 2)
+            col = "#04121a" if pv == mx else "var(--soft)"
+            cells += f'<div class="cell" style="background:rgba(45,212,238,{op});color:{col}">{i}-{j}</div>'
+    return f'<div class="heat">{cells}</div>'
+
 def build_match(fx, pred, p):
     article = get_preview(p, pred)
     factors = pred.get("key_factors") or []
     fx_html = ""
     if factors:
-        fx_html = '<h2>Key factors</h2><ul style="list-style:none;padding:0;margin:4px 0 20px">' + "".join(
-            f'<li style="position:relative;padding-left:22px;margin-bottom:12px;font-family:var(--read);font-size:18px;color:var(--soft)"><span style="position:absolute;left:0;top:11px;width:7px;height:7px;border-radius:50%;background:var(--cyan)"></span>{f}</li>' for f in factors[:4]) + '</ul>'
-    poll_js = POLL_JS.replace("__U__", POLL_SUPABASE_URL).replace("__K__", POLL_SUPABASE_ANON)
-    body = fill('<main class="read"><article><div class="pmeta" style="padding-top:40px"><span class="lgc __CL__">__LEAGUE__</span><span class="dt">__KICKF__</span></div>'
-        '<h1>__HOME__ vs __AWAY__: AI Prediction &amp; Preview</h1>'
-        '<div class="abyline">Scorina AI · __PUB__</div>'
+        fx_html = '<h2>Key factors</h2><ul class="factors">' + "".join(f"<li>{f}</li>" for f in factors[:4]) + '</ul>'
+
+    fav = p["home"] if p["hw"] >= p["aw"] else p["away"]
+    favp = max(p["hw"], p["aw"])
+    verdict = f"The model leans to {fav} at {favp}%" if favp - p["dr"] > 3 else "The model sees a close, even contest"
+
+    win_fig = ('<div class="fig"><div class="cap">Win probability</div>'
+        f'<div class="pbar"><span style="width:{p["hw"]}%;background:var(--cyan)"></span><span style="width:{p["dr"]}%;background:#3b4459"></span><span style="width:{p["aw"]}%;background:var(--purple)"></span></div>'
+        f'<div class="plabs"><div><b style="color:var(--cyan)">{p["hw"]}%</b><span>{p["home"]}</span></div><div class="m"><b>{p["dr"]}%</b><span>Draw</span></div><div class="r"><b style="color:var(--purple)">{p["aw"]}%</b><span>{p["away"]}</span></div></div></div>')
+    xg_fig = f'<div class="fig"><div class="cap">Expected goals</div>{xg_html(p["xgh"], p["xga"], p["home"], p["away"])}<div class="note">Goals each side is projected to create, from the model.</div></div>'
+    form_fig = f'<div class="fig"><div class="cap">Recent form · last 5</div>{form_guide_html(p, pred)}<div class="note">Points from the last five matches (W=3, D=1, L=0).</div></div>'
+    score_fig = f'<div class="fig"><div class="cap">Most likely scorelines</div>{scoreline_html(p["xgh"], p["xga"], p["home"], p["away"])}<div class="note">From a Poisson model of each side\'s expected goals. Brighter = more likely.</div></div>'
+    article_block = article if article else ""
+
+    body = fill('<main class="mpage">'
+        '<div class="mhead"><div class="pmeta" style="padding-top:44px"><span class="lgc __CL__">__LEAGUE__</span><span class="dt">__KICKF__</span></div>'
+        '<h1>__HOME__ vs __AWAY__: AI Prediction &amp; Preview</h1><div class="abyline">Scorina AI · __PUB__</div></div>'
         '<div class="matchbar"><div class="t"><img src="__HL__" alt=""/><span>__HOME__</span></div><div class="vs">VS</div><div class="t"><img src="__AL__" alt=""/><span>__AWAY__</span></div></div>'
-        '<p class="lead">__HOME__ face __AWAY__ in __LEAGUE__. Here is our model\'s read of the match \u2014 win probabilities, expected goals and the most likely scoreline.</p>'
-        '__ARTICLE__'
-        '<div class="verdict"><div class="cap">Model prediction</div>'
-        '<div class="vbar"><span style="width:__HW__%;background:var(--cyan)"></span><span style="width:__DR__%;background:#3b4459"></span><span style="width:__AW__%;background:var(--purple)"></span></div>'
-        '<div class="vlabels"><div><b>__HW__%</b><span>__HOME__</span></div><div class="m"><b>__DR__%</b><span>Draw</span></div><div class="r"><b>__AW__%</b><span>__AWAY__</span></div></div>'
-        '<div class="vstats"><div><span>Expected goals</span><b>__XGH__ – __XGA__</b></div><div><span>Likely score</span><b>__SCORE__</b></div><div><span>Confidence</span><b>__CONF__</b></div></div></div>'
-        '<h2>Recent form</h2><div class="forms"><div><div class="fl">__HOME__ · last 5</div><div class="fbs">__FH__</div></div><div><div class="fl">__AWAY__ · last 5</div><div class="fbs">__FA__</div></div></div>'
-        '__FX__'
+        '<p class="lead">__VERDICT__. Below is the full model breakdown \u2014 win probabilities, expected goals, recent form and the most likely scorelines.</p>'
+        '<h2 class="mh">Match insights</h2><div class="igrid">__WINFIG____XGFIG____FORMFIG____SCOREFIG__</div>'
+        '<div class="mstats"><div><span>Likely score</span><b>__LSCORE__</b></div><div><span>Confidence</span><b>__CONF__</b></div><div><span>Expected goals</span><b>__XGH__ &ndash; __XGA__</b></div></div>'
+        '<div class="article-body">__ARTICLE__</div>'
+        '<div class="article-body">__FX__</div>'
         '<div class="poll" data-slug="__SLUG__"><div class="poll-q"><span class="t">Who wins? Cast your vote</span><span class="poll-total"></span></div>'
         '<button class="poll-opt" data-pick="home"><span class="bar"><i></i></span><span class="lbl">__HOME__</span><span class="pc"></span></button>'
         '<button class="poll-opt" data-pick="draw"><span class="bar"><i></i></span><span class="lbl">Draw</span><span class="pc"></span></button>'
         '<button class="poll-opt" data-pick="away"><span class="bar"><i></i></span><span class="lbl">__AWAY__</span><span class="pc"></span></button>'
         '<div class="poll-foot">Tap your pick to see how everyone voted.</div></div>'
-        '<a class="cta" href="__SITE__/#/analysis"><span><span class="t">Want the live version?</span><br><span class="s">See the up-to-the-minute prediction on Scorina AI.</span></span><span class="go">Open →</span></a>'
-        '<p class="disc">Predictions are model estimates for analysis and entertainment, not betting advice.</p></article></main>',
+        '<a class="cta" href="__SITE__/#/analysis"><span><span class="t">Want the live version?</span><br><span class="s">See the up-to-the-minute prediction on Scorina AI.</span></span><span class="go">Open \u2192</span></a>'
+        '<p class="disc">Predictions are model estimates for analysis and entertainment, not betting advice.</p></main>',
         {"__CL__": p["cls"], "__LEAGUE__": p["league"], "__KICKF__": p["kickf"], "__HOME__": p["home"], "__AWAY__": p["away"],
-         "__PUB__": (str(datetime.now(timezone.utc).day) + datetime.now(timezone.utc).strftime(" %B %Y")), "__HL__": p["hl"], "__AL__": p["al"],
-         "__ARTICLE__": article,  # Sonnet write-up
-         "__HW__": p["hw"], "__DR__": p["dr"], "__AW__": p["aw"], "__XGH__": p["xgh"], "__XGA__": p["xga"],
-         "__SCORE__": p["score"], "__CONF__": p["conf"], "__FH__": form_badges(pred.get("home_form_sequence")),
-         "__FA__": form_badges(pred.get("away_form_sequence")), "__FX__": fx_html, "__SLUG__": p["slug"], "__SITE__": SITE})
+         "__PUB__": (str(datetime.now(timezone.utc).day) + datetime.now(timezone.utc).strftime(" %B %Y")),
+         "__HL__": p["hl"], "__AL__": p["al"], "__VERDICT__": verdict,
+         "__WINFIG__": win_fig, "__XGFIG__": xg_fig, "__FORMFIG__": form_fig, "__SCOREFIG__": score_fig,
+         "__LSCORE__": p["score"], "__CONF__": p["conf"], "__XGH__": p["xgh"], "__XGA__": p["xga"],
+         "__ARTICLE__": article_block, "__FX__": fx_html, "__SLUG__": p["slug"], "__SITE__": SITE})
+    poll_js = POLL_JS.replace("__U__", POLL_SUPABASE_URL).replace("__K__", POLL_SUPABASE_ANON)
     write(f"{OUT}/{p['slug']}.html", page(f"{p['home']} vs {p['away']} Prediction: AI Preview & Score | Scorina AI",
-        f"{p['home']} vs {p['away']} prediction and preview — win probabilities, expected goals and the most likely scoreline. Vote on who wins.",
+        f"{p['home']} vs {p['away']} prediction and preview — win probabilities, expected goals, recent form and the most likely scoreline. Vote on who wins.",
         f"{SITE}/blog/{p['slug']}.html", body, script=f"<script>{poll_js}</script>"))
+
 
 def write(path, content):
     os.makedirs(os.path.dirname(path), exist_ok=True)
