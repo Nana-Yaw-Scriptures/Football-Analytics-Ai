@@ -1,503 +1,483 @@
 #!/usr/bin/env python3
 """
-Scorina AI - match-preview blog generator (v3: editorial design + live poll).
+Scorina AI blog generator (v5) — curated football previews.
 
-Pulls upcoming fixtures and predictions from your live API, writes a beautiful,
-mobile-responsive preview page per match (with a shared "Who wins?" poll), and
-rebuilds the blog index + sitemap. Standard library only.
+Selects the week's marquee fixtures (big clubs, max 2 per league, 8 total),
+then builds:
+  - the hub (/blog/)                     API-Football-style: banner cards + sidebar + pagination
+  - a page per league (/blog/league/..)  SEO landing per competition
+  - a page per team   (/blog/team/..)    SEO landing per club
+  - a match page per fixture             prediction module + poll (Sonnet write-up added next step)
+  - sitemap.xml
 
-    python generate_blog.py
-    git add public/blog public/sitemap.xml
-    git commit -m "Generate match previews"
-    git push
+Run:  python generate_blog.py
+Standard library only.
 """
 
-import json
-import os
-import re
-import time
-import urllib.request
-import urllib.error
-from datetime import datetime, timezone
+import json, os, re, time, urllib.request
+from datetime import datetime, timezone, timedelta
 
 # ---------------------------------------------------------------- config
-API_BASE  = "https://football-analytics-ai-production.up.railway.app"
-SITE      = "https://www.scorinai.com"
-OUT_DIR   = "public/blog"
-SITEMAP   = "public/sitemap.xml"
-MAX_POSTS = 15
-PAUSE_SEC = 0.5
+API_BASE = "https://football-analytics-ai-production.up.railway.app"
+SITE     = "https://www.scorinai.com"
+OUT      = "public/blog"
+SITEMAP  = "public/sitemap.xml"
+PER_PAGE = 6
+MAX_PER_LEAGUE = 2
+MAX_TOTAL = 8
+PAUSE = 0.4
 
-# Poll storage — fill these with your Supabase project values (Settings → API).
-# The anon/publishable key is public and safe to embed; RLS protects the data.
 POLL_SUPABASE_URL  = "https://mfoigbwxpyjbcicnixbj.supabase.co"
 POLL_SUPABASE_ANON = "sb_publishable_IfgQdGbt7XaHszoGctcY8Q_fZTR4LuC"
 
-# ---------------------------------------------------------------- api helpers
-def api_get(path):
+# Which clubs make a fixture "featured". Names must match API-Football labels.
+BIG_TEAMS = {
+    "Premier League": ["Arsenal", "Liverpool", "Manchester City", "Manchester United",
+                       "Chelsea", "Tottenham", "Newcastle"],
+    "La Liga":        ["Real Madrid", "Barcelona", "Atletico Madrid", "Sevilla",
+                       "Athletic Club", "Real Sociedad"],
+    "Bundesliga":     ["Bayern Munich", "Borussia Dortmund", "RB Leipzig",
+                       "Bayer Leverkusen", "Eintracht Frankfurt"],
+    "Serie A":        ["Juventus", "Inter", "AC Milan", "Napoli", "Roma", "Atalanta"],
+    "Ligue 1":        ["Paris Saint Germain", "Marseille", "Monaco", "Lyon", "Lille"],
+    "Primeira Liga":  ["Benfica", "Porto", "Sporting CP", "Braga"],
+    "Champions League": ["Real Madrid", "Barcelona", "Bayern Munich", "Manchester City",
+                       "Liverpool", "Arsenal", "Inter", "Paris Saint Germain"],
+}
+
+LEAGUE_META = {  # name: (slug, css-class)
+    "Premier League": ("premier-league", "pl"),
+    "La Liga": ("la-liga", "laliga"),
+    "Bundesliga": ("bundesliga", "bund"),
+    "Serie A": ("serie-a", "seriea"),
+    "Ligue 1": ("ligue-1", "ligue1"),
+    "Primeira Liga": ("primeira-liga", "primeira"),
+    "Champions League": ("champions-league", "ucl"),
+}
+
+# ---------------------------------------------------------------- helpers
+def api_get(p):
     try:
-        req = urllib.request.Request(f"{API_BASE}{path}", headers={"Accept": "application/json"})
-        with urllib.request.urlopen(req, timeout=30) as r:
-            return json.loads(r.read().decode())
+        r = urllib.request.Request(f"{API_BASE}{p}", headers={"Accept": "application/json"})
+        with urllib.request.urlopen(r, timeout=30) as x:
+            return json.loads(x.read().decode())
     except Exception as e:
-        print(f"  ! GET {path} failed: {e}")
-        return None
+        print(f"  ! GET {p}: {e}"); return None
 
-
-def api_post(path, body):
+def api_post(p, body):
     try:
-        data = json.dumps(body).encode()
-        req = urllib.request.Request(
-            f"{API_BASE}{path}", data=data,
-            headers={"Content-Type": "application/json", "Accept": "application/json"},
-        )
-        with urllib.request.urlopen(req, timeout=45) as r:
-            return json.loads(r.read().decode())
+        d = json.dumps(body).encode()
+        r = urllib.request.Request(f"{API_BASE}{p}", data=d,
+                                   headers={"Content-Type": "application/json", "Accept": "application/json"})
+        with urllib.request.urlopen(r, timeout=45) as x:
+            return json.loads(x.read().decode())
     except Exception as e:
-        print(f"  ! POST {path} failed: {e}")
-        return None
+        print(f"  ! POST {p}: {e}"); return None
 
+def slugify(t):
+    t = re.sub(r"[^a-zA-Z0-9]+", "-", t.lower()).strip("-")
+    return re.sub(r"-{2,}", "-", t)
 
-def slugify(text):
-    text = re.sub(r"[^a-zA-Z0-9]+", "-", text.lower()).strip("-")
-    return re.sub(r"-{2,}", "-", text)
+def lmeta(league):
+    return LEAGUE_META.get(league, (slugify(league or "football"), "pl"))
 
+def dt(iso):
+    try: return datetime.fromisoformat(iso.replace("Z", "+00:00"))
+    except Exception: return None
 
-def human_date(iso):
-    if not iso:
-        return ""
-    try:
-        d = datetime.fromisoformat(iso.replace("Z", "+00:00"))
-        return d.strftime("%A, %-d %B %Y")
-    except Exception:
-        return iso[:10]
+def human(iso):
+    d = dt(iso); return d.strftime("%A, %-d %B %Y") if d else ""
 
+def short(iso):
+    d = dt(iso); return d.strftime("%a %-d %b") if d else "TBD"
+
+def gameweek(iso):
+    d = dt(iso)
+    if not d: return ("Upcoming", "0000")
+    mon = d - timedelta(days=d.weekday()); sun = mon + timedelta(days=6)
+    return (f"{mon.strftime('%-d')}\u2013{sun.strftime('%-d %b')}", mon.strftime("%Y%m%d"))
+
+def pct(x):
+    try: return round(float(x) * 100)
+    except Exception: return 0
+
+def fill(t, m):
+    for k, v in m.items(): t = t.replace(k, str(v))
+    return t
 
 def form_badges(seq):
     seq = (seq or [])[-5:]
-    if not seq:
-        return '<span class="muted">No recent data</span>'
+    if not seq: return '<span style="color:var(--muted)">No recent data</span>'
     return "".join(f'<span class="fb {r}">{r}</span>' for r in seq)
 
-
-def pct(x):
-    try:
-        return round(float(x) * 100)
-    except Exception:
-        return 0
-
-
-# ---------------------------------------------------------------- shared CSS
+# ---------------------------------------------------------------- CSS
 CSS = """
-    :root{
-      --bg:#07090f; --surface:#0d1119; --raise:#11161f; --line:rgba(255,255,255,.08);
-      --text:#f1f4fa; --soft:#cfd7e4; --muted:#8b96a9; --faint:#5b6577;
-      --cyan:#2dd4ee; --purple:#a98bff; --green:#38e0a6; --red:#ff7089; --amber:#f6c344;
-      --serif:'Fraunces',Georgia,serif; --read:'Newsreader',Georgia,serif;
-      --sans:'Outfit',system-ui,-apple-system,sans-serif; --mono:'JetBrains Mono',monospace;
-    }
-    *{box-sizing:border-box;margin:0;padding:0;}
-    html{-webkit-text-size-adjust:100%;}
-    body{background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.6;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
-    ::selection{background:rgba(45,212,238,.28);}
-    a{color:inherit;text-decoration:none;}
-    img{max-width:100%;display:block;}
-    .wrap{max-width:692px;margin:0 auto;padding:0 22px;}
-    .muted{color:var(--muted);}
-    .site{border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(7,9,15,.86);backdrop-filter:saturate(140%) blur(12px);z-index:30;}
-    .site .row{display:flex;align-items:center;justify-content:space-between;height:62px;max-width:1120px;margin:0 auto;padding:0 22px;}
-    .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:16px;letter-spacing:-.01em;}
-    .brand .dot{width:26px;height:26px;border-radius:8px;background:linear-gradient(140deg,var(--cyan),var(--purple));box-shadow:0 4px 14px rgba(45,212,238,.25);}
-    .brand em{color:var(--muted);font-style:normal;font-weight:600;}
-    .site .back{font-size:13px;color:var(--muted);font-weight:600;transition:color .15s;}
-    .site .back:hover{color:var(--text);}
-    .kicker{font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--cyan);}
-    footer{border-top:1px solid var(--line);margin-top:72px;}
-    footer .in{max-width:692px;margin:0 auto;padding:34px 22px 72px;color:var(--muted);font-size:13px;display:flex;flex-wrap:wrap;gap:10px 22px;align-items:center;}
-    footer a{font-weight:600;transition:color .15s;} footer a:hover{color:var(--text);}
-    footer .sep{flex:1;min-width:20px;}
+:root{--bg:#0a0b0e;--surface:#111318;--raise:#15181f;--line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.14);
+--text:#f3f5f9;--soft:#c4ccd8;--muted:#828c9c;--faint:#525b6b;
+--cyan:#2dd4ee;--purple:#a98bff;--green:#38e0a6;--amber:#f6c344;--red:#ff7089;--pink:#ff6fae;
+--pl:#b79bff;--laliga:#ff9d5c;--bund:#ff5c74;--seriea:#3ad9ad;--ligue1:#5b8cff;--primeira:#40dd88;--ucl:#6f9bff;
+--disp:'Space Grotesk',system-ui,sans-serif;--acc:'Fraunces',serif;--read:'Newsreader',Georgia,serif;--sans:'Outfit',system-ui,sans-serif;--mono:'JetBrains Mono',monospace;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.6;-webkit-font-smoothing:antialiased;}
+a{color:inherit;text-decoration:none;}img{max-width:100%;}
+.accent{font-family:var(--acc);font-style:italic;font-weight:500;background:linear-gradient(100deg,var(--cyan),var(--purple) 55%,var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent;}
+.wrap{max-width:1200px;margin:0 auto;padding:0 40px;}
+.nav{position:sticky;top:0;z-index:40;background:rgba(10,11,14,.82);backdrop-filter:saturate(150%) blur(14px);border-bottom:1px solid var(--line);}
+.nav .in{max-width:1200px;margin:0 auto;padding:0 40px;height:66px;display:flex;align-items:center;justify-content:space-between;}
+.brand{display:flex;align-items:center;gap:11px;font-family:var(--disp);font-weight:700;font-size:17px;}
+.brand .dot{width:26px;height:26px;border-radius:8px;background:linear-gradient(140deg,var(--cyan),var(--purple));box-shadow:0 4px 16px rgba(45,212,238,.3);}
+.brand em{color:var(--muted);font-style:normal;font-weight:500;}
+.nlinks{display:flex;gap:28px;font-size:13.5px;color:var(--muted);font-weight:500;}.nlinks a:hover{color:var(--text);}
+.nbtn{font-family:var(--mono);font-size:12.5px;border:1px solid var(--line2);border-radius:9px;padding:9px 15px;}.nbtn:hover{border-color:var(--cyan);background:rgba(45,212,238,.08);}
+@media(max-width:820px){.nlinks{display:none;}}
+.hero{position:relative;overflow:hidden;border-bottom:1px solid var(--line);}
+.hero::before{content:"";position:absolute;top:-160px;left:-100px;width:480px;height:480px;border-radius:50%;background:radial-gradient(circle,rgba(45,212,238,.15),transparent 68%);}
+.hero::after{content:"";position:absolute;top:-80px;right:-60px;width:420px;height:420px;border-radius:50%;background:radial-gradient(circle,rgba(169,139,255,.15),transparent 68%);}
+.hero .in{position:relative;z-index:1;padding:58px 0 40px;}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--cyan);margin-bottom:18px;}
+.hero h1{font-family:var(--disp);font-weight:700;font-size:56px;line-height:1;letter-spacing:-.03em;max-width:18ch;}
+.hero p{font-size:18px;color:var(--soft);max-width:60ch;margin-top:18px;}
+@media(max-width:820px){.hero h1{font-size:38px;}}
+.picks-strip{padding:34px 0;border-bottom:1px solid var(--line);}
+.strip-h{display:flex;align-items:baseline;gap:16px;margin-bottom:20px;}
+.strip-h h2{font-family:var(--disp);font-weight:600;font-size:22px;}.strip-h .sub{font-family:var(--mono);font-size:12px;color:var(--muted);}.strip-h .more{margin-left:auto;font-family:var(--mono);font-size:12.5px;color:var(--cyan);}
+.picks{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.pick{display:flex;align-items:center;gap:16px;border:1px solid var(--line);background:linear-gradient(160deg,var(--raise),var(--surface));border-radius:16px;padding:18px;transition:.15s;}
+.pick:hover{border-color:rgba(45,212,238,.45);transform:translateY(-3px);}
+.ring{width:64px;height:64px;flex-shrink:0;}
+.ring-bg{fill:none;stroke:rgba(255,255,255,.08);stroke-width:7;}
+.ring-fg{fill:none;stroke-width:7;stroke-linecap:round;transform:rotate(-90deg);transform-origin:50% 50%;}
+.ring-t{fill:var(--text);font-family:var(--mono);font-weight:700;font-size:17px;}
+.pk-teams{font-weight:600;font-size:14px;display:flex;flex-direction:column;gap:3px;}.pk-teams .w{color:var(--cyan);}
+.pk-call{font-size:12px;color:var(--muted);margin-top:7px;}.pk-call b{color:var(--text);}
+@media(max-width:900px){.picks{grid-template-columns:1fr;}}
+.layout{display:grid;grid-template-columns:1fr 320px;gap:44px;padding:44px 0 60px;}
+.feed-h{display:flex;align-items:baseline;gap:14px;margin-bottom:22px;}.feed-h h2{font-family:var(--disp);font-weight:600;font-size:24px;}.feed-h .sub{font-family:var(--mono);font-size:12px;color:var(--muted);}
+.feed{display:flex;flex-direction:column;gap:22px;}
+.pcard{border:1px solid var(--line);background:var(--surface);border-radius:18px;overflow:hidden;transition:.15s;display:block;}
+.pcard:hover{border-color:rgba(45,212,238,.4);transform:translateY(-3px);}
+.banner{position:relative;height:150px;display:flex;align-items:center;justify-content:center;}
+.banner.pl{background:linear-gradient(135deg,rgba(183,155,255,.22),rgba(17,19,24,.6));}
+.banner.laliga{background:linear-gradient(135deg,rgba(255,157,92,.22),rgba(17,19,24,.6));}
+.banner.bund{background:linear-gradient(135deg,rgba(255,92,116,.22),rgba(17,19,24,.6));}
+.banner.seriea{background:linear-gradient(135deg,rgba(58,217,173,.22),rgba(17,19,24,.6));}
+.banner.ligue1{background:linear-gradient(135deg,rgba(91,140,255,.22),rgba(17,19,24,.6));}
+.banner.primeira{background:linear-gradient(135deg,rgba(64,221,136,.22),rgba(17,19,24,.6));}
+.banner.ucl{background:linear-gradient(135deg,rgba(111,155,255,.22),rgba(17,19,24,.6));}
+.banner-teams{display:flex;align-items:center;gap:22px;}
+.banner-teams img{width:52px;height:52px;object-fit:contain;filter:drop-shadow(0 4px 10px rgba(0,0,0,.4));}
+.banner-teams .vs{font-family:var(--disp);font-weight:700;font-size:15px;color:var(--soft);letter-spacing:.05em;}
+.banner-bar{position:absolute;bottom:0;left:0;right:0;height:6px;display:flex;gap:2px;}.banner-bar span{display:block;height:100%;}
+.pbody{padding:20px 22px 22px;}
+.pmeta{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.lgc{padding:3px 9px;border-radius:6px;font-family:var(--mono);font-size:10px;letter-spacing:.05em;text-transform:uppercase;}
+.lgc.pl{color:var(--pl);background:rgba(183,155,255,.13);}.lgc.laliga{color:var(--laliga);background:rgba(255,157,92,.13);}
+.lgc.bund{color:var(--bund);background:rgba(255,92,116,.13);}.lgc.seriea{color:var(--seriea);background:rgba(58,217,173,.13);}
+.lgc.ligue1{color:var(--ligue1);background:rgba(91,140,255,.13);}.lgc.primeira{color:var(--primeira);background:rgba(64,221,136,.13);}.lgc.ucl{color:var(--ucl);background:rgba(111,155,255,.13);}
+.pmeta .dt{font-family:var(--mono);font-size:11px;color:var(--muted);}
+.pcard h3{font-family:var(--disp);font-weight:600;font-size:23px;letter-spacing:-.01em;margin-bottom:8px;}
+.pcard .exc{font-size:14.5px;color:var(--muted);line-height:1.55;max-width:60ch;}
+.pcard .rm{display:inline-block;margin-top:14px;font-family:var(--mono);font-size:12.5px;color:var(--cyan);font-weight:500;}
+.pager{display:flex;gap:8px;margin-top:34px;align-items:center;}
+.pager a,.pager span.cur{width:38px;height:38px;display:grid;place-items:center;border:1px solid var(--line);border-radius:10px;font-family:var(--mono);font-size:13px;color:var(--muted);transition:.15s;}
+.pager .cur{background:linear-gradient(135deg,var(--cyan),var(--purple));color:#06101a;border-color:transparent;font-weight:700;}
+.pager a:hover{border-color:var(--cyan);color:var(--text);}.pager .nx{width:auto;padding:0 14px;}
+.side{display:flex;flex-direction:column;gap:22px;}
+.widget{border:1px solid var(--line);background:var(--surface);border-radius:16px;padding:20px;}
+.widget h4{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:16px;}
+.lg-list{display:flex;flex-direction:column;gap:3px;}
+.lg-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:9px;transition:.15s;}.lg-row:hover{background:rgba(255,255,255,.03);}
+.lg-row .d{width:8px;height:8px;border-radius:50%;flex-shrink:0;}.lg-row .nm{font-size:13.5px;font-weight:500;flex:1;}.lg-row .ct{font-family:var(--mono);font-size:12px;color:var(--muted);}
+.recent{display:flex;flex-direction:column;gap:14px;}.recent a{font-size:13.5px;color:var(--soft);line-height:1.4;font-weight:500;display:block;}.recent a:hover{color:var(--cyan);}
+.recent a .rd{display:block;font-family:var(--mono);font-size:10.5px;color:var(--faint);margin-top:3px;font-weight:400;}
+.gw{display:flex;flex-direction:column;gap:9px;}.gw div{display:flex;justify-content:space-between;font-size:13px;color:var(--soft);padding:6px 0;border-bottom:1px solid var(--line);}.gw div:last-child{border-bottom:none;}.gw div span{font-family:var(--mono);font-size:11px;color:var(--muted);}
+.tags{display:flex;flex-wrap:wrap;gap:8px;}.tag{font-size:12px;color:var(--soft);border:1px solid var(--line);border-radius:999px;padding:5px 12px;transition:.15s;}.tag:hover{border-color:var(--cyan);color:var(--cyan);}
+@media(max-width:900px){.layout{grid-template-columns:1fr;gap:34px;}}
+footer{border-top:1px solid var(--line);}
+footer .in{max-width:1200px;margin:0 auto;padding:32px 40px 64px;color:var(--muted);font-size:13px;display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;}
+footer a{font-weight:600;}footer a:hover{color:var(--text);}footer .sep{flex:1;}
+/* match page */
+.read{max-width:720px;margin:0 auto;padding:0 40px;}
+article{padding:48px 0 8px;}
+.matchbar{display:flex;align-items:center;justify-content:center;gap:20px;border:1px solid var(--line);background:var(--surface);border-radius:16px;padding:22px;margin:8px 0 26px;}
+.matchbar .t{display:flex;flex-direction:column;align-items:center;gap:9px;flex:1;}.matchbar .t img{width:56px;height:56px;object-fit:contain;}.matchbar .t span{font-weight:600;font-size:15px;text-align:center;}.matchbar .vs{font-family:var(--mono);color:var(--muted);font-size:13px;}
+article h1{font-family:var(--disp);font-weight:700;font-size:38px;line-height:1.08;letter-spacing:-.02em;margin-bottom:16px;}
+.abyline{color:var(--faint);font-family:var(--mono);font-size:12.5px;padding-bottom:22px;border-bottom:1px solid var(--line);}
+.lead{font-family:var(--read);font-size:21px;line-height:1.6;color:var(--soft);margin:26px 0;}
+article p{font-family:var(--read);font-size:19px;line-height:1.72;color:var(--soft);margin:0 0 20px;}
+article h2{font-family:var(--disp);font-weight:600;font-size:25px;margin:40px 0 14px;}
+.verdict{border:1px solid var(--line);background:var(--surface);border-radius:18px;padding:24px;margin:26px 0;}
+.verdict .cap{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:16px;}
+.vbar{display:flex;height:14px;border-radius:999px;overflow:hidden;gap:3px;}.vbar span{display:block;height:100%;}
+.vlabels{display:flex;justify-content:space-between;margin-top:14px;gap:8px;}.vlabels>div{display:flex;flex-direction:column;gap:2px;}.vlabels .m{align-items:center;}.vlabels .r{align-items:flex-end;}
+.vlabels b{font-family:var(--mono);font-weight:700;font-size:20px;}.vlabels span{font-size:12px;color:var(--muted);}
+.vstats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:22px;border-top:1px solid var(--line);padding-top:18px;}
+.vstats>div{text-align:center;}.vstats span{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:5px;}.vstats b{font-family:var(--mono);font-weight:700;font-size:16px;}
+.forms{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:6px 0 8px;}
+.fl{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;}.fbs{display:flex;gap:7px;}
+.fb{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;font-family:var(--mono);font-weight:700;font-size:12px;}
+.fb.W{background:rgba(56,224,166,.15);color:var(--green);}.fb.D{background:rgba(246,195,68,.15);color:var(--amber);}.fb.L{background:rgba(255,112,137,.15);color:var(--red);}
+.poll{border:1px solid var(--line);background:linear-gradient(180deg,var(--raise),var(--surface));border-radius:18px;padding:22px;margin:36px 0;}
+.poll-q{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:16px;}.poll-q .t{font-weight:700;font-size:16px;}.poll-total{font-family:var(--mono);font-size:12px;color:var(--muted);}
+.poll-opt{position:relative;display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:transparent;border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:10px;cursor:pointer;color:var(--text);font-family:var(--sans);overflow:hidden;}
+.poll.open .poll-opt:hover{border-color:rgba(45,212,238,.45);background:rgba(45,212,238,.05);}
+.poll-opt .lbl{font-weight:600;font-size:15px;flex:1;z-index:2;}.poll-opt .bar{position:absolute;inset:0;z-index:1;}.poll-opt .bar>i{display:block;height:100%;width:0;background:rgba(45,212,238,.14);transition:width .7s;}
+.poll-opt .pc{font-family:var(--mono);font-weight:700;font-size:14px;color:var(--muted);z-index:2;opacity:0;transition:.3s;}
+.poll.done .poll-opt .pc{opacity:1;}.poll.done .poll-opt.mine{border-color:rgba(45,212,238,.55);}.poll.done .poll-opt.mine .pc{color:var(--cyan);}
+.poll-foot{font-size:12px;color:var(--faint);margin-top:12px;}
+.cta{display:flex;align-items:center;justify-content:space-between;gap:16px;border:1px solid rgba(45,212,238,.3);border-radius:16px;padding:22px 24px;margin:36px 0 8px;background:linear-gradient(120deg,rgba(45,212,238,.08),rgba(169,139,255,.06));}
+.cta .t{font-weight:700;font-size:16px;}.cta .s{font-size:13.5px;color:var(--muted);margin-top:3px;}.cta .go{font-family:var(--mono);font-weight:700;color:var(--cyan);}
+.disc{font-size:13px;color:var(--faint);border-top:1px solid var(--line);padding-top:20px;margin-top:36px;}
+@media(max-width:600px){.read{padding:0 22px;}article h1{font-size:30px;}.lead{font-size:19px;}article p{font-size:18px;}}
 """
 
-# ---------------------------------------------------------------- poll widget JS
-POLL_JS = """
-  (function(){
-    var URL="__SUPA_URL__", KEY="__SUPA_KEY__";
-    var box=document.querySelector('.poll'); if(!box) return;
-    var slug=box.getAttribute('data-slug');
-    var opts=box.querySelectorAll('.poll-opt');
-    var totalEl=box.querySelector('.poll-total');
-    var voted=null; try{voted=localStorage.getItem('poll_'+slug);}catch(e){}
-    function H(x){return Object.assign({apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json'},x||{});}
-    function apply(res){
-      var m={home:(res&&res.home)||0,draw:(res&&res.draw)||0,away:(res&&res.away)||0};
-      var t=m.home+m.draw+m.away;
-      if(totalEl) totalEl.textContent=t+(t===1?' vote':' votes');
-      if(!voted){box.classList.add('open');return;}
-      box.classList.add('done');
-      opts.forEach(function(o){
-        var p=o.getAttribute('data-pick'), pc=t?Math.round(m[p]*100/t):0;
-        var i=o.querySelector('.bar>i'); if(i) i.style.width=pc+'%';
-        var pe=o.querySelector('.pc'); if(pe) pe.textContent=pc+'%';
-        if(voted===p) o.classList.add('mine');
-      });
-    }
-    function load(){
-      fetch(URL+'/rest/v1/rpc/get_poll_results',{method:'POST',headers:H(),body:JSON.stringify({p_slug:slug})})
-        .then(function(r){return r.json();}).then(function(rows){apply(rows&&rows[0]);}).catch(function(){box.classList.add('open');});
-    }
-    function vote(p){
-      if(voted) return; voted=p; try{localStorage.setItem('poll_'+slug,p);}catch(e){}
-      fetch(URL+'/rest/v1/poll_votes',{method:'POST',headers:H({Prefer:'return=minimal'}),body:JSON.stringify({match_slug:slug,pick:p})})
-        .then(load).catch(load);
-    }
-    opts.forEach(function(o){o.addEventListener('click',function(){vote(o.getAttribute('data-pick'));});});
-    load();
-  })();
-"""
+POLL_JS = """(function(){var URL="__U__",KEY="__K__";var box=document.querySelector('.poll');if(!box)return;var slug=box.getAttribute('data-slug');var opts=box.querySelectorAll('.poll-opt');var tot=box.querySelector('.poll-total');var voted=null;try{voted=localStorage.getItem('poll_'+slug);}catch(e){}function H(x){return Object.assign({apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json'},x||{});}function ap(res){var m={home:(res&&res.home)||0,draw:(res&&res.draw)||0,away:(res&&res.away)||0};var t=m.home+m.draw+m.away;if(tot)tot.textContent=t+(t===1?' vote':' votes');if(!voted){box.classList.add('open');return;}box.classList.add('done');opts.forEach(function(o){var p=o.getAttribute('data-pick'),pc=t?Math.round(m[p]*100/t):0;var i=o.querySelector('.bar>i');if(i)i.style.width=pc+'%';var pe=o.querySelector('.pc');if(pe)pe.textContent=pc+'%';if(voted===p)o.classList.add('mine');});}function load(){fetch(URL+'/rest/v1/rpc/get_poll_results',{method:'POST',headers:H(),body:JSON.stringify({p_slug:slug})}).then(function(r){return r.json();}).then(function(rows){ap(rows&&rows[0]);}).catch(function(){box.classList.add('open');});}function vote(p){if(voted)return;voted=p;try{localStorage.setItem('poll_'+slug,p);}catch(e){}fetch(URL+'/rest/v1/poll_votes',{method:'POST',headers:H({Prefer:'return=minimal'}),body:JSON.stringify({match_slug:slug,pick:p})}).then(load).catch(load);}opts.forEach(function(o){o.addEventListener('click',function(){vote(o.getAttribute('data-pick'));});});load();})();"""
 
-# ---------------------------------------------------------------- post template
-POST = """<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>__TITLE__</title>
-  <meta name="description" content="__DESC__"/>
-  <link rel="canonical" href="__SITE__/blog/__SLUG__.html"/>
-  <meta name="robots" content="index, follow"/>
-  <meta property="og:type" content="article"/>
-  <meta property="og:title" content="__H1__"/>
-  <meta property="og:description" content="__DESC__"/>
-  <meta property="og:url" content="__SITE__/blog/__SLUG__.html"/>
-  <meta property="og:image" content="__SITE__/og-image.png"/>
-  <meta name="twitter:card" content="summary_large_image"/>
-  <script type="application/ld+json">
-  {"@context":"https://schema.org","@type":"Article","headline":"__H1__","description":"__DESC__","image":"__SITE__/og-image.png","datePublished":"__PUB__","dateModified":"__PUB__","author":{"@type":"Organization","name":"Scorina AI"},"publisher":{"@type":"Organization","name":"Scorina AI","logo":{"@type":"ImageObject","url":"__SITE__/scorina_ai_logo.svg"}},"mainEntityOfPage":"__SITE__/blog/__SLUG__.html"}
-  </script>
-  <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet"/>
-  <style>__CSS__
-    article{padding:56px 0 8px;}
-    .post-head .kicker{margin-bottom:20px;}
-    h1{font-family:var(--serif);font-weight:600;font-size:46px;line-height:1.06;letter-spacing:-.02em;margin-bottom:20px;}
-    .author{display:flex;align-items:center;gap:12px;padding:20px 0 26px;border-bottom:1px solid var(--line);margin-bottom:8px;}
-    .author .av{width:42px;height:42px;border-radius:50%;background:linear-gradient(140deg,var(--cyan),var(--purple));flex-shrink:0;display:grid;place-items:center;font-weight:800;color:#06101f;font-size:15px;}
-    .author .meta{font-size:13.5px;color:var(--muted);line-height:1.5;}
-    .author .meta b{color:var(--text);font-weight:600;font-size:14.5px;}
-    .lead{font-family:var(--read);font-size:22px;line-height:1.55;color:var(--soft);margin:32px 0 4px;}
-    article p{font-family:var(--read);font-size:20px;line-height:1.72;color:var(--soft);margin:0 0 24px;}
-    article p a{color:var(--cyan);text-decoration:underline;text-underline-offset:2px;}
-    h2{font-family:var(--serif);font-weight:600;font-size:30px;letter-spacing:-.01em;margin:48px 0 16px;}
-    /* prediction module */
-    .verdict{border:1px solid var(--line);background:var(--surface);border-radius:20px;padding:26px;margin:32px 0;}
-    .verdict .cap{font-size:11.5px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);margin-bottom:18px;}
-    .vbar{display:flex;height:14px;border-radius:999px;overflow:hidden;gap:3px;}
-    .vbar span{display:block;height:100%;border-radius:2px;}
-    .vlabels{display:flex;justify-content:space-between;margin-top:16px;gap:8px;}
-    .vlabels > div{display:flex;flex-direction:column;gap:3px;min-width:0;}
-    .vlabels .mid{align-items:center;} .vlabels .right{align-items:flex-end;}
-    .vlabels b{font-family:var(--mono);font-weight:700;font-size:21px;}
-    .vlabels span{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:16ch;}
-    .vstats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:24px;border-top:1px solid var(--line);padding-top:20px;}
-    .vstats > div{display:flex;flex-direction:column;gap:5px;text-align:center;}
-    .vstats span{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);}
-    .vstats b{font-family:var(--mono);font-weight:700;font-size:17px;}
-    /* form */
-    .forms{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:8px 0;}
-    .fl{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;}
-    .fbs{display:flex;gap:7px;}
-    .fb{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;font-family:var(--mono);font-weight:700;font-size:12px;}
-    .fb.W{background:rgba(56,224,166,.15);color:var(--green);}
-    .fb.D{background:rgba(246,195,68,.15);color:var(--amber);}
-    .fb.L{background:rgba(255,112,137,.15);color:var(--red);}
-    ul.factors{list-style:none;padding:0;margin:4px 0 24px;}
-    ul.factors li{position:relative;padding-left:24px;margin-bottom:13px;font-family:var(--read);font-size:19px;color:var(--soft);line-height:1.6;}
-    ul.factors li::before{content:"";position:absolute;left:0;top:12px;width:8px;height:8px;border-radius:50%;background:var(--cyan);}
-    /* POLL */
-    .poll{border:1px solid var(--line);background:linear-gradient(180deg,var(--raise),var(--surface));border-radius:20px;padding:24px;margin:40px 0;}
-    .poll-q{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:18px;}
-    .poll-q .t{font-weight:700;font-size:17px;}
-    .poll-total{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap;}
-    .poll-opt{position:relative;display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:transparent;border:1px solid var(--line);border-radius:13px;padding:15px 17px;margin-bottom:11px;cursor:pointer;color:var(--text);font-family:var(--sans);overflow:hidden;transition:border-color .15s,background .15s,transform .1s;}
-    .poll-opt:last-of-type{margin-bottom:0;}
-    .poll.open .poll-opt:hover{border-color:rgba(45,212,238,.45);background:rgba(45,212,238,.05);}
-    .poll.open .poll-opt:active{transform:scale(.99);}
-    .poll-opt .lbl{font-weight:600;font-size:15.5px;flex:1;z-index:2;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-    .poll-opt .bar{position:absolute;inset:0;z-index:1;}
-    .poll-opt .bar>i{display:block;height:100%;width:0;background:rgba(45,212,238,.14);transition:width .7s cubic-bezier(.2,.8,.2,1);}
-    .poll-opt .pc{font-family:var(--mono);font-weight:700;font-size:14px;color:var(--muted);z-index:2;opacity:0;transition:opacity .3s;}
-    .poll.done .poll-opt{cursor:default;}
-    .poll.done .poll-opt .pc{opacity:1;}
-    .poll.done .poll-opt.mine{border-color:rgba(45,212,238,.55);}
-    .poll.done .poll-opt.mine .bar>i{background:rgba(45,212,238,.22);}
-    .poll.done .poll-opt.mine .pc{color:var(--cyan);}
-    .poll-foot{font-size:12px;color:var(--faint);margin-top:14px;}
-    .cta{display:flex;align-items:center;justify-content:space-between;gap:16px;border:1px solid rgba(45,212,238,.3);border-radius:18px;padding:22px 24px;margin:40px 0 8px;background:linear-gradient(120deg,rgba(45,212,238,.08),rgba(169,139,255,.06));}
-    .cta .t{font-weight:700;font-size:16.5px;} .cta .s{font-size:13.5px;color:var(--muted);margin-top:3px;}
-    .cta .go{flex-shrink:0;font-family:var(--mono);font-weight:700;color:var(--cyan);}
-    .disclaimer{font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:22px;margin-top:40px;line-height:1.6;}
-    @media(max-width:600px){
-      article{padding:40px 0 8px;}
-      h1{font-size:34px;} h2{font-size:25px;margin-top:38px;}
-      .lead{font-size:20px;} article p{font-size:18.5px;}
-      ul.factors li{font-size:17.5px;}
-      .vlabels b{font-size:18px;} .vlabels span{font-size:11.5px;max-width:11ch;}
-      .vstats{gap:8px;} .vstats b{font-size:15px;}
-      .cta{flex-direction:column;align-items:flex-start;gap:10px;}
-    }
-  </style>
-</head>
-<body>
-  <header class="site"><div class="row">
-    <a class="brand" href="__SITE__"><span class="dot"></span> Scorina AI <em>Journal</em></a>
-    <a class="back" href="/blog/">← All previews</a>
-  </div></header>
+FONTS = ('<link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>'
+         '<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@1,9..144,500;1,9..144,600&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>')
 
-  <main class="wrap"><article>
-    <div class="post-head">
-      <div class="kicker">__LEAGUE__ · Match Preview</div>
-      <h1>__H1__</h1>
-      <div class="author">
-        <div class="av">S</div>
-        <div class="meta"><b>Scorina AI</b><br>__PUBHUMAN__ · __KICK__</div>
-      </div>
-    </div>
+NAV = ('<nav class="nav"><div class="in"><a class="brand" href="' + SITE + '"><span class="dot"></span> Scorina AI <em>Journal</em></a>'
+       '<div class="nlinks"><a href="/blog/">Previews</a><a href="/blog/how-scorina-ai-predicts.html">How it works</a>'
+       '<a href="' + SITE + '/#/live">Live</a></div><a class="nbtn" href="' + SITE + '">Open app ↗</a></div></nav>')
 
-    <p class="lead">__HOME__ face __AWAY__ in __LEAGUE__. Here is our model's read — win probabilities, expected goals and the most likely scoreline, plus how you see it.</p>
+FOOTER = ('<footer><div class="in"><a href="/blog/">Journal</a><a href="' + SITE + '/#/live">Live Scores</a>'
+          '<a href="' + SITE + '/#/analysis">Predictions</a><a href="' + SITE + '/#/bestpicks">AI Picks</a>'
+          '<span class="sep"></span><span>© 2026 Scorina AI · Football analytics &amp; predictions</span></div></footer>')
 
-    <div class="verdict">
-      <div class="cap">Model prediction</div>
-      <div class="vbar">
-        <span style="width:__HW__%;background:var(--cyan)"></span>
-        <span style="width:__DR__%;background:#3b4459"></span>
-        <span style="width:__AW__%;background:var(--purple)"></span>
-      </div>
-      <div class="vlabels">
-        <div><b>__HW__%</b><span>__HOME__</span></div>
-        <div class="mid"><b>__DR__%</b><span>Draw</span></div>
-        <div class="right"><b>__AW__%</b><span>__AWAY__</span></div>
-      </div>
-      <div class="vstats">
-        <div><span>Expected goals</span><b>__XGH__ – __XGA__</b></div>
-        <div><span>Likely score</span><b>__SCORE__</b></div>
-        <div><span>Confidence</span><b>__CONF__</b></div>
-      </div>
-    </div>
+def page(title, desc, canon, body, extra_head="", script=""):
+    return fill("""<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/><title>__T__</title>
+<meta name="description" content="__D__"/><link rel="canonical" href="__C__"/><meta name="robots" content="index, follow"/>
+<meta property="og:title" content="__T__"/><meta property="og:description" content="__D__"/><meta property="og:url" content="__C__"/>
+<meta property="og:image" content="__S__/og-image.png"/>__EH____FONTS__<style>__CSS__</style></head>
+<body>__NAV____BODY____FOOTER____SCRIPT__</body></html>""",
+    {"__T__": title, "__D__": desc, "__C__": canon, "__S__": SITE, "__EH__": extra_head,
+     "__FONTS__": FONTS, "__CSS__": CSS, "__NAV__": NAV, "__BODY__": body, "__FOOTER__": FOOTER, "__SCRIPT__": script})
 
-    <h2>Recent form</h2>
-    <div class="forms">
-      <div><div class="fl">__HOME__ · last 5</div><div class="fbs">__FORMH__</div></div>
-      <div><div class="fl">__AWAY__ · last 5</div><div class="fbs">__FORMA__</div></div>
-    </div>
+# ---------------------------------------------------------------- selection
+def involves(fx):
+    b = BIG_TEAMS.get(fx.get("league"), [])
+    return (fx.get("homeTeam") in b) + (fx.get("awayTeam") in b)
 
-    __FACTORS__
+def select_featured(fixtures):
+    by = {}
+    for fx in fixtures:
+        if not fx.get("homeTeam") or not fx.get("awayTeam"): continue
+        if fx.get("league") not in BIG_TEAMS: continue
+        if involves(fx) == 0: continue
+        by.setdefault(fx["league"], []).append(fx)
+    picked = []
+    for league, items in by.items():
+        items.sort(key=lambda f: -involves(f))
+        picked += items[:MAX_PER_LEAGUE]
+    picked.sort(key=lambda f: -involves(f))
+    return picked[:MAX_TOTAL]
 
-    <div class="poll" data-slug="__SLUG__">
-      <div class="poll-q"><span class="t">Who wins? Cast your vote</span><span class="poll-total"></span></div>
-      <button class="poll-opt" data-pick="home"><span class="bar"><i></i></span><span class="lbl">__HOME__</span><span class="pc"></span></button>
-      <button class="poll-opt" data-pick="draw"><span class="bar"><i></i></span><span class="lbl">Draw</span><span class="pc"></span></button>
-      <button class="poll-opt" data-pick="away"><span class="bar"><i></i></span><span class="lbl">__AWAY__</span><span class="pc"></span></button>
-      <div class="poll-foot">Tap your pick to see how everyone voted.</div>
-    </div>
+# ---------------------------------------------------------------- component renderers
+def pick_ring(p):
+    top = max(p["hw"], p["aw"]); circ = 207.35; off = round(circ * (1 - top / 100), 1)
+    grad = "rgHi" if top >= 62 else ("rgMd" if top >= 45 else "rgLo")
+    win = p["home"] if p["hw"] >= p["aw"] else p["away"]
+    return fill('<a class="pick" href="/blog/__SLUG__.html"><svg class="ring" viewBox="0 0 80 80"><circle class="ring-bg" cx="40" cy="40" r="33"/>'
+        '<circle class="ring-fg" style="stroke:url(#__G__)" cx="40" cy="40" r="33" stroke-dasharray="207.35" stroke-dashoffset="__OFF__"/>'
+        '<text class="ring-t" x="40" y="40" text-anchor="middle" dominant-baseline="central">__TOP__%</text></svg>'
+        '<div><div class="pk-teams"><span class="w">__WIN__ ✓</span><span>__OTHER__</span></div>'
+        '<div class="pk-call"><b>__WIN__ win</b> · __SCORE__</div></div></a>',
+        {"__SLUG__": p["slug"], "__G__": grad, "__OFF__": off, "__TOP__": top, "__WIN__": win,
+         "__OTHER__": p["away"] if win == p["home"] else p["home"], "__SCORE__": p["score"]})
 
-    <a class="cta" href="__SITE__/#/analysis">
-      <span><span class="t">Want the live version?</span><br><span class="s">See the up-to-the-minute prediction on Scorina AI.</span></span>
-      <span class="go">Open →</span>
-    </a>
+def card(p):
+    return fill('<a class="pcard" href="/blog/__SLUG__.html"><div class="banner __CL__"><div class="banner-teams">'
+        '<img src="__HL__" alt="" loading="lazy"/><span class="vs">VS</span><img src="__AL__" alt="" loading="lazy"/></div>'
+        '<div class="banner-bar"><span style="width:__HW__%;background:var(--cyan)"></span><span style="width:__DR__%;background:#3b4459"></span><span style="width:__AW__%;background:var(--purple)"></span></div></div>'
+        '<div class="pbody"><div class="pmeta"><span class="lgc __CL__">__LEAGUE__</span><span class="dt">__KICK__ · GW __GW__</span></div>'
+        '<h3>__HOME__ vs __AWAY__</h3><p class="exc">__EXC__</p><span class="rm">Read full preview →</span></div></a>',
+        {"__SLUG__": p["slug"], "__CL__": p["cls"], "__HL__": p["hl"], "__AL__": p["al"],
+         "__HW__": p["hw"], "__DR__": p["dr"], "__AW__": p["aw"], "__LEAGUE__": p["league"],
+         "__KICK__": p["kick"], "__GW__": p["gw"], "__HOME__": p["home"], "__AWAY__": p["away"], "__EXC__": p["exc"]})
 
-    <p class="disclaimer">Predictions are model estimates for analysis and entertainment, not betting advice. Figures update as new data arrives.</p>
-  </article></main>
+def sidebar(posts, all_posts):
+    lg = {}
+    for p in all_posts: lg.setdefault(p["league"], 0); lg[p["league"]] += 1
+    lg_rows = "".join(fill('<a class="lg-row" href="/blog/league/__SL__.html"><span class="d" style="background:var(--__CL__)"></span><span class="nm">__L__</span><span class="ct">__N__</span></a>',
+        {"__SL__": lmeta(L)[0], "__CL__": lmeta(L)[1], "__L__": L, "__N__": n}) for L, n in sorted(lg.items(), key=lambda x: -x[1]))
+    recent = "".join(fill('<a href="/blog/__SLUG__.html">__HOME__ vs __AWAY__<span class="rd">__LEAGUE__ · __KICK__</span></a>',
+        {"__SLUG__": p["slug"], "__HOME__": p["home"], "__AWAY__": p["away"], "__LEAGUE__": p["league"], "__KICK__": p["kick"]})
+        for p in sorted(all_posts, key=lambda p: p["date"] or "", reverse=True)[:5])
+    gw = {}
+    for p in all_posts: gw.setdefault((p["gwsort"], p["gw"]), 0); gw[(p["gwsort"], p["gw"])] += 1
+    gw_rows = "".join(f'<div>{label} <span>{n}</span></div>' for (s, label), n in sorted(gw.items()))
+    teams = {}
+    for p in all_posts:
+        for t in (p["home"], p["away"]): teams[t] = slugify(t)
+    tags = "".join(f'<a class="tag" href="/blog/team/{s}.html">{t}</a>' for t, s in sorted(teams.items()))
+    return fill('<aside class="side"><div class="widget"><h4>Leagues</h4><div class="lg-list">__LG__</div></div>'
+        '<div class="widget"><h4>Recent previews</h4><div class="recent">__RC__</div></div>'
+        '<div class="widget"><h4>By gameweek</h4><div class="gw">__GW__</div></div>'
+        '<div class="widget"><h4>Teams</h4><div class="tags">__TG__</div></div></aside>',
+        {"__LG__": lg_rows, "__RC__": recent, "__GW__": gw_rows, "__TG__": tags})
 
-  <footer><div class="in">
-    <a href="/blog/">Journal</a>
-    <a href="__SITE__/#/live">Live Scores</a>
-    <a href="__SITE__/#/analysis">Predictions</a>
-    <a href="__SITE__/#/bestpicks">AI Picks</a>
-    <span class="sep"></span>
-    <span>© 2026 Scorina AI</span>
-  </div></footer>
-  <script>__POLL_JS__</script>
-</body>
-</html>
-"""
+def pager(cur, total):
+    if total <= 1: return ""
+    out = []
+    for i in range(1, total + 1):
+        href = "/blog/" if i == 1 else f"/blog/index-{i}.html"
+        out.append(f'<span class="cur">{i}</span>' if i == cur else f'<a href="{href}">{i}</a>')
+    if cur < total:
+        nxt = "/blog/" if cur + 1 == 1 else f"/blog/index-{cur+1}.html"
+        out.append(f'<a class="nx" href="{nxt}">Next →</a>')
+    return '<div class="pager">' + "".join(out) + '</div>'
 
-# ---------------------------------------------------------------- index template
-INDEX = """<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>The Scorina AI Journal — Football Match Previews & Predictions</title>
-  <meta name="description" content="AI-powered match previews and predictions for the Premier League, La Liga, Serie A and Europe's top leagues, from Scorina AI."/>
-  <link rel="canonical" href="__SITE__/blog/"/>
-  <meta property="og:type" content="website"/>
-  <meta property="og:title" content="The Scorina AI Journal — Match Previews & Predictions"/>
-  <meta property="og:url" content="__SITE__/blog/"/>
-  <meta property="og:image" content="__SITE__/og-image.png"/>
-  <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
-  <style>__CSS__
-    .hero{padding:70px 0 44px;border-bottom:1px solid var(--line);}
-    .hero .kicker{margin-bottom:18px;}
-    .hero h1{font-family:var(--serif);font-weight:600;font-size:56px;line-height:1.02;letter-spacing:-.025em;margin-bottom:18px;}
-    .hero p{font-family:var(--read);color:var(--soft);font-size:20px;max-width:54ch;line-height:1.55;}
-    .feed{padding:0 0 8px;}
-    .entry{display:block;padding:34px 0;border-bottom:1px solid var(--line);transition:opacity .15s;}
-    .entry:hover{opacity:.7;}
-    .entry .et{font-size:12px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--cyan);}
-    .entry h2{font-family:var(--serif);font-weight:600;font-size:30px;letter-spacing:-.015em;margin:12px 0 10px;line-height:1.12;}
-    .entry p{font-family:var(--read);color:var(--soft);font-size:18px;line-height:1.55;max-width:62ch;}
-    .entry .em{color:var(--faint);font-size:12.5px;margin-top:14px;font-family:var(--mono);}
-    .entry:first-child h2{font-size:38px;}
-    @media(max-width:600px){
-      .hero{padding:48px 0 34px;} .hero h1{font-size:40px;} .hero p{font-size:18px;}
-      .entry h2{font-size:25px;} .entry:first-child h2{font-size:29px;} .entry p{font-size:16.5px;}
-    }
-  </style>
-</head>
-<body>
-  <header class="site"><div class="row">
-    <a class="brand" href="__SITE__"><span class="dot"></span> Scorina AI <em>Journal</em></a>
-    <a class="back" href="__SITE__">← Back to app</a>
-  </div></header>
+DEFS = ('<svg width="0" height="0" style="position:absolute"><defs>'
+        '<linearGradient id="rgHi" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#38e0a6"/><stop offset="1" stop-color="#2dd4ee"/></linearGradient>'
+        '<linearGradient id="rgMd" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f6c344"/><stop offset="1" stop-color="#ff9d5c"/></linearGradient>'
+        '<linearGradient id="rgLo" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2dd4ee"/><stop offset="1" stop-color="#a98bff"/></linearGradient></defs></svg>')
 
-  <main class="wrap">
-    <section class="hero">
-      <div class="kicker">The Scorina AI Journal</div>
-      <h1>Match previews, decided by data.</h1>
-      <p>AI-generated previews for Europe's top leagues — win probabilities, expected goals, form and the most likely scoreline for every fixture. Then tell us who you think wins.</p>
-    </section>
-    <section class="feed">
-__CARDS__
-    </section>
-  </main>
+# ---------------------------------------------------------------- page builders
+def build_hub(posts):
+    pages = [posts[i:i + PER_PAGE] for i in range(0, len(posts), PER_PAGE)] or [[]]
+    total = len(pages)
+    picks = sorted(posts, key=lambda p: -max(p["hw"], p["aw"]))[:3]
+    strip = ('<section class="picks-strip"><div class="wrap"><div class="strip-h"><h2>Top picks</h2>'
+             '<span class="sub">/ highest-confidence this week</span></div><div class="picks">'
+             + "".join(pick_ring(p) for p in picks) + '</div></div></section>') if picks else ""
+    for idx, chunk in enumerate(pages, 1):
+        feed = "".join(card(p) for p in chunk) or '<p style="color:var(--muted)">No featured matches this week yet.</p>'
+        hero = ('<header class="hero"><div class="wrap in"><div class="eyebrow">The Scorina AI Journal / Match intelligence</div>'
+                '<h1>Football, <span class="accent">decided by data</span>.</h1>'
+                '<p>AI-generated previews for the biggest fixtures across Europe — win probabilities, expected goals and the most likely scoreline. Tap any match for the full breakdown and vote on who wins.</p></div></header>')
+        body = DEFS + (hero + strip if idx == 1 else "") + (
+            '<div class="wrap"><div class="layout"><main><div class="feed-h"><h2>Latest previews</h2>'
+            f'<span class="sub">/ page {idx} of {total}</span></div><div class="feed">{feed}</div>{pager(idx, total)}</main>'
+            + sidebar(chunk, posts) + '</div></div>')
+        html = page("The Scorina AI Journal — Football Match Previews & Predictions",
+                    "AI-powered previews and predictions for the biggest fixtures in the Premier League, La Liga, Serie A and Europe's top leagues.",
+                    f"{SITE}/blog/", body)
+        write(f"{OUT}/index.html" if idx == 1 else f"{OUT}/index-{idx}.html", html)
 
-  <footer><div class="in">
-    <a href="__SITE__/#/live">Live Scores</a>
-    <a href="__SITE__/#/analysis">Predictions</a>
-    <a href="__SITE__/#/players">Players</a>
-    <span class="sep"></span>
-    <span>© 2026 Scorina AI</span>
-  </div></footer>
-</body>
-</html>
-"""
+def build_league(league, posts):
+    sl, cl = lmeta(league)
+    feed = "".join(card(p) for p in posts)
+    hero = fill('<header class="hero"><div class="wrap in"><div class="eyebrow">Previews / __L__</div>'
+        '<h1>__L__ <span class="accent">predictions</span>.</h1>'
+        '<p>AI match previews and predictions for this week\'s biggest __L__ fixtures — win probabilities, expected goals and the most likely scoreline.</p></div></header>',
+        {"__L__": league})
+    body = hero + f'<div class="wrap"><div class="layout"><main><div class="feed-h"><h2>{league} previews</h2><span class="sub">/ {len(posts)} this week</span></div><div class="feed">{feed}</div></main>' + sidebar(posts, posts) + '</div></div>'
+    write(f"{OUT}/league/{sl}.html", page(f"{league} Predictions & Match Previews | Scorina AI",
+        f"AI predictions and match previews for the biggest {league} fixtures — probabilities, expected goals and scorelines.",
+        f"{SITE}/blog/league/{sl}.html", body))
 
-CARD = """      <a class="entry" href="/blog/__SLUG__.html">
-        <div class="et">__LEAGUE__ · Match Preview</div>
-        <h2>__HOME__ vs __AWAY__</h2>
-        <p>AI prediction and preview — win probabilities, expected goals and the most likely scoreline. Cast your vote on who wins.</p>
-        <div class="em">__KICK__</div>
-      </a>"""
+def build_team(team, slug, posts, all_posts):
+    feed = "".join(card(p) for p in posts)
+    hero = fill('<header class="hero"><div class="wrap in"><div class="eyebrow">Previews / __T__</div>'
+        '<h1>__T__ <span class="accent">predictions</span>.</h1>'
+        '<p>Every Scorina AI preview and prediction featuring __T__ — probabilities, expected goals and the most likely scoreline for each match.</p></div></header>',
+        {"__T__": team})
+    body = hero + f'<div class="wrap"><div class="layout"><main><div class="feed-h"><h2>{team} previews</h2><span class="sub">/ {len(posts)} this week</span></div><div class="feed">{feed}</div></main>' + sidebar(posts, all_posts) + '</div></div>'
+    write(f"{OUT}/team/{slug}.html", page(f"{team} Predictions & Match Previews | Scorina AI",
+        f"AI predictions and match previews featuring {team} — win probabilities, expected goals and scorelines.",
+        f"{SITE}/blog/team/{slug}.html", body))
 
-
-def render_post(fx, pred, slug):
-    home = fx.get("homeTeam") or pred.get("home_team_name") or ""
-    away = fx.get("awayTeam") or pred.get("away_team_name") or ""
-    league = fx.get("league") or "Football"
-    kick = human_date(fx.get("date"))
-    venue = fx.get("venue")
-    kick_full = kick + (f", {venue}" if venue else "") if kick else "Upcoming fixture"
-    pub = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    h1 = f"{home} vs {away}: AI Prediction & Match Preview"
-    desc = f"{home} vs {away} prediction and preview. Scorina AI's win probabilities, expected goals and most likely scoreline for this {league} match — plus vote on who wins."
-
+def build_match(fx, pred, p):
     factors = pred.get("key_factors") or []
-    factors_html = ""
+    fx_html = ""
     if factors:
-        items = "".join(f"<li>{f}</li>" for f in factors[:4])
-        factors_html = f'<h2>Key factors</h2>\n    <ul class="factors">{items}</ul>'
-
-    poll_js = POLL_JS.replace("__SUPA_URL__", POLL_SUPABASE_URL).replace("__SUPA_KEY__", POLL_SUPABASE_ANON)
-
-    repl = {
-        "__CSS__": CSS, "__POLL_JS__": poll_js,
-        "__TITLE__": f"{home} vs {away} Prediction: AI Preview & Score | Scorina AI",
-        "__DESC__": desc, "__H1__": h1, "__SLUG__": slug, "__SITE__": SITE,
-        "__PUB__": pub, "__PUBHUMAN__": datetime.now(timezone.utc).strftime("%-d %B %Y"),
-        "__HOME__": home, "__AWAY__": away, "__LEAGUE__": league, "__KICK__": kick_full,
-        "__HW__": str(pct(pred.get("home_win"))), "__DR__": str(pct(pred.get("draw"))),
-        "__AW__": str(pct(pred.get("away_win"))),
-        "__XGH__": str(pred.get("home_expected_goals", "")), "__XGA__": str(pred.get("away_expected_goals", "")),
-        "__SCORE__": pred.get("most_likely_score") or pred.get("predicted_score") or "—",
-        "__CONF__": pred.get("confidence_level") or "Medium",
-        "__FORMH__": form_badges(pred.get("home_form_sequence")),
-        "__FORMA__": form_badges(pred.get("away_form_sequence")),
-        "__FACTORS__": factors_html,
-    }
-    out = POST
-    for k, v in repl.items():
-        out = out.replace(k, v)
-    return out
-
+        fx_html = '<h2>Key factors</h2><ul style="list-style:none;padding:0;margin:4px 0 20px">' + "".join(
+            f'<li style="position:relative;padding-left:22px;margin-bottom:12px;font-family:var(--read);font-size:18px;color:var(--soft)"><span style="position:absolute;left:0;top:11px;width:7px;height:7px;border-radius:50%;background:var(--cyan)"></span>{f}</li>' for f in factors[:4]) + '</ul>'
+    poll_js = POLL_JS.replace("__U__", POLL_SUPABASE_URL).replace("__K__", POLL_SUPABASE_ANON)
+    body = fill('<main class="read"><article><div class="pmeta" style="padding-top:40px"><span class="lgc __CL__">__LEAGUE__</span><span class="dt">__KICKF__</span></div>'
+        '<h1>__HOME__ vs __AWAY__: AI Prediction &amp; Preview</h1>'
+        '<div class="abyline">Scorina AI · __PUB__</div>'
+        '<div class="matchbar"><div class="t"><img src="__HL__" alt=""/><span>__HOME__</span></div><div class="vs">VS</div><div class="t"><img src="__AL__" alt=""/><span>__AWAY__</span></div></div>'
+        '<p class="lead">__HOME__ face __AWAY__ in __LEAGUE__. Here is our model\'s read of the match \u2014 win probabilities, expected goals and the most likely scoreline.</p>'
+        '__ARTICLE__'
+        '<div class="verdict"><div class="cap">Model prediction</div>'
+        '<div class="vbar"><span style="width:__HW__%;background:var(--cyan)"></span><span style="width:__DR__%;background:#3b4459"></span><span style="width:__AW__%;background:var(--purple)"></span></div>'
+        '<div class="vlabels"><div><b>__HW__%</b><span>__HOME__</span></div><div class="m"><b>__DR__%</b><span>Draw</span></div><div class="r"><b>__AW__%</b><span>__AWAY__</span></div></div>'
+        '<div class="vstats"><div><span>Expected goals</span><b>__XGH__ – __XGA__</b></div><div><span>Likely score</span><b>__SCORE__</b></div><div><span>Confidence</span><b>__CONF__</b></div></div></div>'
+        '<h2>Recent form</h2><div class="forms"><div><div class="fl">__HOME__ · last 5</div><div class="fbs">__FH__</div></div><div><div class="fl">__AWAY__ · last 5</div><div class="fbs">__FA__</div></div></div>'
+        '__FX__'
+        '<div class="poll" data-slug="__SLUG__"><div class="poll-q"><span class="t">Who wins? Cast your vote</span><span class="poll-total"></span></div>'
+        '<button class="poll-opt" data-pick="home"><span class="bar"><i></i></span><span class="lbl">__HOME__</span><span class="pc"></span></button>'
+        '<button class="poll-opt" data-pick="draw"><span class="bar"><i></i></span><span class="lbl">Draw</span><span class="pc"></span></button>'
+        '<button class="poll-opt" data-pick="away"><span class="bar"><i></i></span><span class="lbl">__AWAY__</span><span class="pc"></span></button>'
+        '<div class="poll-foot">Tap your pick to see how everyone voted.</div></div>'
+        '<a class="cta" href="__SITE__/#/analysis"><span><span class="t">Want the live version?</span><br><span class="s">See the up-to-the-minute prediction on Scorina AI.</span></span><span class="go">Open →</span></a>'
+        '<p class="disc">Predictions are model estimates for analysis and entertainment, not betting advice.</p></article></main>',
+        {"__CL__": p["cls"], "__LEAGUE__": p["league"], "__KICKF__": p["kickf"], "__HOME__": p["home"], "__AWAY__": p["away"],
+         "__PUB__": datetime.now(timezone.utc).strftime("%-d %B %Y"), "__HL__": p["hl"], "__AL__": p["al"],
+         "__ARTICLE__": "",  # Sonnet write-up goes here next step
+         "__HW__": p["hw"], "__DR__": p["dr"], "__AW__": p["aw"], "__XGH__": p["xgh"], "__XGA__": p["xga"],
+         "__SCORE__": p["score"], "__CONF__": p["conf"], "__FH__": form_badges(pred.get("home_form_sequence")),
+         "__FA__": form_badges(pred.get("away_form_sequence")), "__FX__": fx_html, "__SLUG__": p["slug"], "__SITE__": SITE})
+    write(f"{OUT}/{p['slug']}.html", page(f"{p['home']} vs {p['away']} Prediction: AI Preview & Score | Scorina AI",
+        f"{p['home']} vs {p['away']} prediction and preview — win probabilities, expected goals and the most likely scoreline. Vote on who wins.",
+        f"{SITE}/blog/{p['slug']}.html", body, script=f"<script>{poll_js}</script>"))
 
 def write(path, content):
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, "w", encoding="utf-8") as f:
-        f.write(content)
+    with open(path, "w", encoding="utf-8") as f: f.write(content)
 
-
+# ---------------------------------------------------------------- main
 def main():
-    if "YOUR-REF" in POLL_SUPABASE_URL or "YOUR_ANON" in POLL_SUPABASE_ANON:
-        print("NOTE: set POLL_SUPABASE_URL and POLL_SUPABASE_ANON at the top of this file, "
-              "or the poll won't record votes. Generating anyway.\n")
-
-    print(f"Fetching upcoming fixtures from {API_BASE} ...")
+    print(f"Fetching fixtures from {API_BASE} ...")
     fixtures = api_get("/live/upcoming") or []
     if not isinstance(fixtures, list) or not fixtures:
-        print("No upcoming fixtures returned. Nothing to generate.")
-        return
+        print("No upcoming fixtures. Nothing to generate."); return
 
-    seen, posts = set(), []
-    for fx in fixtures:
-        if len(posts) >= MAX_POSTS:
-            break
-        home, away = fx.get("homeTeam"), fx.get("awayTeam")
-        league = fx.get("league") or "Premier League"
-        if not home or not away:
-            continue
+    featured = select_featured(fixtures)
+    if not featured:
+        print("No featured (big-club) fixtures this week."); return
+    print(f"Selected {len(featured)} featured fixtures.")
+
+    posts = []
+    for fx in featured:
+        home, away, league = fx["homeTeam"], fx["awayTeam"], fx["league"]
         slug = slugify(f"{home}-vs-{away}-prediction")
-        if slug in seen:
-            continue
-        seen.add(slug)
-
-        print(f"  -> {home} vs {away}")
+        print(f"  -> {home} vs {away} ({league})")
         pred = api_post("/predict/match", {"home_team": home, "away_team": away, "league": league})
-        time.sleep(PAUSE_SEC)
+        time.sleep(PAUSE)
         if not pred or "home_win" not in pred:
-            print("     skipped (no prediction)")
-            continue
-
-        write(f"{OUT_DIR}/{slug}.html", render_post(fx, pred, slug))
-        posts.append({"slug": slug, "home": home, "away": away, "league": league,
-                      "kick": human_date(fx.get("date"))})
+            print("     skipped (no prediction)"); continue
+        gw_label, gw_sort = gameweek(fx.get("date"))
+        p = {"slug": slug, "home": home, "away": away, "league": league, "cls": lmeta(league)[1],
+             "date": fx.get("date"), "kick": short(fx.get("date")),
+             "kickf": human(fx.get("date")) + (f", {fx.get('venue')}" if fx.get("venue") else ""),
+             "gw": gw_label, "gwsort": gw_sort,
+             "hl": fx.get("homeLogo") or pred.get("home_crest") or "",
+             "al": fx.get("awayLogo") or pred.get("away_crest") or "",
+             "hw": pct(pred.get("home_win")), "dr": pct(pred.get("draw")), "aw": pct(pred.get("away_win")),
+             "xgh": pred.get("home_expected_goals", ""), "xga": pred.get("away_expected_goals", ""),
+             "score": pred.get("most_likely_score") or pred.get("predicted_score") or "—",
+             "conf": pred.get("confidence_level") or "Medium",
+             "exc": f"Our model reads {home} vs {away} — win probabilities, expected goals and the most likely scoreline, plus the case for each result."}
+        build_match(fx, pred, p)
+        posts.append(p)
 
     if not posts:
-        print("No posts generated.")
-        return
+        print("No posts generated."); return
 
-    cards = "\n".join(
-        CARD.replace("__SLUG__", p["slug"]).replace("__HOME__", p["home"])
-            .replace("__AWAY__", p["away"]).replace("__LEAGUE__", p["league"])
-            .replace("__KICK__", p["kick"] or "Upcoming")
-        for p in posts
-    )
-    write(f"{OUT_DIR}/index.html", INDEX.replace("__CSS__", CSS).replace("__SITE__", SITE).replace("__CARDS__", cards))
+    build_hub(posts)
 
+    leagues = {}
+    for p in posts: leagues.setdefault(p["league"], []).append(p)
+    for L, ps in leagues.items(): build_league(L, ps)
+
+    teams = {}
+    for p in posts:
+        for t in (p["home"], p["away"]): teams.setdefault(t, []).append(p)
+    for t, ps in teams.items(): build_team(t, slugify(t), ps, posts)
+
+    # sitemap
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    urls = [(f"{SITE}/", "daily", "1.0", None), (f"{SITE}/blog/", "weekly", "0.8", None)]
-    urls += [(f"{SITE}/blog/{p['slug']}.html", "monthly", "0.7", today) for p in posts]
-    body = "\n".join(
-        "  <url>\n    <loc>{}</loc>\n{}    <changefreq>{}</changefreq>\n    <priority>{}</priority>\n  </url>".format(
-            loc, (f"    <lastmod>{lm}</lastmod>\n" if lm else ""), cf, pr)
-        for loc, cf, pr, lm in urls
-    )
+    urls = [(f"{SITE}/blog/", "daily", "0.9")]
+    urls += [(f"{SITE}/blog/{p['slug']}.html", "weekly", "0.7") for p in posts]
+    urls += [(f"{SITE}/blog/league/{lmeta(L)[0]}.html", "weekly", "0.6") for L in leagues]
+    urls += [(f"{SITE}/blog/team/{slugify(t)}.html", "weekly", "0.5") for t in teams]
+    body = "\n".join(f'  <url><loc>{u}</loc><lastmod>{today}</lastmod><changefreq>{c}</changefreq><priority>{pr}</priority></url>' for u, c, pr in urls)
     write(SITEMAP, f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{body}\n</urlset>\n')
 
-    print(f"\nDone. Generated {len(posts)} post(s), rebuilt index.html and sitemap.xml.")
-
+    print(f"\nDone. {len(posts)} matches, {len(leagues)} league pages, {len(teams)} team pages, hub + sitemap.")
 
 if __name__ == "__main__":
     main()
