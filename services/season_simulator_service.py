@@ -18,8 +18,7 @@ LEAGUE_CONFIG = {
     "Ligue 1":        {"id": 61,  "teams": 18, "cl": 3, "el": 2, "relegation": 4},
     "Primeira Liga":  {"id": 94,  "teams": 18, "cl": 3, "el": 2, "relegation": 3},
 }
-SEASON = 2025
-
+from services.season import SEASON
 
 def _read_cache(name, max_age=600):
     path = os.path.join(CACHE_DIR, f"{name}.json")

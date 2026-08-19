@@ -17,7 +17,7 @@ load_dotenv()
 API_KEY = os.getenv("API_FOOTBALL_KEY", "")
 BASE_URL = "https://v3.football.api-sports.io"
 CACHE_DIR = "cache"
-SEASON = 2025  # 2024-2025 season (API uses start year)
+from services.season import SEASON # 2024-2025 season (API uses start year)
 
 HEADERS = {"x-apisports-key": API_KEY}
 

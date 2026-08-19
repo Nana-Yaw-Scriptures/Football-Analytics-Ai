@@ -17,7 +17,7 @@ API_BASE           = "https://v3.football.api-sports.io"
 API_HEADERS        = {"x-apisports-key": API_KEY}
 FDORG_BASE         = "https://api.football-data.org/v4"
 FDORG_HEADERS      = {"X-Auth-Token": FOOTBALL_DATA_KEY}
-SEASON             = 2025
+from services.season import SEASON
 
 app = FastAPI(title="Football Analyst AI - Backend")
 
@@ -1277,7 +1277,7 @@ def get_live_managers():
                 resp = requests.get(
                     f"{FDORG_BASE}/competitions/{comp_id}/teams",
                     headers=FDORG_HEADERS,
-                    params={"season": 2025},
+                    params={"season": SEASON},
                     timeout=10,
                 )
                 if resp.status_code != 200:

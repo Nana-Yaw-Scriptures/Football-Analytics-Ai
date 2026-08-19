@@ -148,7 +148,7 @@ def get_international_fixtures(date=None, upcoming=False):
 
     _write_cache(cache_name, all_fixtures)
     return all_fixtures
-SEASON = 2025  # API-Football uses the start year of the season (2024 = 2024-25 season)
+from services.season import SEASON  # API-Football uses the start year of the season (2024 = 2024-25 season)
 
 
 def _get(endpoint, params=None):
