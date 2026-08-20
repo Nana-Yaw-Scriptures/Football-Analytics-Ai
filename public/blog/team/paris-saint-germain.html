@@ -3,23 +3,24 @@
 <meta name="description" content="AI predictions and match previews featuring Paris Saint Germain — win probabilities, expected goals and scorelines."/><link rel="canonical" href="https://www.scorinai.com/blog/team/paris-saint-germain.html"/><meta name="robots" content="index, follow"/>
 <meta property="og:title" content="Paris Saint Germain Predictions & Match Previews | Scorina AI"/><meta property="og:description" content="AI predictions and match previews featuring Paris Saint Germain — win probabilities, expected goals and scorelines."/><meta property="og:url" content="https://www.scorinai.com/blog/team/paris-saint-germain.html"/>
 <meta property="og:image" content="https://www.scorinai.com/og-image.png"/><link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/><link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@1,9..144,500;1,9..144,600&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/><style>
-:root{--bg:#0a0b0e;--surface:#111318;--raise:#15181f;--line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.14);
---text:#f3f5f9;--soft:#c4ccd8;--muted:#828c9c;--faint:#525b6b;
---cyan:#2dd4ee;--purple:#a98bff;--green:#38e0a6;--amber:#f6c344;--red:#ff7089;--pink:#ff6fae;
---pl:#b79bff;--laliga:#ff9d5c;--bund:#ff5c74;--seriea:#3ad9ad;--ligue1:#5b8cff;--primeira:#40dd88;--ucl:#6f9bff;
+:root{--bg:#f6f7fb;--surface:#ffffff;--raise:#fbfcfe;--line:#e7eaf1;--line2:#d7dce6;
+--text:#141824;--soft:#41485a;--muted:#79809492;--muted:#788094;--faint:#a0a7b6;
+--cyan:#1cb6d6;--purple:#7c4fe4;--green:#12b886;--amber:#e0980a;--red:#ec4d6b;--pink:#ec4899;
+--grad:linear-gradient(120deg,#2dd4ee,#8b5cf6);
+--pl:#7c4fe4;--laliga:#e06a1b;--bund:#e2405a;--seriea:#0fa478;--ligue1:#3b6fe0;--primeira:#12a866;--ucl:#4a6fe0;
 --disp:'Space Grotesk',system-ui,sans-serif;--acc:'Fraunces',serif;--read:'Newsreader',Georgia,serif;--sans:'Outfit',system-ui,sans-serif;--mono:'JetBrains Mono',monospace;}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.6;-webkit-font-smoothing:antialiased;}
 a{color:inherit;text-decoration:none;}img{max-width:100%;}
 .accent{font-family:var(--acc);font-style:italic;font-weight:500;background:linear-gradient(100deg,var(--cyan),var(--purple) 55%,var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent;}
 .wrap{max-width:1200px;margin:0 auto;padding:0 40px;}
-.nav{position:sticky;top:0;z-index:40;background:rgba(10,11,14,.82);backdrop-filter:saturate(150%) blur(14px);border-bottom:1px solid var(--line);}
+.nav{position:sticky;top:0;z-index:40;background:rgba(246,247,251,.85);backdrop-filter:saturate(160%) blur(14px);border-bottom:1px solid var(--line);}
 .nav .in{max-width:1200px;margin:0 auto;padding:0 40px;height:66px;display:flex;align-items:center;justify-content:space-between;}
 .brand{display:flex;align-items:center;gap:11px;font-family:var(--disp);font-weight:700;font-size:17px;}
-.brand .dot{width:26px;height:26px;border-radius:8px;background:linear-gradient(140deg,var(--cyan),var(--purple));box-shadow:0 4px 16px rgba(45,212,238,.3);}
+.brand .logo{width:30px;height:30px;border-radius:9px;display:block;box-shadow:0 6px 16px rgba(124,79,228,.25);}
 .brand em{color:var(--muted);font-style:normal;font-weight:500;}
-.nlinks{display:flex;gap:28px;font-size:13.5px;color:var(--muted);font-weight:500;}.nlinks a:hover{color:var(--text);}
-.nbtn{font-family:var(--mono);font-size:12.5px;border:1px solid var(--line2);border-radius:9px;padding:9px 15px;}.nbtn:hover{border-color:var(--cyan);background:rgba(45,212,238,.08);}
+.nlinks{display:flex;gap:26px;font-size:13.5px;color:var(--muted);font-weight:500;}.nlinks a{position:relative;padding:6px 2px;}.nlinks a:hover{color:var(--text);}.nlinks a.active{color:var(--text);font-weight:600;}.nlinks a.active::after{content:'';position:absolute;left:50%;bottom:-2px;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:var(--grad);}
+.nbtn{font-family:var(--mono);font-size:12.5px;color:#fff;background:var(--grad);border-radius:10px;padding:10px 16px;box-shadow:0 6px 16px rgba(124,79,228,.25);}.nbtn:hover{opacity:.92;}
 @media(max-width:820px){.nav .in{flex-wrap:wrap;height:auto;padding-top:12px;padding-bottom:12px;gap:10px 16px;}.nlinks{order:3;flex-basis:100%;gap:18px;font-size:13px;overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch;padding-top:4px;}.nbtn{margin-left:auto;}}
 .hero{position:relative;overflow:hidden;border-bottom:1px solid var(--line);}
 .hero::before{content:"";position:absolute;top:-160px;left:-100px;width:480px;height:480px;border-radius:50%;background:radial-gradient(circle,rgba(45,212,238,.15),transparent 68%);}
@@ -36,48 +37,49 @@ a{color:inherit;text-decoration:none;}img{max-width:100%;}
 .pick{display:flex;align-items:center;gap:16px;border:1px solid var(--line);background:linear-gradient(160deg,var(--raise),var(--surface));border-radius:16px;padding:18px;transition:.15s;}
 .pick:hover{border-color:rgba(45,212,238,.45);transform:translateY(-3px);}
 .ring{width:64px;height:64px;flex-shrink:0;}
-.ring-bg{fill:none;stroke:rgba(255,255,255,.08);stroke-width:7;}
+.ring-bg{fill:none;stroke:rgba(20,24,36,.08);stroke-width:7;}
 .ring-fg{fill:none;stroke-width:7;stroke-linecap:round;transform:rotate(-90deg);transform-origin:50% 50%;}
 .ring-t{fill:var(--text);font-family:var(--mono);font-weight:700;font-size:17px;}
 .pk-teams{font-weight:600;font-size:14px;display:flex;flex-direction:column;gap:3px;}.pk-teams .w{color:var(--cyan);}
 .pk-call{font-size:12px;color:var(--muted);margin-top:7px;}.pk-call b{color:var(--text);}
 @media(max-width:900px){.picks{grid-template-columns:1fr;}}
 .layout{display:grid;grid-template-columns:1fr 320px;gap:44px;padding:44px 0 60px;}
-.feed-h{display:flex;align-items:baseline;gap:14px;margin-bottom:22px;}.feed-h h2{font-family:var(--disp);font-weight:600;font-size:24px;}.feed-h .sub{font-family:var(--mono);font-size:12px;color:var(--muted);}
-.feed{display:flex;flex-direction:column;gap:22px;}
+.feed-h{display:flex;align-items:baseline;gap:14px;margin-bottom:10px;}.feed-intro{font-family:var(--read);font-size:16px;color:var(--soft);line-height:1.6;max-width:60ch;margin-bottom:24px;}.feed-h h2{font-family:var(--disp);font-weight:600;font-size:24px;}.feed-h .sub{font-family:var(--mono);font-size:12px;color:var(--muted);}
+.feed{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+@media(max-width:1080px){.feed{grid-template-columns:1fr;}}
 .pcard{border:1px solid var(--line);background:var(--surface);border-radius:18px;overflow:hidden;transition:.15s;display:block;}
 .pcard:hover{border-color:rgba(45,212,238,.4);transform:translateY(-3px);}
-.banner{position:relative;height:150px;display:flex;align-items:center;justify-content:center;}
-.banner.pl{background:linear-gradient(135deg,rgba(183,155,255,.22),rgba(17,19,24,.6));}
-.banner.laliga{background:linear-gradient(135deg,rgba(255,157,92,.22),rgba(17,19,24,.6));}
-.banner.bund{background:linear-gradient(135deg,rgba(255,92,116,.22),rgba(17,19,24,.6));}
-.banner.seriea{background:linear-gradient(135deg,rgba(58,217,173,.22),rgba(17,19,24,.6));}
-.banner.ligue1{background:linear-gradient(135deg,rgba(91,140,255,.22),rgba(17,19,24,.6));}
-.banner.primeira{background:linear-gradient(135deg,rgba(64,221,136,.22),rgba(17,19,24,.6));}
-.banner.ucl{background:linear-gradient(135deg,rgba(111,155,255,.22),rgba(17,19,24,.6));}
-.banner-teams{display:flex;align-items:center;gap:22px;}
-.banner-teams img{width:52px;height:52px;object-fit:contain;filter:drop-shadow(0 4px 10px rgba(0,0,0,.4));}
-.banner-teams .vs{font-family:var(--disp);font-weight:700;font-size:15px;color:var(--soft);letter-spacing:.05em;}
+.banner{position:relative;height:118px;display:flex;align-items:center;justify-content:center;}
+.banner.pl{background:linear-gradient(135deg,#2dd4ee,#7c4fe4);}
+.banner.laliga{background:linear-gradient(135deg,#22d3ee,#6366f1);}
+.banner.bund{background:linear-gradient(135deg,#38bdf8,#a855f7);}
+.banner.seriea{background:linear-gradient(135deg,#2dd4ee,#a855f7);}
+.banner.ligue1{background:linear-gradient(135deg,#38bdf8,#7c4fe4);}
+.banner.primeira{background:linear-gradient(135deg,#2dd4ee,#8b5cf6);}
+.banner.ucl{background:linear-gradient(135deg,#4a6fe0,#8b5cf6);}
+.banner-teams{display:flex;align-items:center;gap:18px;}
+.banner{overflow:hidden;}.banner::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 15%,rgba(255,255,255,.28),transparent 55%);}.banner-teams{position:relative;z-index:2;}.banner-teams img{width:46px;height:46px;object-fit:contain;padding:7px;background:rgba(255,255,255,.92);border-radius:50%;box-shadow:0 6px 16px rgba(0,0,0,.18);}
+.banner-teams .vs{font-family:var(--disp);font-weight:700;font-size:15px;color:#fff;letter-spacing:.05em;text-shadow:0 2px 8px rgba(0,0,0,.25);}
 .banner-bar{position:absolute;bottom:0;left:0;right:0;height:6px;display:flex;gap:2px;}.banner-bar span{display:block;height:100%;}
-.pbody{padding:20px 22px 22px;}
+.pbody{padding:17px 19px 19px;}
 .pmeta{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
 .lgc{padding:3px 9px;border-radius:6px;font-family:var(--mono);font-size:10px;letter-spacing:.05em;text-transform:uppercase;}
 .lgc.pl{color:var(--pl);background:rgba(183,155,255,.13);}.lgc.laliga{color:var(--laliga);background:rgba(255,157,92,.13);}
 .lgc.bund{color:var(--bund);background:rgba(255,92,116,.13);}.lgc.seriea{color:var(--seriea);background:rgba(58,217,173,.13);}
 .lgc.ligue1{color:var(--ligue1);background:rgba(91,140,255,.13);}.lgc.primeira{color:var(--primeira);background:rgba(64,221,136,.13);}.lgc.ucl{color:var(--ucl);background:rgba(111,155,255,.13);}
 .pmeta .dt{font-family:var(--mono);font-size:11px;color:var(--muted);}
-.pcard h3{font-family:var(--disp);font-weight:600;font-size:23px;letter-spacing:-.01em;margin-bottom:8px;}
-.pcard .exc{font-size:14.5px;color:var(--muted);line-height:1.55;max-width:60ch;}
+.pcard h3{font-family:var(--disp);font-weight:600;font-size:19px;letter-spacing:-.01em;margin-bottom:7px;}
+.pcard .exc{font-size:13.5px;color:var(--muted);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
 .pcard .rm{display:inline-block;margin-top:14px;font-family:var(--mono);font-size:12.5px;color:var(--cyan);font-weight:500;}
 .pager{display:flex;gap:8px;margin-top:34px;align-items:center;}
 .pager a,.pager span.cur{width:38px;height:38px;display:grid;place-items:center;border:1px solid var(--line);border-radius:10px;font-family:var(--mono);font-size:13px;color:var(--muted);transition:.15s;}
-.pager .cur{background:linear-gradient(135deg,var(--cyan),var(--purple));color:#06101a;border-color:transparent;font-weight:700;}
+.pager .cur{background:var(--grad);color:#fff;border-color:transparent;font-weight:700;}
 .pager a:hover{border-color:var(--cyan);color:var(--text);}.pager .nx{width:auto;padding:0 14px;}
 .side{display:flex;flex-direction:column;gap:22px;}
 .widget{border:1px solid var(--line);background:var(--surface);border-radius:16px;padding:20px;}
 .widget h4{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:16px;}
 .lg-list{display:flex;flex-direction:column;gap:3px;}
-.lg-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:9px;transition:.15s;}.lg-row:hover{background:rgba(255,255,255,.03);}
+.lg-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:9px;transition:.15s;}.lg-row:hover{background:rgba(20,24,36,.04);}
 .lg-row .d{width:8px;height:8px;border-radius:50%;flex-shrink:0;}.lg-row .nm{font-size:13.5px;font-weight:500;flex:1;}.lg-row .ct{font-family:var(--mono);font-size:12px;color:var(--muted);}
 .recent{display:flex;flex-direction:column;gap:14px;}.recent a{font-size:13.5px;color:var(--soft);line-height:1.4;font-weight:500;display:block;}.recent a:hover{color:var(--cyan);}
 .recent a .rd{display:block;font-family:var(--mono);font-size:10.5px;color:var(--faint);margin-top:3px;font-weight:400;}
@@ -98,7 +100,7 @@ footer a{font-weight:600;}footer a:hover{color:var(--text);}footer .sep{flex:1;}
 .matchbar .vs{font-family:var(--mono);color:var(--muted);font-size:14px;}
 .lead{font-family:var(--read);font-size:21px;line-height:1.6;color:var(--soft);margin:26px 0;max-width:70ch;}
 .mh{font-family:var(--disp);font-weight:600;font-size:26px;margin:44px 0 20px;letter-spacing:-.01em;}
-.igrid{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+.igrid{display:grid;grid-template-columns:1fr 1fr;gap:26px 18px;align-items:start;}.insight{display:flex;flex-direction:column;}.insight-note{font-family:var(--read);font-size:14.5px;color:var(--soft);line-height:1.6;margin:14px 2px 0;}
 @media(max-width:820px){.igrid{grid-template-columns:1fr;}}
 .fig{border:1px solid var(--line);background:var(--surface);border-radius:18px;padding:24px;}
 .fig .cap{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:20px;}
@@ -106,35 +108,91 @@ footer a{font-weight:600;}footer a:hover{color:var(--text);}footer .sep{flex:1;}
 .pbar{display:flex;height:16px;border-radius:999px;overflow:hidden;gap:3px;margin-bottom:14px;}.pbar span{display:block;height:100%;}
 .plabs{display:flex;justify-content:space-between;}.plabs>div{display:flex;flex-direction:column;gap:2px;}.plabs .m{align-items:center;}.plabs .r{align-items:flex-end;}
 .plabs b{font-family:var(--mono);font-weight:700;font-size:21px;}.plabs span{font-size:12px;color:var(--muted);}
-.xgc{display:grid;gap:14px;}.xgc .row{display:grid;grid-template-columns:100px 1fr 40px;align-items:center;gap:12px;}.xgc .nm{font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}.xgc .track{height:16px;border-radius:999px;background:rgba(255,255,255,.05);overflow:hidden;}.xgc .track>i{display:block;height:100%;border-radius:999px;}.xgc .v{font-family:var(--mono);font-size:14px;text-align:right;}
+.xgc{display:grid;gap:14px;}.xgc .row{display:grid;grid-template-columns:100px 1fr 40px;align-items:center;gap:12px;}.xgc .nm{font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}.xgc .track{height:16px;border-radius:999px;background:#eef1f6;overflow:hidden;}.xgc .track>i{display:block;height:100%;border-radius:999px;}.xgc .v{font-family:var(--mono);font-size:14px;text-align:right;}
 .fg-row{margin-bottom:18px;}.fg-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;}.fg-top .nm{font-size:14px;font-weight:600;}.fg-top .pts{font-family:var(--mono);font-size:12px;color:var(--muted);}
 .fg-cells{display:flex;gap:6px;}.fgc{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;font-family:var(--mono);font-weight:700;font-size:12px;}
 .fgc.W{background:rgba(56,224,166,.16);color:var(--green);}.fgc.D{background:rgba(246,195,68,.16);color:var(--amber);}.fgc.L{background:rgba(255,112,137,.16);color:var(--red);}
-.fg-bar{display:flex;height:8px;border-radius:999px;overflow:hidden;margin-top:16px;background:rgba(255,255,255,.05);}.fg-bar i{display:block;height:100%;}
+.fg-bar{display:flex;height:8px;border-radius:999px;overflow:hidden;margin-top:16px;background:#eef1f6;}.fg-bar i{display:block;height:100%;}
 .heat{display:grid;grid-template-columns:auto repeat(4,1fr);gap:5px;font-family:var(--mono);}
 .heat .h{font-size:10.5px;color:var(--muted);display:grid;place-items:center;padding:3px;}
-.heat .cell{aspect-ratio:1.7;border-radius:7px;display:grid;place-items:center;font-size:11.5px;font-weight:700;}
-.mstats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:24px;}
-.mstats>div{border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:18px;text-align:center;}
-.mstats span{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:6px;}.mstats b{font-family:var(--mono);font-weight:700;font-size:18px;}
+.heat .cell{aspect-ratio:1.7;border-radius:7px;display:grid;place-items:center;font-size:11.5px;font-weight:700;color:#0b3a48;}
+.mstats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:24px;}
+.mstats .stat{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:16px;padding:22px 20px;text-align:center;}
+.mstats .stat::before{content:"";position:absolute;inset:0;opacity:.10;}
+.mstats .stat.c1::before{background:radial-gradient(circle at 50% 0%,var(--cyan),transparent 70%);}
+.mstats .stat.c2::before{background:radial-gradient(circle at 50% 0%,var(--amber),transparent 70%);}
+.mstats .stat.c3::before{background:radial-gradient(circle at 50% 0%,var(--purple),transparent 70%);}
+.mstats .stat.c1{border-color:rgba(45,212,238,.25);}.mstats .stat.c2{border-color:rgba(246,195,68,.25);}.mstats .stat.c3{border-color:rgba(169,139,255,.25);}
+.mstats .ic{position:relative;width:34px;height:34px;margin:0 auto 12px;border-radius:9px;display:grid;place-items:center;}
+.mstats .c1 .ic{background:rgba(45,212,238,.12);color:var(--cyan);}.mstats .c2 .ic{background:rgba(246,195,68,.12);color:var(--amber);}.mstats .c3 .ic{background:rgba(169,139,255,.12);color:var(--purple);}
+.mstats .ic svg{width:18px;height:18px;}
+.mstats .lbl{position:relative;display:block;font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px;}
+.mstats .val{position:relative;font-family:var(--mono);font-weight:700;font-size:22px;}
+.mstats .c1 .val{color:var(--cyan);}.mstats .c2 .val{color:var(--amber);}.mstats .c3 .val{color:var(--purple);}
 .article-body{max-width:72ch;}
 .article-body h2{font-family:var(--disp);font-weight:600;font-size:26px;margin:0 0 16px;letter-spacing:-.01em;}
 .article-body p{font-family:var(--read);font-size:19px;line-height:1.72;color:var(--soft);margin:0 0 20px;}
 .factors{list-style:none;padding:0;margin:4px 0 20px;max-width:72ch;}
 .factors li{position:relative;padding-left:22px;margin-bottom:12px;font-family:var(--read);font-size:18px;color:var(--soft);}
 .factors li::before{content:"";position:absolute;left:0;top:11px;width:7px;height:7px;border-radius:50%;background:var(--cyan);}
-.poll{border:1px solid var(--line);background:linear-gradient(180deg,var(--raise),var(--surface));border-radius:18px;padding:24px;margin:36px 0;max-width:640px;}
-.poll-q{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:16px;}.poll-q .t{font-weight:700;font-size:16px;}.poll-total{font-family:var(--mono);font-size:12px;color:var(--muted);}
-.poll-opt{position:relative;display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:transparent;border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:10px;cursor:pointer;color:var(--text);font-family:var(--sans);overflow:hidden;}
-.poll.open .poll-opt:hover{border-color:rgba(45,212,238,.45);background:rgba(45,212,238,.05);}
-.poll-opt .lbl{font-weight:600;font-size:15px;flex:1;z-index:2;}.poll-opt .bar{position:absolute;inset:0;z-index:1;}.poll-opt .bar>i{display:block;height:100%;width:0;background:rgba(45,212,238,.14);transition:width .7s;}
-.poll-opt .pc{font-family:var(--mono);font-weight:700;font-size:14px;color:var(--muted);z-index:2;opacity:0;transition:.3s;}
-.poll.done .poll-opt .pc{opacity:1;}.poll.done .poll-opt.mine{border-color:rgba(45,212,238,.55);}.poll.done .poll-opt.mine .pc{color:var(--cyan);}
-.poll-foot{font-size:12px;color:var(--faint);margin-top:12px;}
-.cta{display:flex;align-items:center;justify-content:space-between;gap:16px;border:1px solid rgba(45,212,238,.3);border-radius:16px;padding:24px 26px;margin:36px 0 8px;background:linear-gradient(120deg,rgba(45,212,238,.08),rgba(169,139,255,.06));max-width:820px;}
+.kf-panel{display:flex;flex-direction:column;gap:12px;max-width:760px;margin-bottom:26px;}
+.kf-item{display:flex;align-items:center;gap:16px;border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:16px 18px;}
+.kf-item.form{align-items:flex-start;}
+.kf-ic{width:40px;height:40px;flex:none;border-radius:11px;display:grid;place-items:center;}
+.kf-ic svg{width:20px;height:20px;}
+.kf-ic.cyan{background:rgba(45,212,238,.1);border:1px solid rgba(45,212,238,.22);color:var(--cyan);}
+.kf-ic.purple{background:rgba(169,139,255,.1);border:1px solid rgba(169,139,255,.22);color:var(--purple);}
+.kf-ic.green{background:rgba(56,224,166,.1);border:1px solid rgba(56,224,166,.22);color:var(--green);}
+.kf-ic.amber{background:rgba(246,195,68,.1);border:1px solid rgba(246,195,68,.22);color:var(--amber);}
+.kf-txt{display:flex;flex-direction:column;gap:3px;flex:1;min-width:0;}
+.kf-label{font-family:var(--mono);font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);}
+.kf-val{font-family:var(--disp);font-weight:600;font-size:17px;color:var(--text);}
+.kf-chip{font-family:var(--mono);font-weight:700;font-size:14px;padding:5px 11px;border-radius:8px;flex:none;}
+.kf-chip.cyan{color:var(--cyan);background:rgba(45,212,238,.12);}
+.kf-chip.purple{color:var(--purple);background:rgba(169,139,255,.12);}
+.kf-form{flex:1;display:flex;flex-direction:column;gap:10px;min-width:0;}
+.kf-form-row{display:flex;align-items:center;gap:12px;}
+.kf-tm{font-size:13.5px;font-weight:600;width:33%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.kf-pills{display:flex;gap:5px;flex:1;}
+.kf-pill{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;font-family:var(--mono);font-weight:700;font-size:11px;}
+.kf-pill.W{background:rgba(56,224,166,.16);color:var(--green);}
+.kf-pill.D{background:rgba(246,195,68,.16);color:var(--amber);}
+.kf-pill.L{background:rgba(255,112,137,.16);color:var(--red);}
+.kf-empty{font-size:12.5px;color:var(--faint);}
+.kf-pts{font-family:var(--mono);font-size:12.5px;color:var(--muted);flex:none;}
+.kf-details-h{font-family:var(--disp);font-weight:600;font-size:17px;color:var(--soft);margin:6px 0 14px;}
+.poll{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:22px;padding:28px;margin:36px 0;max-width:600px;background:linear-gradient(165deg,#ffffff,#f7f8fc);box-shadow:0 8px 30px rgba(70,60,150,.06);}
+.poll::before{content:"";position:absolute;top:-60px;right:-40px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(124,79,228,.10),transparent 70%);pointer-events:none;}
+.poll::after{content:"";position:absolute;bottom:-70px;left:-50px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(45,212,238,.10),transparent 70%);pointer-events:none;}
+.poll-head{position:relative;z-index:2;margin-bottom:20px;}
+.poll-eyebrow{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--purple);margin-bottom:10px;}
+.poll-eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--grad);}
+.poll-q{font-family:var(--disp);font-weight:700;font-size:21px;letter-spacing:-.01em;line-height:1.2;color:var(--text);}
+.poll-sub{font-size:13.5px;color:var(--muted);margin-top:6px;}
+.poll-opts{position:relative;z-index:2;display:flex;flex-direction:column;gap:11px;margin-top:22px;}
+.poll-opt{position:relative;display:flex;align-items:center;gap:14px;width:100%;text-align:left;background:#fbfcfe;border:1.5px solid var(--line);border-radius:14px;padding:15px 18px;cursor:pointer;color:var(--text);font-family:var(--sans);overflow:hidden;transition:.18s;}
+.poll.open .poll-opt:hover{border-color:rgba(124,79,228,.5);background:rgba(124,79,228,.05);transform:translateY(-1px);}
+.poll-opt .bar{position:absolute;inset:0;z-index:1;}
+.poll-opt .bar>i{display:block;height:100%;width:0;border-radius:12px;transition:width .9s cubic-bezier(.22,1,.36,1);opacity:.9;}
+.poll-opt[data-pick="home"] .bar>i{background:linear-gradient(90deg,rgba(45,212,238,.30),rgba(45,212,238,.12));}
+.poll-opt[data-pick="draw"] .bar>i{background:linear-gradient(90deg,rgba(150,158,180,.28),rgba(150,158,180,.10));}
+.poll-opt[data-pick="away"] .bar>i{background:linear-gradient(90deg,rgba(124,79,228,.28),rgba(124,79,228,.12));}
+.poll-opt .tick{position:relative;z-index:2;width:22px;height:22px;border-radius:50%;border:2px solid var(--faint);flex:none;display:grid;place-items:center;transition:.2s;}
+.poll-opt .tick svg{width:12px;height:12px;opacity:0;transform:scale(.5);transition:.2s;stroke:#fff;}
+.poll-opt .lbl{position:relative;z-index:2;font-weight:600;font-size:15.5px;flex:1;}
+.poll-opt .pc{position:relative;z-index:2;font-family:var(--mono);font-weight:700;font-size:15px;color:var(--muted);opacity:0;transition:.3s;}
+.poll.done .poll-opt{cursor:default;}
+.poll.done .poll-opt .pc{opacity:1;}
+.poll.done .poll-opt.mine{border-color:rgba(124,79,228,.6);}
+.poll.done .poll-opt.mine .tick{border-color:var(--purple);background:var(--purple);}
+.poll.done .poll-opt.mine .tick svg{opacity:1;transform:scale(1);}
+.poll.done .poll-opt.mine .pc{color:var(--purple);}
+.poll-foot{position:relative;z-index:2;display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);margin-top:16px;}
+.poll-foot svg{width:14px;height:14px;stroke:var(--muted);}
+.cta{display:flex;align-items:center;justify-content:space-between;gap:16px;border:1px solid rgba(124,79,228,.25);border-radius:16px;padding:24px 26px;margin:36px 0 8px;background:linear-gradient(120deg,rgba(45,212,238,.10),rgba(124,79,228,.08));max-width:820px;}
 .cta .t{font-weight:700;font-size:16px;}.cta .s{font-size:13.5px;color:var(--muted);margin-top:3px;}.cta .go{font-family:var(--mono);font-weight:700;color:var(--cyan);}
 .disc{font-size:13px;color:var(--faint);border-top:1px solid var(--line);padding-top:20px;margin:36px 0 60px;max-width:72ch;}
 @media(max-width:600px){.mpage{padding:0 20px;}.mhead h1{font-size:31px;}.lead{font-size:19px;}.matchbar{gap:24px;padding:24px;}.cta{flex-direction:column;align-items:flex-start;}}
 
 </style></head>
-<body><nav class="nav"><div class="in"><a class="brand" href="https://www.scorinai.com"><span class="dot"></span> Scorina AI <em>Journal</em></a><div class="nlinks"><a href="/blog/">Previews</a><a href="/blog/how-scorina-ai-predicts.html">How it works</a><a href="https://www.scorinai.com/#/live">Live</a></div><a class="nbtn" href="https://www.scorinai.com">Open app ↗</a></div></nav><header class="hero"><div class="wrap in"><div class="eyebrow">Previews / Paris Saint Germain</div><h1>Paris Saint Germain <span class="accent">predictions</span>.</h1><p>Every Scorina AI preview and prediction featuring Paris Saint Germain — probabilities, expected goals and the most likely scoreline for each match.</p></div></header><div class="wrap"><div class="layout"><main><div class="feed-h"><h2>Paris Saint Germain previews</h2><span class="sub">/ 1 this week</span></div><div class="feed"><a class="pcard" href="/blog/lille-vs-paris-saint-germain-prediction.html"><div class="banner ligue1"><div class="banner-teams"><img src="https://media.api-sports.io/football/teams/79.png" alt="" loading="lazy"/><span class="vs">VS</span><img src="https://media.api-sports.io/football/teams/85.png" alt="" loading="lazy"/></div><div class="banner-bar"><span style="width:31%;background:var(--cyan)"></span><span style="width:41%;background:#3b4459"></span><span style="width:29%;background:var(--purple)"></span></div></div><div class="pbody"><div class="pmeta"><span class="lgc ligue1">Ligue 1</span><span class="dt">Fri 28 Aug · GW 24–30 Aug</span></div><h3>Lille vs Paris Saint Germain</h3><p class="exc">Our model reads Lille vs Paris Saint Germain — win probabilities, expected goals and the most likely scoreline, plus the case for each result.</p><span class="rm">Read full preview →</span></div></a></div></main><aside class="side"><div class="widget"><h4>Leagues</h4><div class="lg-list"><a class="lg-row" href="/blog/league/ligue-1.html"><span class="d" style="background:var(--ligue1)"></span><span class="nm">Ligue 1</span><span class="ct">3</span></a><a class="lg-row" href="/blog/league/premier-league.html"><span class="d" style="background:var(--pl)"></span><span class="nm">Premier League</span><span class="ct">3</span></a><a class="lg-row" href="/blog/league/la-liga.html"><span class="d" style="background:var(--laliga)"></span><span class="nm">La Liga</span><span class="ct">3</span></a><a class="lg-row" href="/blog/league/serie-a.html"><span class="d" style="background:var(--seriea)"></span><span class="nm">Serie A</span><span class="ct">3</span></a></div></div><div class="widget"><h4>Recent previews</h4><div class="recent"><a href="/blog/monaco-vs-marseille-prediction.html">Monaco vs Marseille<span class="rd">Ligue 1 · Sun 30 Aug</span></a><a href="/blog/tottenham-vs-newcastle-prediction.html">Tottenham vs Newcastle<span class="rd">Premier League · Sat 29 Aug</span></a><a href="/blog/lille-vs-paris-saint-germain-prediction.html">Lille vs Paris Saint Germain<span class="rd">Ligue 1 · Fri 28 Aug</span></a><a href="/blog/barcelona-vs-athletic-club-prediction.html">Barcelona vs Athletic Club<span class="rd">La Liga · Thu 27 Aug</span></a><a href="/blog/real-madrid-vs-real-sociedad-prediction.html">Real Madrid vs Real Sociedad<span class="rd">La Liga · Wed 26 Aug</span></a></div></div><div class="widget"><h4>By gameweek</h4><div class="gw"><div>17–23 Aug <span>7</span></div><div>24–30 Aug <span>5</span></div></div></div><div class="widget"><h4>Teams</h4><div class="tags"><a class="tag" href="/blog/team/arsenal.html">Arsenal</a><a class="tag" href="/blog/team/athletic-club.html">Athletic Club</a><a class="tag" href="/blog/team/barcelona.html">Barcelona</a><a class="tag" href="/blog/team/coventry.html">Coventry</a><a class="tag" href="/blog/team/frosinone.html">Frosinone</a><a class="tag" href="/blog/team/genoa.html">Genoa</a><a class="tag" href="/blog/team/inter.html">Inter</a><a class="tag" href="/blog/team/juventus.html">Juventus</a><a class="tag" href="/blog/team/lille.html">Lille</a><a class="tag" href="/blog/team/liverpool.html">Liverpool</a><a class="tag" href="/blog/team/marseille.html">Marseille</a><a class="tag" href="/blog/team/monaco.html">Monaco</a><a class="tag" href="/blog/team/monza.html">Monza</a><a class="tag" href="/blog/team/napoli.html">Napoli</a><a class="tag" href="/blog/team/newcastle.html">Newcastle</a><a class="tag" href="/blog/team/paris-saint-germain.html">Paris Saint Germain</a><a class="tag" href="/blog/team/real-madrid.html">Real Madrid</a><a class="tag" href="/blog/team/real-sociedad.html">Real Sociedad</a><a class="tag" href="/blog/team/sevilla.html">Sevilla</a><a class="tag" href="/blog/team/strasbourg.html">Strasbourg</a><a class="tag" href="/blog/team/tottenham.html">Tottenham</a></div></div></aside></div></div><footer><div class="in"><a href="/blog/">Journal</a><a href="https://www.scorinai.com/#/live">Live Scores</a><a href="https://www.scorinai.com/#/analysis">Predictions</a><a href="https://www.scorinai.com/#/bestpicks">AI Picks</a><span class="sep"></span><span>© 2026 Scorina AI · Football analytics &amp; predictions</span></div></footer></body></html>
+<body><nav class="nav"><div class="in"><a class="brand" href="/blog/"><img class="logo" src="/scriptiq_logo.svg" alt="Scorina AI"/> Scorina AI <em>Journal</em></a><div class="nlinks"><a href="/blog/">Previews</a><a href="/blog/how-scorina-ai-predicts.html">How it works</a><a href="https://www.scorinai.com/#/live">Live</a></div><a class="nbtn" href="https://www.scorinai.com">Open app ↗</a></div></nav><header class="hero"><div class="wrap in"><div class="eyebrow">Previews / Paris Saint Germain</div><h1>Paris Saint Germain <span class="accent">predictions</span>.</h1><p>Every Scorina AI preview and prediction featuring Paris Saint Germain — probabilities, expected goals and the most likely scoreline for each match.</p></div></header><div class="wrap"><div class="layout"><main><div class="feed-h"><h2>Paris Saint Germain previews</h2><span class="sub">/ 1 this week</span></div><div class="feed"><a class="pcard" href="/blog/lille-vs-paris-saint-germain-prediction.html"><div class="banner ligue1"><div class="banner-teams"><img src="https://media.api-sports.io/football/teams/79.png" alt="" loading="lazy"/><span class="vs">VS</span><img src="https://media.api-sports.io/football/teams/85.png" alt="" loading="lazy"/></div><div class="banner-bar"><span style="width:31%;background:var(--cyan)"></span><span style="width:41%;background:#3b4459"></span><span style="width:29%;background:var(--purple)"></span></div></div><div class="pbody"><div class="pmeta"><span class="lgc ligue1">Ligue 1</span><span class="dt">Fri 28 Aug · GW 24–30 Aug</span></div><h3>Lille vs Paris Saint Germain</h3><p class="exc">Our model reads Lille vs Paris Saint Germain — win probabilities, expected goals and the most likely scoreline, plus the case for each result.</p><span class="rm">Read full preview →</span></div></a></div></main><aside class="side"><div class="widget"><h4>Leagues</h4><div class="lg-list"><a class="lg-row" href="/blog/league/ligue-1.html"><span class="d" style="background:var(--ligue1)"></span><span class="nm">Ligue 1</span><span class="ct">3</span></a><a class="lg-row" href="/blog/league/premier-league.html"><span class="d" style="background:var(--pl)"></span><span class="nm">Premier League</span><span class="ct">3</span></a><a class="lg-row" href="/blog/league/la-liga.html"><span class="d" style="background:var(--laliga)"></span><span class="nm">La Liga</span><span class="ct">3</span></a><a class="lg-row" href="/blog/league/serie-a.html"><span class="d" style="background:var(--seriea)"></span><span class="nm">Serie A</span><span class="ct">3</span></a></div></div><div class="widget"><h4>Recent previews</h4><div class="recent"><a href="/blog/monaco-vs-marseille-prediction.html">Monaco vs Marseille<span class="rd">Ligue 1 · Sun 30 Aug</span></a><a href="/blog/tottenham-vs-newcastle-prediction.html">Tottenham vs Newcastle<span class="rd">Premier League · Sat 29 Aug</span></a><a href="/blog/lille-vs-paris-saint-germain-prediction.html">Lille vs Paris Saint Germain<span class="rd">Ligue 1 · Fri 28 Aug</span></a><a href="/blog/barcelona-vs-athletic-club-prediction.html">Barcelona vs Athletic Club<span class="rd">La Liga · Thu 27 Aug</span></a><a href="/blog/real-madrid-vs-real-sociedad-prediction.html">Real Madrid vs Real Sociedad<span class="rd">La Liga · Wed 26 Aug</span></a></div></div><div class="widget"><h4>By gameweek</h4><div class="gw"><div>17–23 Aug <span>7</span></div><div>24–30 Aug <span>5</span></div></div></div><div class="widget"><h4>Teams</h4><div class="tags"><a class="tag" href="/blog/team/arsenal.html">Arsenal</a><a class="tag" href="/blog/team/athletic-club.html">Athletic Club</a><a class="tag" href="/blog/team/barcelona.html">Barcelona</a><a class="tag" href="/blog/team/coventry.html">Coventry</a><a class="tag" href="/blog/team/frosinone.html">Frosinone</a><a class="tag" href="/blog/team/genoa.html">Genoa</a><a class="tag" href="/blog/team/inter.html">Inter</a><a class="tag" href="/blog/team/juventus.html">Juventus</a><a class="tag" href="/blog/team/lille.html">Lille</a><a class="tag" href="/blog/team/liverpool.html">Liverpool</a><a class="tag" href="/blog/team/marseille.html">Marseille</a><a class="tag" href="/blog/team/monaco.html">Monaco</a><a class="tag" href="/blog/team/monza.html">Monza</a><a class="tag" href="/blog/team/napoli.html">Napoli</a><a class="tag" href="/blog/team/newcastle.html">Newcastle</a><a class="tag" href="/blog/team/paris-saint-germain.html">Paris Saint Germain</a><a class="tag" href="/blog/team/real-madrid.html">Real Madrid</a><a class="tag" href="/blog/team/real-sociedad.html">Real Sociedad</a><a class="tag" href="/blog/team/sevilla.html">Sevilla</a><a class="tag" href="/blog/team/strasbourg.html">Strasbourg</a><a class="tag" href="/blog/team/tottenham.html">Tottenham</a></div></div></aside></div></div><footer><div class="in"><a href="/blog/">Journal</a><a href="https://www.scorinai.com/#/live">Live Scores</a><a href="https://www.scorinai.com/#/analysis">Predictions</a><a href="https://www.scorinai.com/#/bestpicks">AI Picks</a><span class="sep"></span><span>© 2026 Scorina AI · Football analytics &amp; predictions</span></div></footer></body></html>

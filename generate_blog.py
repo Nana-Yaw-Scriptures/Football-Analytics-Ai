@@ -143,23 +143,24 @@ def form_badges(seq):
 
 # ---------------------------------------------------------------- CSS
 CSS = """
-:root{--bg:#0a0b0e;--surface:#111318;--raise:#15181f;--line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.14);
---text:#f3f5f9;--soft:#c4ccd8;--muted:#828c9c;--faint:#525b6b;
---cyan:#2dd4ee;--purple:#a98bff;--green:#38e0a6;--amber:#f6c344;--red:#ff7089;--pink:#ff6fae;
---pl:#b79bff;--laliga:#ff9d5c;--bund:#ff5c74;--seriea:#3ad9ad;--ligue1:#5b8cff;--primeira:#40dd88;--ucl:#6f9bff;
+:root{--bg:#f6f7fb;--surface:#ffffff;--raise:#fbfcfe;--line:#e7eaf1;--line2:#d7dce6;
+--text:#141824;--soft:#41485a;--muted:#79809492;--muted:#788094;--faint:#a0a7b6;
+--cyan:#1cb6d6;--purple:#7c4fe4;--green:#12b886;--amber:#e0980a;--red:#ec4d6b;--pink:#ec4899;
+--grad:linear-gradient(120deg,#2dd4ee,#8b5cf6);
+--pl:#7c4fe4;--laliga:#e06a1b;--bund:#e2405a;--seriea:#0fa478;--ligue1:#3b6fe0;--primeira:#12a866;--ucl:#4a6fe0;
 --disp:'Space Grotesk',system-ui,sans-serif;--acc:'Fraunces',serif;--read:'Newsreader',Georgia,serif;--sans:'Outfit',system-ui,sans-serif;--mono:'JetBrains Mono',monospace;}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.6;-webkit-font-smoothing:antialiased;}
 a{color:inherit;text-decoration:none;}img{max-width:100%;}
 .accent{font-family:var(--acc);font-style:italic;font-weight:500;background:linear-gradient(100deg,var(--cyan),var(--purple) 55%,var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent;}
 .wrap{max-width:1200px;margin:0 auto;padding:0 40px;}
-.nav{position:sticky;top:0;z-index:40;background:rgba(10,11,14,.82);backdrop-filter:saturate(150%) blur(14px);border-bottom:1px solid var(--line);}
+.nav{position:sticky;top:0;z-index:40;background:rgba(246,247,251,.85);backdrop-filter:saturate(160%) blur(14px);border-bottom:1px solid var(--line);}
 .nav .in{max-width:1200px;margin:0 auto;padding:0 40px;height:66px;display:flex;align-items:center;justify-content:space-between;}
 .brand{display:flex;align-items:center;gap:11px;font-family:var(--disp);font-weight:700;font-size:17px;}
-.brand .dot{width:26px;height:26px;border-radius:8px;background:linear-gradient(140deg,var(--cyan),var(--purple));box-shadow:0 4px 16px rgba(45,212,238,.3);}
+.brand .logo{width:30px;height:30px;border-radius:9px;display:block;box-shadow:0 6px 16px rgba(124,79,228,.25);}
 .brand em{color:var(--muted);font-style:normal;font-weight:500;}
-.nlinks{display:flex;gap:28px;font-size:13.5px;color:var(--muted);font-weight:500;}.nlinks a:hover{color:var(--text);}
-.nbtn{font-family:var(--mono);font-size:12.5px;border:1px solid var(--line2);border-radius:9px;padding:9px 15px;}.nbtn:hover{border-color:var(--cyan);background:rgba(45,212,238,.08);}
+.nlinks{display:flex;gap:26px;font-size:13.5px;color:var(--muted);font-weight:500;}.nlinks a{position:relative;padding:6px 2px;}.nlinks a:hover{color:var(--text);}.nlinks a.active{color:var(--text);font-weight:600;}.nlinks a.active::after{content:'';position:absolute;left:50%;bottom:-2px;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:var(--grad);}
+.nbtn{font-family:var(--mono);font-size:12.5px;color:#fff;background:var(--grad);border-radius:10px;padding:10px 16px;box-shadow:0 6px 16px rgba(124,79,228,.25);}.nbtn:hover{opacity:.92;}
 @media(max-width:820px){.nav .in{flex-wrap:wrap;height:auto;padding-top:12px;padding-bottom:12px;gap:10px 16px;}.nlinks{order:3;flex-basis:100%;gap:18px;font-size:13px;overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch;padding-top:4px;}.nbtn{margin-left:auto;}}
 .hero{position:relative;overflow:hidden;border-bottom:1px solid var(--line);}
 .hero::before{content:"";position:absolute;top:-160px;left:-100px;width:480px;height:480px;border-radius:50%;background:radial-gradient(circle,rgba(45,212,238,.15),transparent 68%);}
@@ -176,48 +177,49 @@ a{color:inherit;text-decoration:none;}img{max-width:100%;}
 .pick{display:flex;align-items:center;gap:16px;border:1px solid var(--line);background:linear-gradient(160deg,var(--raise),var(--surface));border-radius:16px;padding:18px;transition:.15s;}
 .pick:hover{border-color:rgba(45,212,238,.45);transform:translateY(-3px);}
 .ring{width:64px;height:64px;flex-shrink:0;}
-.ring-bg{fill:none;stroke:rgba(255,255,255,.08);stroke-width:7;}
+.ring-bg{fill:none;stroke:rgba(20,24,36,.08);stroke-width:7;}
 .ring-fg{fill:none;stroke-width:7;stroke-linecap:round;transform:rotate(-90deg);transform-origin:50% 50%;}
 .ring-t{fill:var(--text);font-family:var(--mono);font-weight:700;font-size:17px;}
 .pk-teams{font-weight:600;font-size:14px;display:flex;flex-direction:column;gap:3px;}.pk-teams .w{color:var(--cyan);}
 .pk-call{font-size:12px;color:var(--muted);margin-top:7px;}.pk-call b{color:var(--text);}
 @media(max-width:900px){.picks{grid-template-columns:1fr;}}
 .layout{display:grid;grid-template-columns:1fr 320px;gap:44px;padding:44px 0 60px;}
-.feed-h{display:flex;align-items:baseline;gap:14px;margin-bottom:22px;}.feed-h h2{font-family:var(--disp);font-weight:600;font-size:24px;}.feed-h .sub{font-family:var(--mono);font-size:12px;color:var(--muted);}
-.feed{display:flex;flex-direction:column;gap:22px;}
+.feed-h{display:flex;align-items:baseline;gap:14px;margin-bottom:10px;}.feed-intro{font-family:var(--read);font-size:16px;color:var(--soft);line-height:1.6;max-width:60ch;margin-bottom:24px;}.feed-h h2{font-family:var(--disp);font-weight:600;font-size:24px;}.feed-h .sub{font-family:var(--mono);font-size:12px;color:var(--muted);}
+.feed{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+@media(max-width:1080px){.feed{grid-template-columns:1fr;}}
 .pcard{border:1px solid var(--line);background:var(--surface);border-radius:18px;overflow:hidden;transition:.15s;display:block;}
 .pcard:hover{border-color:rgba(45,212,238,.4);transform:translateY(-3px);}
-.banner{position:relative;height:150px;display:flex;align-items:center;justify-content:center;}
-.banner.pl{background:linear-gradient(135deg,rgba(183,155,255,.22),rgba(17,19,24,.6));}
-.banner.laliga{background:linear-gradient(135deg,rgba(255,157,92,.22),rgba(17,19,24,.6));}
-.banner.bund{background:linear-gradient(135deg,rgba(255,92,116,.22),rgba(17,19,24,.6));}
-.banner.seriea{background:linear-gradient(135deg,rgba(58,217,173,.22),rgba(17,19,24,.6));}
-.banner.ligue1{background:linear-gradient(135deg,rgba(91,140,255,.22),rgba(17,19,24,.6));}
-.banner.primeira{background:linear-gradient(135deg,rgba(64,221,136,.22),rgba(17,19,24,.6));}
-.banner.ucl{background:linear-gradient(135deg,rgba(111,155,255,.22),rgba(17,19,24,.6));}
-.banner-teams{display:flex;align-items:center;gap:22px;}
-.banner-teams img{width:52px;height:52px;object-fit:contain;filter:drop-shadow(0 4px 10px rgba(0,0,0,.4));}
-.banner-teams .vs{font-family:var(--disp);font-weight:700;font-size:15px;color:var(--soft);letter-spacing:.05em;}
+.banner{position:relative;height:118px;display:flex;align-items:center;justify-content:center;}
+.banner.pl{background:linear-gradient(135deg,#2dd4ee,#7c4fe4);}
+.banner.laliga{background:linear-gradient(135deg,#22d3ee,#6366f1);}
+.banner.bund{background:linear-gradient(135deg,#38bdf8,#a855f7);}
+.banner.seriea{background:linear-gradient(135deg,#2dd4ee,#a855f7);}
+.banner.ligue1{background:linear-gradient(135deg,#38bdf8,#7c4fe4);}
+.banner.primeira{background:linear-gradient(135deg,#2dd4ee,#8b5cf6);}
+.banner.ucl{background:linear-gradient(135deg,#4a6fe0,#8b5cf6);}
+.banner-teams{display:flex;align-items:center;gap:18px;}
+.banner{overflow:hidden;}.banner::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 15%,rgba(255,255,255,.28),transparent 55%);}.banner-teams{position:relative;z-index:2;}.banner-teams img{width:46px;height:46px;object-fit:contain;padding:7px;background:rgba(255,255,255,.92);border-radius:50%;box-shadow:0 6px 16px rgba(0,0,0,.18);}
+.banner-teams .vs{font-family:var(--disp);font-weight:700;font-size:15px;color:#fff;letter-spacing:.05em;text-shadow:0 2px 8px rgba(0,0,0,.25);}
 .banner-bar{position:absolute;bottom:0;left:0;right:0;height:6px;display:flex;gap:2px;}.banner-bar span{display:block;height:100%;}
-.pbody{padding:20px 22px 22px;}
+.pbody{padding:17px 19px 19px;}
 .pmeta{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
 .lgc{padding:3px 9px;border-radius:6px;font-family:var(--mono);font-size:10px;letter-spacing:.05em;text-transform:uppercase;}
 .lgc.pl{color:var(--pl);background:rgba(183,155,255,.13);}.lgc.laliga{color:var(--laliga);background:rgba(255,157,92,.13);}
 .lgc.bund{color:var(--bund);background:rgba(255,92,116,.13);}.lgc.seriea{color:var(--seriea);background:rgba(58,217,173,.13);}
 .lgc.ligue1{color:var(--ligue1);background:rgba(91,140,255,.13);}.lgc.primeira{color:var(--primeira);background:rgba(64,221,136,.13);}.lgc.ucl{color:var(--ucl);background:rgba(111,155,255,.13);}
 .pmeta .dt{font-family:var(--mono);font-size:11px;color:var(--muted);}
-.pcard h3{font-family:var(--disp);font-weight:600;font-size:23px;letter-spacing:-.01em;margin-bottom:8px;}
-.pcard .exc{font-size:14.5px;color:var(--muted);line-height:1.55;max-width:60ch;}
+.pcard h3{font-family:var(--disp);font-weight:600;font-size:19px;letter-spacing:-.01em;margin-bottom:7px;}
+.pcard .exc{font-size:13.5px;color:var(--muted);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
 .pcard .rm{display:inline-block;margin-top:14px;font-family:var(--mono);font-size:12.5px;color:var(--cyan);font-weight:500;}
 .pager{display:flex;gap:8px;margin-top:34px;align-items:center;}
 .pager a,.pager span.cur{width:38px;height:38px;display:grid;place-items:center;border:1px solid var(--line);border-radius:10px;font-family:var(--mono);font-size:13px;color:var(--muted);transition:.15s;}
-.pager .cur{background:linear-gradient(135deg,var(--cyan),var(--purple));color:#06101a;border-color:transparent;font-weight:700;}
+.pager .cur{background:var(--grad);color:#fff;border-color:transparent;font-weight:700;}
 .pager a:hover{border-color:var(--cyan);color:var(--text);}.pager .nx{width:auto;padding:0 14px;}
 .side{display:flex;flex-direction:column;gap:22px;}
 .widget{border:1px solid var(--line);background:var(--surface);border-radius:16px;padding:20px;}
 .widget h4{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:16px;}
 .lg-list{display:flex;flex-direction:column;gap:3px;}
-.lg-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:9px;transition:.15s;}.lg-row:hover{background:rgba(255,255,255,.03);}
+.lg-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:9px;transition:.15s;}.lg-row:hover{background:rgba(20,24,36,.04);}
 .lg-row .d{width:8px;height:8px;border-radius:50%;flex-shrink:0;}.lg-row .nm{font-size:13.5px;font-weight:500;flex:1;}.lg-row .ct{font-family:var(--mono);font-size:12px;color:var(--muted);}
 .recent{display:flex;flex-direction:column;gap:14px;}.recent a{font-size:13.5px;color:var(--soft);line-height:1.4;font-weight:500;display:block;}.recent a:hover{color:var(--cyan);}
 .recent a .rd{display:block;font-family:var(--mono);font-size:10.5px;color:var(--faint);margin-top:3px;font-weight:400;}
@@ -238,7 +240,7 @@ footer a{font-weight:600;}footer a:hover{color:var(--text);}footer .sep{flex:1;}
 .matchbar .vs{font-family:var(--mono);color:var(--muted);font-size:14px;}
 .lead{font-family:var(--read);font-size:21px;line-height:1.6;color:var(--soft);margin:26px 0;max-width:70ch;}
 .mh{font-family:var(--disp);font-weight:600;font-size:26px;margin:44px 0 20px;letter-spacing:-.01em;}
-.igrid{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+.igrid{display:grid;grid-template-columns:1fr 1fr;gap:26px 18px;align-items:start;}.insight{display:flex;flex-direction:column;}.insight-note{font-family:var(--read);font-size:14.5px;color:var(--soft);line-height:1.6;margin:14px 2px 0;}
 @media(max-width:820px){.igrid{grid-template-columns:1fr;}}
 .fig{border:1px solid var(--line);background:var(--surface);border-radius:18px;padding:24px;}
 .fig .cap{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:20px;}
@@ -246,32 +248,88 @@ footer a{font-weight:600;}footer a:hover{color:var(--text);}footer .sep{flex:1;}
 .pbar{display:flex;height:16px;border-radius:999px;overflow:hidden;gap:3px;margin-bottom:14px;}.pbar span{display:block;height:100%;}
 .plabs{display:flex;justify-content:space-between;}.plabs>div{display:flex;flex-direction:column;gap:2px;}.plabs .m{align-items:center;}.plabs .r{align-items:flex-end;}
 .plabs b{font-family:var(--mono);font-weight:700;font-size:21px;}.plabs span{font-size:12px;color:var(--muted);}
-.xgc{display:grid;gap:14px;}.xgc .row{display:grid;grid-template-columns:100px 1fr 40px;align-items:center;gap:12px;}.xgc .nm{font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}.xgc .track{height:16px;border-radius:999px;background:rgba(255,255,255,.05);overflow:hidden;}.xgc .track>i{display:block;height:100%;border-radius:999px;}.xgc .v{font-family:var(--mono);font-size:14px;text-align:right;}
+.xgc{display:grid;gap:14px;}.xgc .row{display:grid;grid-template-columns:100px 1fr 40px;align-items:center;gap:12px;}.xgc .nm{font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}.xgc .track{height:16px;border-radius:999px;background:#eef1f6;overflow:hidden;}.xgc .track>i{display:block;height:100%;border-radius:999px;}.xgc .v{font-family:var(--mono);font-size:14px;text-align:right;}
 .fg-row{margin-bottom:18px;}.fg-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;}.fg-top .nm{font-size:14px;font-weight:600;}.fg-top .pts{font-family:var(--mono);font-size:12px;color:var(--muted);}
 .fg-cells{display:flex;gap:6px;}.fgc{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;font-family:var(--mono);font-weight:700;font-size:12px;}
 .fgc.W{background:rgba(56,224,166,.16);color:var(--green);}.fgc.D{background:rgba(246,195,68,.16);color:var(--amber);}.fgc.L{background:rgba(255,112,137,.16);color:var(--red);}
-.fg-bar{display:flex;height:8px;border-radius:999px;overflow:hidden;margin-top:16px;background:rgba(255,255,255,.05);}.fg-bar i{display:block;height:100%;}
+.fg-bar{display:flex;height:8px;border-radius:999px;overflow:hidden;margin-top:16px;background:#eef1f6;}.fg-bar i{display:block;height:100%;}
 .heat{display:grid;grid-template-columns:auto repeat(4,1fr);gap:5px;font-family:var(--mono);}
 .heat .h{font-size:10.5px;color:var(--muted);display:grid;place-items:center;padding:3px;}
-.heat .cell{aspect-ratio:1.7;border-radius:7px;display:grid;place-items:center;font-size:11.5px;font-weight:700;}
-.mstats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:24px;}
-.mstats>div{border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:18px;text-align:center;}
-.mstats span{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:6px;}.mstats b{font-family:var(--mono);font-weight:700;font-size:18px;}
+.heat .cell{aspect-ratio:1.7;border-radius:7px;display:grid;place-items:center;font-size:11.5px;font-weight:700;color:#0b3a48;}
+.mstats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:24px;}
+.mstats .stat{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:16px;padding:22px 20px;text-align:center;}
+.mstats .stat::before{content:"";position:absolute;inset:0;opacity:.10;}
+.mstats .stat.c1::before{background:radial-gradient(circle at 50% 0%,var(--cyan),transparent 70%);}
+.mstats .stat.c2::before{background:radial-gradient(circle at 50% 0%,var(--amber),transparent 70%);}
+.mstats .stat.c3::before{background:radial-gradient(circle at 50% 0%,var(--purple),transparent 70%);}
+.mstats .stat.c1{border-color:rgba(45,212,238,.25);}.mstats .stat.c2{border-color:rgba(246,195,68,.25);}.mstats .stat.c3{border-color:rgba(169,139,255,.25);}
+.mstats .ic{position:relative;width:34px;height:34px;margin:0 auto 12px;border-radius:9px;display:grid;place-items:center;}
+.mstats .c1 .ic{background:rgba(45,212,238,.12);color:var(--cyan);}.mstats .c2 .ic{background:rgba(246,195,68,.12);color:var(--amber);}.mstats .c3 .ic{background:rgba(169,139,255,.12);color:var(--purple);}
+.mstats .ic svg{width:18px;height:18px;}
+.mstats .lbl{position:relative;display:block;font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px;}
+.mstats .val{position:relative;font-family:var(--mono);font-weight:700;font-size:22px;}
+.mstats .c1 .val{color:var(--cyan);}.mstats .c2 .val{color:var(--amber);}.mstats .c3 .val{color:var(--purple);}
 .article-body{max-width:72ch;}
 .article-body h2{font-family:var(--disp);font-weight:600;font-size:26px;margin:0 0 16px;letter-spacing:-.01em;}
 .article-body p{font-family:var(--read);font-size:19px;line-height:1.72;color:var(--soft);margin:0 0 20px;}
 .factors{list-style:none;padding:0;margin:4px 0 20px;max-width:72ch;}
 .factors li{position:relative;padding-left:22px;margin-bottom:12px;font-family:var(--read);font-size:18px;color:var(--soft);}
 .factors li::before{content:"";position:absolute;left:0;top:11px;width:7px;height:7px;border-radius:50%;background:var(--cyan);}
-.poll{border:1px solid var(--line);background:linear-gradient(180deg,var(--raise),var(--surface));border-radius:18px;padding:24px;margin:36px 0;max-width:640px;}
-.poll-q{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:16px;}.poll-q .t{font-weight:700;font-size:16px;}.poll-total{font-family:var(--mono);font-size:12px;color:var(--muted);}
-.poll-opt{position:relative;display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:transparent;border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:10px;cursor:pointer;color:var(--text);font-family:var(--sans);overflow:hidden;}
-.poll.open .poll-opt:hover{border-color:rgba(45,212,238,.45);background:rgba(45,212,238,.05);}
-.poll-opt .lbl{font-weight:600;font-size:15px;flex:1;z-index:2;}.poll-opt .bar{position:absolute;inset:0;z-index:1;}.poll-opt .bar>i{display:block;height:100%;width:0;background:rgba(45,212,238,.14);transition:width .7s;}
-.poll-opt .pc{font-family:var(--mono);font-weight:700;font-size:14px;color:var(--muted);z-index:2;opacity:0;transition:.3s;}
-.poll.done .poll-opt .pc{opacity:1;}.poll.done .poll-opt.mine{border-color:rgba(45,212,238,.55);}.poll.done .poll-opt.mine .pc{color:var(--cyan);}
-.poll-foot{font-size:12px;color:var(--faint);margin-top:12px;}
-.cta{display:flex;align-items:center;justify-content:space-between;gap:16px;border:1px solid rgba(45,212,238,.3);border-radius:16px;padding:24px 26px;margin:36px 0 8px;background:linear-gradient(120deg,rgba(45,212,238,.08),rgba(169,139,255,.06));max-width:820px;}
+.kf-panel{display:flex;flex-direction:column;gap:12px;max-width:760px;margin-bottom:26px;}
+.kf-item{display:flex;align-items:center;gap:16px;border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:16px 18px;}
+.kf-item.form{align-items:flex-start;}
+.kf-ic{width:40px;height:40px;flex:none;border-radius:11px;display:grid;place-items:center;}
+.kf-ic svg{width:20px;height:20px;}
+.kf-ic.cyan{background:rgba(45,212,238,.1);border:1px solid rgba(45,212,238,.22);color:var(--cyan);}
+.kf-ic.purple{background:rgba(169,139,255,.1);border:1px solid rgba(169,139,255,.22);color:var(--purple);}
+.kf-ic.green{background:rgba(56,224,166,.1);border:1px solid rgba(56,224,166,.22);color:var(--green);}
+.kf-ic.amber{background:rgba(246,195,68,.1);border:1px solid rgba(246,195,68,.22);color:var(--amber);}
+.kf-txt{display:flex;flex-direction:column;gap:3px;flex:1;min-width:0;}
+.kf-label{font-family:var(--mono);font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);}
+.kf-val{font-family:var(--disp);font-weight:600;font-size:17px;color:var(--text);}
+.kf-chip{font-family:var(--mono);font-weight:700;font-size:14px;padding:5px 11px;border-radius:8px;flex:none;}
+.kf-chip.cyan{color:var(--cyan);background:rgba(45,212,238,.12);}
+.kf-chip.purple{color:var(--purple);background:rgba(169,139,255,.12);}
+.kf-form{flex:1;display:flex;flex-direction:column;gap:10px;min-width:0;}
+.kf-form-row{display:flex;align-items:center;gap:12px;}
+.kf-tm{font-size:13.5px;font-weight:600;width:33%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.kf-pills{display:flex;gap:5px;flex:1;}
+.kf-pill{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;font-family:var(--mono);font-weight:700;font-size:11px;}
+.kf-pill.W{background:rgba(56,224,166,.16);color:var(--green);}
+.kf-pill.D{background:rgba(246,195,68,.16);color:var(--amber);}
+.kf-pill.L{background:rgba(255,112,137,.16);color:var(--red);}
+.kf-empty{font-size:12.5px;color:var(--faint);}
+.kf-pts{font-family:var(--mono);font-size:12.5px;color:var(--muted);flex:none;}
+.kf-details-h{font-family:var(--disp);font-weight:600;font-size:17px;color:var(--soft);margin:6px 0 14px;}
+.poll{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:22px;padding:28px;margin:36px 0;max-width:600px;background:linear-gradient(165deg,#ffffff,#f7f8fc);box-shadow:0 8px 30px rgba(70,60,150,.06);}
+.poll::before{content:"";position:absolute;top:-60px;right:-40px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(124,79,228,.10),transparent 70%);pointer-events:none;}
+.poll::after{content:"";position:absolute;bottom:-70px;left:-50px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(45,212,238,.10),transparent 70%);pointer-events:none;}
+.poll-head{position:relative;z-index:2;margin-bottom:20px;}
+.poll-eyebrow{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--purple);margin-bottom:10px;}
+.poll-eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--grad);}
+.poll-q{font-family:var(--disp);font-weight:700;font-size:21px;letter-spacing:-.01em;line-height:1.2;color:var(--text);}
+.poll-sub{font-size:13.5px;color:var(--muted);margin-top:6px;}
+.poll-opts{position:relative;z-index:2;display:flex;flex-direction:column;gap:11px;margin-top:22px;}
+.poll-opt{position:relative;display:flex;align-items:center;gap:14px;width:100%;text-align:left;background:#fbfcfe;border:1.5px solid var(--line);border-radius:14px;padding:15px 18px;cursor:pointer;color:var(--text);font-family:var(--sans);overflow:hidden;transition:.18s;}
+.poll.open .poll-opt:hover{border-color:rgba(124,79,228,.5);background:rgba(124,79,228,.05);transform:translateY(-1px);}
+.poll-opt .bar{position:absolute;inset:0;z-index:1;}
+.poll-opt .bar>i{display:block;height:100%;width:0;border-radius:12px;transition:width .9s cubic-bezier(.22,1,.36,1);opacity:.9;}
+.poll-opt[data-pick="home"] .bar>i{background:linear-gradient(90deg,rgba(45,212,238,.30),rgba(45,212,238,.12));}
+.poll-opt[data-pick="draw"] .bar>i{background:linear-gradient(90deg,rgba(150,158,180,.28),rgba(150,158,180,.10));}
+.poll-opt[data-pick="away"] .bar>i{background:linear-gradient(90deg,rgba(124,79,228,.28),rgba(124,79,228,.12));}
+.poll-opt .tick{position:relative;z-index:2;width:22px;height:22px;border-radius:50%;border:2px solid var(--faint);flex:none;display:grid;place-items:center;transition:.2s;}
+.poll-opt .tick svg{width:12px;height:12px;opacity:0;transform:scale(.5);transition:.2s;stroke:#fff;}
+.poll-opt .lbl{position:relative;z-index:2;font-weight:600;font-size:15.5px;flex:1;}
+.poll-opt .pc{position:relative;z-index:2;font-family:var(--mono);font-weight:700;font-size:15px;color:var(--muted);opacity:0;transition:.3s;}
+.poll.done .poll-opt{cursor:default;}
+.poll.done .poll-opt .pc{opacity:1;}
+.poll.done .poll-opt.mine{border-color:rgba(124,79,228,.6);}
+.poll.done .poll-opt.mine .tick{border-color:var(--purple);background:var(--purple);}
+.poll.done .poll-opt.mine .tick svg{opacity:1;transform:scale(1);}
+.poll.done .poll-opt.mine .pc{color:var(--purple);}
+.poll-foot{position:relative;z-index:2;display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);margin-top:16px;}
+.poll-foot svg{width:14px;height:14px;stroke:var(--muted);}
+.cta{display:flex;align-items:center;justify-content:space-between;gap:16px;border:1px solid rgba(124,79,228,.25);border-radius:16px;padding:24px 26px;margin:36px 0 8px;background:linear-gradient(120deg,rgba(45,212,238,.10),rgba(124,79,228,.08));max-width:820px;}
 .cta .t{font-weight:700;font-size:16px;}.cta .s{font-size:13.5px;color:var(--muted);margin-top:3px;}.cta .go{font-family:var(--mono);font-weight:700;color:var(--cyan);}
 .disc{font-size:13px;color:var(--faint);border-top:1px solid var(--line);padding-top:20px;margin:36px 0 60px;max-width:72ch;}
 @media(max-width:600px){.mpage{padding:0 20px;}.mhead h1{font-size:31px;}.lead{font-size:19px;}.matchbar{gap:24px;padding:24px;}.cta{flex-direction:column;align-items:flex-start;}}
@@ -283,15 +341,22 @@ POLL_JS = """(function(){var URL="__U__",KEY="__K__";var box=document.querySelec
 FONTS = ('<link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>'
          '<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@1,9..144,500;1,9..144,600&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>')
 
-NAV = ('<nav class="nav"><div class="in"><a class="brand" href="' + SITE + '"><span class="dot"></span> Scorina AI <em>Journal</em></a>'
-       '<div class="nlinks"><a href="/blog/">Previews</a><a href="/blog/how-scorina-ai-predicts.html">How it works</a>'
-       '<a href="' + SITE + '/#/live">Live</a></div><a class="nbtn" href="' + SITE + '">Open app ↗</a></div></nav>')
+def nav(active=""):
+    def cls(name): return ' class="active"' if active == name else ''
+    return ('<nav class="nav"><div class="in"><a class="brand" href="/blog/">'
+        '<img class="logo" src="/scriptiq_logo.svg" alt="Scorina AI"/> Scorina AI <em>Journal</em></a>'
+        '<div class="nlinks">'
+        f'<a href="/blog/"{cls("previews")}>Previews</a>'
+        f'<a href="/blog/how-scorina-ai-predicts.html"{cls("how")}>How it works</a>'
+        f'<a href="{SITE}/#/live"{cls("live")}>Live</a></div>'
+        f'<a class="nbtn" href="{SITE}">Open app ↗</a></div></nav>')
+NAV = nav()
 
 FOOTER = ('<footer><div class="in"><a href="/blog/">Journal</a><a href="' + SITE + '/#/live">Live Scores</a>'
           '<a href="' + SITE + '/#/analysis">Predictions</a><a href="' + SITE + '/#/bestpicks">AI Picks</a>'
           '<span class="sep"></span><span>© 2026 Scorina AI · Football analytics &amp; predictions</span></div></footer>')
 
-def page(title, desc, canon, body, extra_head="", script=""):
+def page(title, desc, canon, body, extra_head="", script="", active=""):
     return fill("""<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/><title>__T__</title>
 <meta name="description" content="__D__"/><link rel="canonical" href="__C__"/><meta name="robots" content="index, follow"/>
@@ -299,7 +364,7 @@ def page(title, desc, canon, body, extra_head="", script=""):
 <meta property="og:image" content="__S__/og-image.png"/>__EH____FONTS__<style>__CSS__</style></head>
 <body>__NAV____BODY____FOOTER____SCRIPT__</body></html>""",
     {"__T__": title, "__D__": desc, "__C__": canon, "__S__": SITE, "__EH__": extra_head,
-     "__FONTS__": FONTS, "__CSS__": CSS, "__NAV__": NAV, "__BODY__": body, "__FOOTER__": FOOTER, "__SCRIPT__": script})
+     "__FONTS__": FONTS, "__CSS__": CSS, "__NAV__": nav(active), "__BODY__": body, "__FOOTER__": FOOTER, "__SCRIPT__": script})
 
 # ---------------------------------------------------------------- selection
 def involves(fx):
@@ -394,12 +459,14 @@ def build_hub(posts):
                 '<h1>Football, <span class="accent">decided by data</span>.</h1>'
                 '<p>AI-generated previews for the biggest fixtures across Europe — win probabilities, expected goals and the most likely scoreline. Tap any match for the full breakdown and vote on who wins.</p></div></header>')
         body = DEFS + (hero + strip if idx == 1 else "") + (
-            '<div class="wrap"><div class="layout"><main><div class="feed-h"><h2>Latest previews</h2>'
-            f'<span class="sub">/ page {idx} of {total}</span></div><div class="feed">{feed}</div>{pager(idx, total)}</main>'
+            '<div class="wrap"><div class="layout"><main><div class="feed-h"><h2>Our picks for the week</h2>'
+            f'<span class="sub">/ page {idx} of {total}</span></div>'
+            + ('<p class="feed-intro">Every week our model reads the biggest fixtures across Europe and picks the ones worth watching. It weighs recent form, expected goals and the history between each pair of teams to find the matches with the most on the line. For every one, you get clear win probabilities, a projected scoreline and the case for each result, all in plain language. Here are this week&rsquo;s previews.</p>' if idx == 1 else '')
+            + f'<div class="feed">{feed}</div>{pager(idx, total)}</main>'
             + sidebar(chunk, posts) + '</div></div>')
         html = page("The Scorina AI Journal — Football Match Previews & Predictions",
                     "AI-powered previews and predictions for the biggest fixtures in the Premier League, La Liga, Serie A and Europe's top leagues.",
-                    f"{SITE}/blog/", body)
+                    f"{SITE}/blog/", body, active="previews")
         write(f"{OUT}/index.html" if idx == 1 else f"{OUT}/index-{idx}.html", html)
 
 def build_league(league, posts):
@@ -473,23 +540,111 @@ def scoreline_html(hxg, axg, home, away, maxg=3):
             cells += f'<div class="cell" style="background:rgba(45,212,238,{op});color:{col}">{i}-{j}</div>'
     return f'<div class="heat">{cells}</div>'
 
+def key_factors_panel(p, pred):
+    """Visual panel of the model's main signals, built from clean data fields."""
+    hs = pred.get("home_form_sequence") or []
+    aw = pred.get("away_form_sequence") or []
+    hp, ap = form_points(hs), form_points(aw)
+    try:
+        hxg, axg = float(p["xgh"]), float(p["xga"])
+    except Exception:
+        hxg, axg = 0.0, 0.0
+    xg_leader = p["home"] if hxg >= axg else p["away"]
+    xg_gap = round(abs(hxg - axg), 2)
+
+    if p["hw"] >= p["aw"] and p["hw"] >= p["dr"]:
+        prob_leader, prob_val = p["home"], p["hw"]
+    elif p["aw"] >= p["dr"]:
+        prob_leader, prob_val = p["away"], p["aw"]
+    else:
+        prob_leader, prob_val = "Draw", p["dr"]
+
+    def pills(seq):
+        seq = (seq or [])[-5:]
+        if not seq:
+            return '<span class="kf-empty">No games yet</span>'
+        return "".join('<span class="kf-pill ' + r + '">' + r + '</span>' for r in seq)
+
+    ICON_PROB = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>'
+    ICON_XG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>'
+    ICON_FORM = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="20" x2="6" y2="14"/><line x1="12" y1="20" x2="12" y2="8"/><line x1="18" y1="20" x2="18" y2="4"/></svg>'
+    ICON_SCORE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/></svg>'
+
+    rows = []
+    # 1. Win probability
+    rows.append(
+        '<div class="kf-item"><div class="kf-ic cyan">' + ICON_PROB + '</div>'
+        '<div class="kf-txt"><span class="kf-label">Model favours</span>'
+        '<span class="kf-val">' + str(prob_leader) + '</span></div>'
+        '<span class="kf-chip cyan">' + str(prob_val) + '%</span></div>'
+    )
+    # 2. Expected goals edge
+    xg_right = (str(hxg) + ' – ' + str(axg)) if (hxg or axg) else 'n/a'
+    edge_txt = (xg_leader + ' edge') if xg_gap >= 0.2 else 'Even xG'
+    rows.append(
+        '<div class="kf-item"><div class="kf-ic purple">' + ICON_XG + '</div>'
+        '<div class="kf-txt"><span class="kf-label">Expected goals · ' + edge_txt + '</span>'
+        '<span class="kf-val">' + xg_right + '</span></div>'
+        '<span class="kf-chip purple">+' + str(xg_gap) + '</span></div>'
+    )
+    # 3. Form (both teams as pills)
+    rows.append(
+        '<div class="kf-item form"><div class="kf-ic green">' + ICON_FORM + '</div>'
+        '<div class="kf-form"><div class="kf-form-row"><span class="kf-tm">' + p["home"] + '</span>'
+        '<span class="kf-pills">' + pills(hs) + '</span><span class="kf-pts">' + str(hp) + '/15</span></div>'
+        '<div class="kf-form-row"><span class="kf-tm">' + p["away"] + '</span>'
+        '<span class="kf-pills">' + pills(aw) + '</span><span class="kf-pts">' + str(ap) + '/15</span></div></div></div>'
+    )
+    # 4. Likely score + confidence
+    rows.append(
+        '<div class="kf-item"><div class="kf-ic amber">' + ICON_SCORE + '</div>'
+        '<div class="kf-txt"><span class="kf-label">Most likely score · ' + str(p["conf"]) + ' confidence</span>'
+        '<span class="kf-val">' + str(p["score"]) + '</span></div></div>'
+    )
+
+    return '<h2 class="mh">Key factors</h2><div class="kf-panel">' + "".join(rows) + '</div>'
+
 def build_match(fx, pred, p):
     article = get_preview(p, pred)
     factors = pred.get("key_factors") or []
-    fx_html = ""
+    fx_html = key_factors_panel(p, pred)
     if factors:
-        fx_html = '<h2>Key factors</h2><ul class="factors">' + "".join(f"<li>{f}</li>" for f in factors[:4]) + '</ul>'
+        fx_html += '<h3 class="kf-details-h">The details</h3><ul class="factors">' + "".join(f"<li>{f}</li>" for f in factors[:5]) + '</ul>'
 
     fav = p["home"] if p["hw"] >= p["aw"] else p["away"]
     favp = max(p["hw"], p["aw"])
     verdict = f"The model leans to {fav} at {favp}%" if favp - p["dr"] > 3 else "The model sees a close, even contest"
 
-    win_fig = ('<div class="fig"><div class="cap">Win probability</div>'
+    _fav = p["home"] if p["hw"] >= p["aw"] else p["away"]
+    _favp = max(p["hw"], p["aw"])
+    _close = abs(p["hw"] - p["aw"]) < 8
+    win_note = (f"We see this one finely balanced \u2014 {p['home']} and {p['away']} are genuinely hard to separate, so we wouldn't be surprised by any of the three results. The bars show how often each outcome comes up when we run the match, and when they sit this close together an upset is always on the cards."
+                if _close else
+                f"We give {_fav} the better chance here at {_favp}%, with the other results trailing behind. These are the odds we settle on after playing the fixture out many times over, so read them as how often each result tends to happen rather than a firm call on the day.")
+    win_fig = ('<div class="insight"><div class="fig"><div class="cap">Win probability</div>'
         f'<div class="pbar"><span style="width:{p["hw"]}%;background:var(--cyan)"></span><span style="width:{p["dr"]}%;background:#3b4459"></span><span style="width:{p["aw"]}%;background:var(--purple)"></span></div>'
-        f'<div class="plabs"><div><b style="color:var(--cyan)">{p["hw"]}%</b><span>{p["home"]}</span></div><div class="m"><b>{p["dr"]}%</b><span>Draw</span></div><div class="r"><b style="color:var(--purple)">{p["aw"]}%</b><span>{p["away"]}</span></div></div></div>')
-    xg_fig = f'<div class="fig"><div class="cap">Expected goals</div>{xg_html(p["xgh"], p["xga"], p["home"], p["away"])}<div class="note">Goals each side is projected to create, from the model.</div></div>'
-    form_fig = f'<div class="fig"><div class="cap">Recent form · last 5</div>{form_guide_html(p, pred)}<div class="note">Points from the last five matches (W=3, D=1, L=0).</div></div>'
-    score_fig = f'<div class="fig"><div class="cap">Most likely scorelines</div>{scoreline_html(p["xgh"], p["xga"], p["home"], p["away"])}<div class="note">From a Poisson model of each side\'s expected goals. Brighter = more likely.</div></div>'
+        f'<div class="plabs"><div><b style="color:var(--cyan)">{p["hw"]}%</b><span>{p["home"]}</span></div><div class="m"><b>{p["dr"]}%</b><span>Draw</span></div><div class="r"><b style="color:var(--purple)">{p["aw"]}%</b><span>{p["away"]}</span></div></div>'
+        f'</div><p class="insight-note">{win_note}</p></div>')
+
+    try:
+        _hx, _ax = float(p["xgh"]), float(p["xga"])
+    except Exception:
+        _hx, _ax = 0.0, 0.0
+    _xgteam = p["home"] if _hx >= _ax else p["away"]
+    xg_note = (f"Expected goals is our read on the quality of chances each side should create, not just the final score. We make it {p['xgh']} for {p['home']} against {p['xga']} for {p['away']}, so we see {_xgteam} carrying the bigger threat across the ninety minutes. The wider that gap, the more comfortably we expect one side to shape the game."
+               if (_hx or _ax) else
+               "Expected goals is our read on the quality of chances each side should create, rather than just the final score. We don't have enough of this season's data to call it yet, so we'll fill this in properly once these teams have played a few more matches.")
+    xg_fig = f'<div class="insight"><div class="fig"><div class="cap">Expected goals</div>{xg_html(p["xgh"], p["xga"], p["home"], p["away"])}</div><p class="insight-note">{xg_note}</p></div>'
+
+    _hp, _ap = form_points(pred.get("home_form_sequence") or []), form_points(pred.get("away_form_sequence") or [])
+    _formteam = p["home"] if _hp >= _ap else p["away"]
+    form_note = (f"Here is how both teams have fared across their last five matches: green marks a win, amber a draw and red a loss. We award three points for a win and one for a draw, and the tally on the right shows who arrives in sharper shape \u2014 on these runs {_formteam} hold the edge."
+                 if (_hp or _ap) else
+                 "Here is where we show each side's last five results \u2014 green for a win, amber for a draw, red for a loss. These fixtures are early in the season, so the run fills in here as the matches are played.")
+    form_fig = f'<div class="insight"><div class="fig"><div class="cap">Recent form \u00b7 last 5</div>{form_guide_html(p, pred)}</div><p class="insight-note">{form_note}</p></div>'
+
+    score_note = f"We play the match out thousands of times using our expected goals and count how often each scoreline lands. The brighter a square, the more often we see that result \u2014 our single most likely outcome here is {p['score']}. It's worth remembering that no one scoreline is ever truly likely on its own, since football tends to spread itself across many possible endings."
+    score_fig = f'<div class="insight"><div class="fig"><div class="cap">Most likely scorelines</div>{scoreline_html(p["xgh"], p["xga"], p["home"], p["away"])}</div><p class="insight-note">{score_note}</p></div>'
     article_block = article if article else ""
 
     body = fill('<main class="mpage">'
@@ -498,14 +653,23 @@ def build_match(fx, pred, p):
         '<div class="matchbar"><div class="t"><img src="__HL__" alt=""/><span>__HOME__</span></div><div class="vs">VS</div><div class="t"><img src="__AL__" alt=""/><span>__AWAY__</span></div></div>'
         '<p class="lead">__VERDICT__. Below is the full model breakdown \u2014 win probabilities, expected goals, recent form and the most likely scorelines.</p>'
         '<h2 class="mh">Match insights</h2><div class="igrid">__WINFIG____XGFIG____FORMFIG____SCOREFIG__</div>'
-        '<div class="mstats"><div><span>Likely score</span><b>__LSCORE__</b></div><div><span>Confidence</span><b>__CONF__</b></div><div><span>Expected goals</span><b>__XGH__ &ndash; __XGA__</b></div></div>'
+        '<div class="mstats">'
+        '<div class="stat c1"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/></svg></div><span class="lbl">Likely score</span><span class="val">__LSCORE__</span></div>'
+        '<div class="stat c2"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 4.9 5.4.8-3.9 3.8.9 5.4L12 19.3 7.2 21.7l.9-5.4L4.2 12.5l5.4-.8z"/></svg></div><span class="lbl">Confidence</span><span class="val">__CONF__</span></div>'
+        '<div class="stat c3"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v16h16"/><circle cx="9" cy="14" r="1.6"/><circle cx="15" cy="9" r="1.6"/></svg></div><span class="lbl">Expected goals</span><span class="val">__XGH__ &ndash; __XGA__</span></div>'
+        '</div>'
         '<div class="article-body">__ARTICLE__</div>'
         '<div class="article-body">__FX__</div>'
-        '<div class="poll" data-slug="__SLUG__"><div class="poll-q"><span class="t">Who wins? Cast your vote</span><span class="poll-total"></span></div>'
-        '<button class="poll-opt" data-pick="home"><span class="bar"><i></i></span><span class="lbl">__HOME__</span><span class="pc"></span></button>'
-        '<button class="poll-opt" data-pick="draw"><span class="bar"><i></i></span><span class="lbl">Draw</span><span class="pc"></span></button>'
-        '<button class="poll-opt" data-pick="away"><span class="bar"><i></i></span><span class="lbl">__AWAY__</span><span class="pc"></span></button>'
-        '<div class="poll-foot">Tap your pick to see how everyone voted.</div></div>'
+        '<div class="poll" data-slug="__SLUG__">'
+        '<div class="poll-head"><span class="poll-eyebrow"><span class="dot"></span> Reader vote</span>'
+        '<div class="poll-q">Our model&rsquo;s made its call. What&rsquo;s yours?</div>'
+        '<div class="poll-sub">Tap your pick to see how everyone voted.</div></div>'
+        '<div class="poll-opts">'
+        '<button class="poll-opt" data-pick="home"><span class="bar"><i></i></span><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span class="lbl">__HOME__</span><span class="pc"></span></button>'
+        '<button class="poll-opt" data-pick="draw"><span class="bar"><i></i></span><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span class="lbl">Draw</span><span class="pc"></span></button>'
+        '<button class="poll-opt" data-pick="away"><span class="bar"><i></i></span><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span class="lbl">__AWAY__</span><span class="pc"></span></button>'
+        '</div>'
+        '<div class="poll-foot"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg> <span class="poll-total"></span></div></div>'
         '<a class="cta" href="__SITE__/#/analysis"><span><span class="t">Want the live version?</span><br><span class="s">See the up-to-the-minute prediction on Scorina AI.</span></span><span class="go">Open \u2192</span></a>'
         '<p class="disc">Predictions are model estimates for analysis and entertainment, not betting advice.</p></main>',
         {"__CL__": p["cls"], "__LEAGUE__": p["league"], "__KICKF__": p["kickf"], "__HOME__": p["home"], "__AWAY__": p["away"],
