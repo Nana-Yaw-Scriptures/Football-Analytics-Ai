@@ -312,6 +312,21 @@ def predict_match(req: MatchPredictionRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/standings/refresh")
+def refresh_standings(token: str = "", league: str = ""):
+    expected = os.getenv("PLAYERS_REFRESH_TOKEN", "")
+    if not expected or token != expected:
+        raise HTTPException(status_code=403, detail="Invalid or missing token")
+    from services.data_fetcher import fetch_standings, LEAGUE_CODES
+    targets = [league] if league else list(LEAGUE_CODES.keys())
+    out = {}
+    for lg in targets:
+        try:
+            out[lg] = len(fetch_standings(lg, force_refresh=True))
+        except Exception as e:
+            out[lg] = f"error: {e}"
+    return {"status": "ok", "standings": out}
+
 @app.post("/analyze/player")
 def analyze_player(req: PlayerRatingRequest):
     try:

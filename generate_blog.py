@@ -583,7 +583,17 @@ def main():
     body = "\n".join(f'  <url><loc>{u}</loc><lastmod>{today}</lastmod><changefreq>{c}</changefreq><priority>{pr}</priority></url>' for u, c, pr in urls)
     write(SITEMAP, f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{body}\n</urlset>\n')
 
-    print(f"\nDone. {len(posts)} matches, {len(leagues)} league pages, {len(teams)} team pages, hub + sitemap.")
+    # Which matches have a preview page — so the app can show a link only for these.
+    # Keyed by "home vs away" (lowercased) AND by slug, both point to the blog URL.
+    index = {}
+    for p in posts:
+        url = f"/blog/{p['slug']}.html"
+        index[p["slug"]] = url
+        index[f"{p['home']} vs {p['away']}".lower()] = url
+        index[f"{p['away']} vs {p['home']}".lower()] = url  # tolerate reversed order
+    write(f"{OUT}/blog_slugs.json", json.dumps({"generated": today, "matches": index}, ensure_ascii=False))
+
+    print(f"\nDone. {len(posts)} matches, {len(leagues)} league pages, {len(teams)} team pages, hub + sitemap + slug index.")
 
 if __name__ == "__main__":
     main()

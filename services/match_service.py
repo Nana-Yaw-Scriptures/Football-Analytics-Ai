@@ -19,6 +19,7 @@ from services.data_fetcher import (
     calculate_elo, parse_form, LEAGUE_CODES
 )
 from services.understat_scraper import scrape_league_xg, find_team_xg
+from services.season import SEASON
 
 # ═══════════════════════════════════════════════
 # CACHE LAYER  (v2.2)
@@ -250,7 +251,11 @@ LEAGUE_HOME_ADVANTAGE = {
 # CACHED FETCHERS
 # ═══════════════════════════════════════════════
 
-def _get_xg_data(league: str, season: str = "2025") -> dict:
+def _get_xg_data(league: str, season: str = None) -> dict:
+    """Current-season xG, falling back to last season while the new season's
+    xG data is still sparse — so the model never loses its xG signal."""
+    if season is None:
+        season = str(SEASON)
     key = f"{league}:{season}"
     now = time.time()
     if key in _xg_cache:
@@ -261,6 +266,18 @@ def _get_xg_data(league: str, season: str = "2025") -> dict:
         data = scrape_league_xg(league, season)
     except Exception:
         data = {}
+    # Fallback: if the current season has no usable xG yet, use last season's
+    if not data:
+        prev = str(int(season) - 1)
+        prev_key = f"{league}:{prev}"
+        if prev_key in _xg_cache and (now - _xg_cache[prev_key][0]) < XG_TTL:
+            data = _xg_cache[prev_key][1]
+        else:
+            try:
+                data = scrape_league_xg(league, prev)
+            except Exception:
+                data = {}
+            _xg_cache[prev_key] = (now, data)
     _xg_cache[key] = (now, data)
     return data
 
@@ -273,7 +290,7 @@ def _get_team_id(name: str, league: str = None):
         try:
             resp = requests.get(
                 f"{API_BASE_URL}/teams", headers=API_HEADERS,
-                params={"league": API_FOOTBALL_LEAGUE_IDS[league], "season": 2025},
+                params={"league": API_FOOTBALL_LEAGUE_IDS[league], "season": SEASON},
                 timeout=5,
             )
             nl = name.lower()
@@ -527,7 +544,7 @@ def get_match_prediction(req, model=None):
     if away_team is None:
         raise ValueError(f"Could not find '{req.away_team}' in any of the 6 European leagues.")
 
-    standings = home_standings if home_league == away_league else home_standings
+    standings = home_standings  # home team's league table (also the Elo baseline)
     h_row = standings[standings["team"] == home_team].iloc[0]
     a_row = (standings if home_league == away_league else away_standings)
     a_row = a_row[a_row["team"] == away_team].iloc[0]
