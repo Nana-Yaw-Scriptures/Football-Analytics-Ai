@@ -124,33 +124,13 @@ def fetch_matches(league, status="FINISHED", limit=100, season=None):
     return pd.DataFrame(rows)
 
 
-def fetch_standings(league, season=None):
-    """
-    Fetch standings with 1-hour in-memory TTL cache.
-    Loads from static JSON cache first to avoid football-data.org timeouts.
-    """
-    import json
-    cache_key = f"{league}:{season or 'current'}"
-    now       = time.time()
+STANDINGS_STATIC_TTL = 10 * 365 * 24 * 3600  # request path never auto-refetches; refresh only via force_refresh
 
-    if cache_key in _standings_cache:
-        fetched_at, cached_df = _standings_cache[cache_key]
-        if now - fetched_at < STANDINGS_TTL:
-            return cached_df
+def _standings_cache_path(season=None):
+    season = season if season is not None else SEASON
+    return os.path.join(os.path.dirname(__file__), '..', 'cache', f'standings_cache_{season}.json')
 
-    # Try static file cache first
-    static_path = os.path.join(os.path.dirname(__file__), '..', 'cache', 'standings_cache.json')
-    try:
-        with open(static_path, 'r', encoding='utf-8') as f:
-            static = json.load(f)
-        if league in static:
-            df = pd.DataFrame(static[league])
-            _standings_cache[cache_key] = (now, df)
-            return df
-    except Exception:
-        pass
-
-    # Fallback to API
+def _rows_from_api(league, season=None):
     code   = LEAGUE_CODES.get(league, "PL")
     params = {}
     if season:
@@ -172,13 +152,93 @@ def fetch_standings(league, season=None):
             "points":        entry["points"],
             "form":          entry.get("form", ""),
         })
-    df = pd.DataFrame(rows)
-    _standings_cache[cache_key] = (now, df)
-    return df
+    return rows
 
-    df = pd.DataFrame(rows)
-    _standings_cache[cache_key] = (now, df)
-    return df
+def fetch_standings(league, season=None, force_refresh=False):
+    """Current-season standings, season-aware with a daily refresh.
+
+    Reads a per-season cache file (standings_cache_<SEASON>.json). If it's missing
+    or stale, pulls the current table from the API and rewrites the file — so
+    promoted/relegated teams appear automatically each season. Falls back to the
+    season file, then the legacy standings_cache.json, so predictions never break.
+    Local file reads keep it fast (no per-request API timeouts).
+    """
+    import json
+    now = time.time()
+    cache_key = f"{league}:{season or SEASON}"
+
+    if not force_refresh and cache_key in _standings_cache:
+        fetched_at, cached_df = _standings_cache[cache_key]
+        if now - fetched_at < STANDINGS_TTL:
+            return cached_df
+
+    path = _standings_cache_path(season)
+    file_fresh = os.path.exists(path) and (now - os.path.getmtime(path) < STANDINGS_STATIC_TTL)
+
+    # Use the season file when it's fresh
+    if file_fresh and not force_refresh:
+        try:
+            with open(path, 'r', encoding='utf-8') as f:
+                store = json.load(f)
+            if league in store and store[league]:
+                df = pd.DataFrame(store[league])
+                _standings_cache[cache_key] = (now, df)
+                return df
+        except Exception:
+            pass
+
+    # Live API fetch happens ONLY when explicitly refreshing (never on a user request)
+    if not force_refresh:
+        for fallback in (path, os.path.join(os.path.dirname(__file__), '..', 'cache', 'standings_cache.json')):
+            if os.path.exists(fallback):
+                try:
+                    with open(fallback, 'r', encoding='utf-8') as f:
+                        store = json.load(f)
+                    if league in store and store[league]:
+                        df = pd.DataFrame(store[league])
+                        _standings_cache[cache_key] = (now, df)
+                        return df
+                except Exception:
+                    pass
+        return pd.DataFrame()
+
+    # force_refresh only: fetch the live current-season table and persist it
+    try:
+        rows = _rows_from_api(league, season)
+        if rows:
+            store = {}
+            if os.path.exists(path):
+                try:
+                    with open(path, 'r', encoding='utf-8') as f:
+                        store = json.load(f)
+                except Exception:
+                    store = {}
+            store[league] = rows
+            try:
+                os.makedirs(os.path.dirname(path), exist_ok=True)
+                with open(path, 'w', encoding='utf-8') as f:
+                    json.dump(store, f, ensure_ascii=False)
+            except Exception:
+                pass
+            df = pd.DataFrame(rows)
+            _standings_cache[cache_key] = (now, df)
+            return df
+    except Exception as e:
+        print(f"[standings] live fetch failed for {league}: {e}")
+
+    # Fallbacks so predictions never break: stale season file, then legacy static file
+    for fallback in (path, os.path.join(os.path.dirname(__file__), '..', 'cache', 'standings_cache.json')):
+        if os.path.exists(fallback):
+            try:
+                with open(fallback, 'r', encoding='utf-8') as f:
+                    store = json.load(f)
+                if league in store and store[league]:
+                    df = pd.DataFrame(store[league])
+                    _standings_cache[cache_key] = (now, df)
+                    return df
+            except Exception:
+                pass
+    return pd.DataFrame()
 
 
 def invalidate_standings_cache(league=None):
