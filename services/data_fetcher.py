@@ -3,6 +3,7 @@ import pandas as pd
 import os
 import time
 from dotenv import load_dotenv
+from services.season import SEASON
 
 load_dotenv()
 
@@ -39,22 +40,63 @@ def _get(endpoint, params=None):
     resp.raise_for_status()
     return resp.json()
 
-def fetch_teams(league):
+TEAMS_TTL = 7 * 24 * 3600  # re-fetch current-season teams at most weekly
+
+def _teams_cache_path(season=None):
+    season = season if season is not None else SEASON
+    return os.path.join(os.path.dirname(__file__), '..', 'cache', f'teams_cache_{season}.json')
+
+def fetch_teams(league, force_refresh=False):
+    """Current-season teams for a league -> [{id, name, crest}, ...].
+
+    Season-aware: the cache file is named per season (teams_cache_<SEASON>.json),
+    so when the season rolls over the old file is ignored and teams are re-fetched
+    automatically. A weekly TTL also picks up promoted/relegated changes. Falls back
+    to the season cache, then the legacy teams_cache.json, so a league never goes blank.
+    """
     import json
-    cache_path = os.path.join(os.path.dirname(__file__), '..', 'cache', 'teams_cache.json')
-    try:
-        with open(cache_path, 'r', encoding='utf-8') as f:
-            cached = json.load(f)
-        if league in cached:
-            return cached[league]
-    except Exception:
-        pass
     code = LEAGUE_CODES.get(league, "PL")
-    data = _get(f"competitions/{code}/teams")
-    return [
-        {"id": t["id"], "name": t["name"], "crest": t.get("crest", "")}
-        for t in data.get("teams", [])
-    ]
+    path = _teams_cache_path()
+
+    cache = {}
+    if os.path.exists(path):
+        try:
+            with open(path, 'r', encoding='utf-8') as f:
+                cache = json.load(f)
+        except Exception:
+            cache = {}
+
+    fresh = os.path.exists(path) and (time.time() - os.path.getmtime(path) < TEAMS_TTL)
+    if cache.get(league) and fresh and not force_refresh:
+        return cache[league]
+
+    # (re)fetch this league from the API
+    try:
+        data = _get(f"competitions/{code}/teams")
+        teams = [
+            {"id": t["id"], "name": t["name"], "crest": t.get("crest", "")}
+            for t in data.get("teams", [])
+        ]
+        if teams:
+            cache[league] = teams
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            with open(path, 'w', encoding='utf-8') as f:
+                json.dump(cache, f, ensure_ascii=False)
+            return teams
+    except Exception as e:
+        print(f"[teams] fetch failed for {league}: {e}")
+
+    # fallbacks so the dropdown never goes empty
+    if cache.get(league):
+        return cache[league]
+    legacy = os.path.join(os.path.dirname(__file__), '..', 'cache', 'teams_cache.json')
+    if os.path.exists(legacy):
+        try:
+            with open(legacy, 'r', encoding='utf-8') as f:
+                return json.load(f).get(league, [])
+        except Exception:
+            pass
+    return []
 
 
 def fetch_matches(league, status="FINISHED", limit=100, season=None):

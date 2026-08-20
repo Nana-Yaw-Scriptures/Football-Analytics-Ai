@@ -9,6 +9,8 @@ import time
 from dotenv import load_dotenv
 from services.season import SEASON
 from services.blog_preview import router as blog_router   # ← line 1 here, with imports
+from services.data_fetcher import fetch_teams
+
 load_dotenv()
 
 # ── API keys ──
@@ -387,9 +389,9 @@ def get_teams(league: str):
 
 @app.get("/teams/refresh/{league}")
 def refresh_teams_cache(league: str):
-    from services.data_fetcher import fetch_teams
-    _teams_cache[league] = fetch_teams(league)
-    return {"refreshed": league, "count": len(_teams_cache[league])}
+    teams = fetch_teams(league, force_refresh=True)
+    _teams_cache[league] = teams
+    return {"refreshed": league, "count": len(teams)}
 
 
 @app.get("/players/search")
@@ -421,6 +423,25 @@ def get_league_players_stats(league: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/players-stats/refresh")
+def refresh_players_stats(token: str = "", scrape: bool = False):
+    """Rebuild the merged player cache. If scrape=true, re-pull rosters first."""
+    expected = os.getenv("PLAYERS_REFRESH_TOKEN", "")
+    if not expected or token != expected:
+        raise HTTPException(status_code=403, detail="Invalid or missing token")
+    try:
+        result = {}
+        if scrape:
+            # Re-pull rosters from API-Football (overwrites players_*_<season>.json)
+            from services.api_football_scraper import scrape_all_leagues
+            players = scrape_all_leagues()
+            result["scraped_players"] = len(players)
+        # Rebuild the merged files the players page serves
+        from services.merged_player_service import rebuild_all
+        result["merged"] = rebuild_all(force=True)
+        return {"status": "ok", **result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/player/{player_id}/matches")
 def get_player_matches(player_id: int, season: int = SEASON):
