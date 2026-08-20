@@ -2,7 +2,7 @@
 """
 Scorina AI blog generator (v5) — curated football previews.
 
-Selects the week's marquee fixtures (big clubs, max 2 per league, 8 total),
+Selects the week's marquee fixtures (big clubs, max 3 per league, 12 total),
 then builds:
   - the hub (/blog/)                     API-Football-style: banner cards + sidebar + pagination
   - a page per league (/blog/league/..)  SEO landing per competition
@@ -23,8 +23,8 @@ SITE     = "https://www.scorinai.com"
 OUT      = "public/blog"
 SITEMAP  = "public/sitemap.xml"
 PER_PAGE = 6
-MAX_PER_LEAGUE = 2
-MAX_TOTAL = 8
+MAX_PER_LEAGUE = 3
+MAX_TOTAL = 12
 PAUSE = 0.4
 
 POLL_SUPABASE_URL  = "https://mfoigbwxpyjbcicnixbj.supabase.co"
