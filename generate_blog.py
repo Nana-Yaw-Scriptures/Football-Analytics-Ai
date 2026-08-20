@@ -64,15 +64,23 @@ def api_get(p):
     except Exception as e:
         print(f"  ! GET {p}: {e}"); return None
 
-def api_post(p, body):
-    try:
-        d = json.dumps(body).encode()
-        r = urllib.request.Request(f"{API_BASE}{p}", data=d,
-                                   headers={"Content-Type": "application/json", "Accept": "application/json"})
-        with urllib.request.urlopen(r, timeout=45) as x:
-            return json.loads(x.read().decode())
-    except Exception as e:
-        print(f"  ! POST {p}: {e}"); return None
+def api_post(p, body, timeout=120, retries=2):
+    d = json.dumps(body).encode()
+    for attempt in range(retries + 1):
+        try:
+            r = urllib.request.Request(f"{API_BASE}{p}", data=d,
+                                       headers={"Content-Type": "application/json", "Accept": "application/json"})
+            with urllib.request.urlopen(r, timeout=timeout) as x:
+                return json.loads(x.read().decode())
+        except urllib.error.HTTPError as e:
+            # A real HTTP error (e.g. 404) won't fix itself on retry — stop.
+            print(f"  ! POST {p}: {e}"); return None
+        except Exception as e:
+            if attempt < retries:
+                print(f"  . POST {p} slow ({e}); retry {attempt + 1}/{retries} ...")
+                time.sleep(3)
+                continue
+            print(f"  ! POST {p}: {e}"); return None
 
 WRITE_UPS = True  # call the Sonnet write-up endpoint for each match page
 
@@ -94,7 +102,7 @@ def get_preview(p, pred):
         "away_form_sequence": pred.get("away_form_sequence") or [],
         "key_factors": pred.get("key_factors") or [],
     }
-    data = api_post("/blog/preview", payload)
+    data = api_post("/blog/preview", payload, timeout=60, retries=1)
     text = (data or {}).get("preview", "").strip()
     if not text:
         return ""
