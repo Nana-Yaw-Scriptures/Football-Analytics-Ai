@@ -10,18 +10,22 @@ import json
 import os
 import time
 from difflib import SequenceMatcher
+from services.season import SEASON
 
 CACHE_DIR = "cache"
 
-# API-Football cache files
+# API-Football cache files — season-aware (roll over automatically each season)
+def _af_file(league_slug):
+    return f"players_{league_slug}_{SEASON}.json"
+
 API_FOOTBALL_FILES = {
-    "Premier League":  "players_premier_league_2025.json",
-    "La Liga":         "players_la_liga_2025.json",
-    "Bundesliga":      "players_bundesliga_2025.json",
-    "Serie A":         "players_serie_a_2025.json",
-    "Ligue 1":         "players_ligue_1_2025.json",
-    "Primeira Liga":   "players_primeira_liga_2025.json",
-    "Champions League":"players_champions_league_2025.json",
+    "Premier League":   _af_file("premier_league"),
+    "La Liga":          _af_file("la_liga"),
+    "Bundesliga":       _af_file("bundesliga"),
+    "Serie A":          _af_file("serie_a"),
+    "Ligue 1":          _af_file("ligue_1"),
+    "Primeira Liga":    _af_file("primeira_liga"),
+    "Champions League": _af_file("champions_league"),
 }
 
 UNDERSTAT_LEAGUES = {
@@ -178,11 +182,12 @@ def _load_understat(league=None):
 
 # ── main merge ──────────────────────────────────────────────────────
 
-def get_merged_players(league=None):
-    cache_key  = f"merged_{league or 'all'}"
+def get_merged_players(league=None, force_refresh=False):
+    # Season-aware cache name so rosters roll over automatically each season
+    cache_key  = f"merged_{league or 'all'}_{SEASON}"
     cache_path = os.path.join(CACHE_DIR, f"{cache_key}.json")
 
-    if os.path.exists(cache_path):
+    if os.path.exists(cache_path) and not force_refresh:
         age = time.time() - os.path.getmtime(cache_path)
         if age < 604800:  # 7 days — use committed cache files on Railway
             with open(cache_path, "r", encoding="utf-8") as f:
@@ -333,6 +338,15 @@ def get_merged_players(league=None):
         print(f"[MergedService] Cache write failed: {e}")
 
     return merged
+
+
+def rebuild_all(force=True):
+    """Rebuild the merged cache for every league + the combined 'all'. Returns counts."""
+    out = {}
+    for lg in list(API_FOOTBALL_FILES.keys()) + [None]:
+        players = get_merged_players(lg, force_refresh=force)
+        out[lg or "all"] = len(players)
+    return out
 
 
 # ── search ──────────────────────────────────────────────────────────
