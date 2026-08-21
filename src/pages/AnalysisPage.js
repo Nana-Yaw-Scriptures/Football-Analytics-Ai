@@ -3825,7 +3825,7 @@ const resp = await fetchWithTimeout(`${API_BASE}/team-fixtures?team=${encodeURIC
     </button>
     {mlData && (
       <button
-        onClick={()=>exportShareCard(mlData,h2hData)}
+        onClick={()=>exportShareCard(mlData,h2hData).catch(console.error)}
         className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border transition-all hover:border-pink-500/30 hover:text-pink-400"
         style={{background:'rgba(255,255,255,0.03)',borderColor:'rgba(255,255,255,0.08)',color:'#64748b'}}>
         📲 Card

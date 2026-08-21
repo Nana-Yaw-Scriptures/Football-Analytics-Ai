@@ -1467,6 +1467,13 @@ function AnalysisPage({ onNavigate, navParams = {} }) {
   const [showExplain, setShowExplain] = useState(false);
   const [activeScenario, setActiveScenario] = useState('neutral');
   const [scorersData, setScorersData] = useState(null);
+  const [previews, setPreviews] = useState({});
+  useEffect(() => {
+    fetch('/blog/blog_slugs.json')
+      .then(r => r.json())
+      .then(d => setPreviews(d.matches || {}))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => { checkBackend().then(setBackendOnline); }, []);
   useEffect(() => {
@@ -3826,7 +3833,8 @@ const resp = await fetchWithTimeout(`${API_BASE}/team-fixtures?team=${encodeURIC
     </button>
     {mlData && (
       <button
-        onClick={()=>exportShareCard(mlData,h2hData)}
+        
+      onClick={()=>exportShareCard(mlData,h2hData).catch(console.error)}
         className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border transition-all hover:border-pink-500/30 hover:text-pink-400"
         style={{background:'rgba(255,255,255,0.03)',borderColor:'rgba(255,255,255,0.08)',color:'#64748b'}}>
         📲 Card
@@ -3886,9 +3894,22 @@ const resp = await fetchWithTimeout(`${API_BASE}/team-fixtures?team=${encodeURIC
                   </div>
                 ))}
               </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-3 h-0.5 rounded-full" style={{background:'linear-gradient(90deg,#22d3ee,#a855f7)'}}/>
-                <span className="text-slate-400 text-base">Powered by Gemini · 2025/26 Season</span>
+           <div className="flex items-center gap-4">
+                {(() => {
+                  const h = (mlData?.home_team_name || '').toLowerCase();
+                  const a = (mlData?.away_team_name || '').toLowerCase();
+                  const url = previews[`${h} vs ${a}`] || previews[`${a} vs ${h}`];
+                  return url ? (
+                    <a href={url} target="_blank" rel="noopener noreferrer"
+                       className="inline-flex items-center gap-1.5 text-cyan-400 font-semibold text-base hover:text-cyan-300 transition-colors">
+                      Read the full preview →
+                    </a>
+                  ) : null;
+                })()}
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-0.5 rounded-full" style={{background:'linear-gradient(90deg,#22d3ee,#a855f7)'}}/>
+                  <span className="text-slate-400 text-base">Powered by Gemini · 2026/27 Season</span>
+                </div>
               </div>
             </div>
           </div>
