@@ -848,17 +848,30 @@ export function exportLeagueStandings(league, standings) {
 
 // Load an image with CORS enabled. Resolves to the image, or null on failure
 // (so a missing/blocked crest never breaks the card).
+// Crests come from football-data.org, which does NOT send CORS headers, so we
+// route them through our own backend proxy to make them same-origin.
+const API_BASE = (typeof process !== 'undefined' && process.env && process.env.REACT_APP_API_URL)
+  || 'https://football-analytics-ai-production.up.railway.app';
+ 
+function proxiedCrest(url) {
+  if (!url) return null;
+  // Already same-origin or a data URL — use as-is.
+  if (url.startsWith('data:') || url.startsWith('/')) return url;
+  return `${API_BASE}/crest?url=${encodeURIComponent(url)}`;
+}
+ 
 function loadCrest(url) {
   return new Promise((resolve) => {
-    if (!url) return resolve(null);
+    const src = proxiedCrest(url);
+    if (!src) return resolve(null);
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => resolve(img);
     img.onerror = () => resolve(null);
-    img.src = url;
+    img.src = src;
   });
 }
-
+ 
 // Draw a crest inside a white disc (so it reads on the dark card), centered at (cx, cy).
 function drawCrestDisc(ctx, img, cx, cy, r) {
   // white disc
@@ -871,7 +884,7 @@ function drawCrestDisc(ctx, img, cx, cy, r) {
   ctx.shadowOffsetY = 6;
   ctx.fill();
   ctx.restore();
-
+ 
   if (img) {
     // clip the logo into the disc, with a little padding
     ctx.save();
@@ -884,7 +897,7 @@ function drawCrestDisc(ctx, img, cx, cy, r) {
     ctx.restore();
   }
 }
-
+ 
 export async function exportShareCard(mlData, h2hData) {
   const home = mlData.home_team_name || 'Home';
   const away = mlData.away_team_name || 'Away';
@@ -897,7 +910,7 @@ export async function exportShareCard(mlData, h2hData) {
   const hXg     = (mlData.home_expected_goals || 0).toFixed(2);
   const aXg     = (mlData.away_expected_goals || 0).toFixed(2);
   const outcome = mlData.predicted_outcome || '';
-
+ 
   // Competition + date line (uses whatever fields you have; all optional)
   const league = mlData.league || mlData.competition || '';
   let dateStr = '';
@@ -909,19 +922,19 @@ export async function exportShareCard(mlData, h2hData) {
     }
   }
   const metaLine = [league, dateStr].filter(Boolean).join('  •  ');
-
+ 
   // Preload both crests before drawing (so toDataURL works).
   const [homeImg, awayImg] = await Promise.all([
-    loadCrest(mlData.home_team_logo || mlData.home_logo),
-    loadCrest(mlData.away_team_logo || mlData.away_logo),
+    loadCrest(mlData.home_team_logo || mlData.home_logo || mlData.homeLogo || mlData.home_crest || mlData.home_team_badge || (mlData.home_team && mlData.home_team.logo)),
+    loadCrest(mlData.away_team_logo || mlData.away_logo || mlData.awayLogo || mlData.away_crest || mlData.away_team_badge || (mlData.away_team && mlData.away_team.logo)),
   ]);
-
+ 
   const SIZE = 1080;
   const canvas = document.createElement('canvas');
   canvas.width  = SIZE;
   canvas.height = SIZE;
   const ctx = canvas.getContext('2d');
-
+ 
   // ── Background ──
   const bg = ctx.createLinearGradient(0, 0, SIZE, SIZE);
   bg.addColorStop(0, '#050810');
@@ -929,7 +942,7 @@ export async function exportShareCard(mlData, h2hData) {
   bg.addColorStop(1, '#060c1a');
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, SIZE, SIZE);
-
+ 
   // Grid lines (subtle)
   ctx.strokeStyle = 'rgba(34,211,238,0.04)';
   ctx.lineWidth = 1;
@@ -937,7 +950,7 @@ export async function exportShareCard(mlData, h2hData) {
     ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, SIZE); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(SIZE, i); ctx.stroke();
   }
-
+ 
   // Top accent bar
   const topBar = ctx.createLinearGradient(0, 0, SIZE, 0);
   topBar.addColorStop(0, '#22d3ee');
@@ -945,13 +958,13 @@ export async function exportShareCard(mlData, h2hData) {
   topBar.addColorStop(1, '#22d3ee');
   ctx.fillStyle = topBar;
   ctx.fillRect(0, 0, SIZE, 6);
-
+ 
   // ── Brand ──
   ctx.font = '800 48px Arial, sans-serif';
   ctx.fillStyle = '#ffffff';
   ctx.textAlign = 'left';
   ctx.fillText('Scorina', 60, 90);
-
+ 
   // AI badge
   const aiGrad = ctx.createLinearGradient(0, 60, 0, 100);
   aiGrad.addColorStop(0, '#22d3ee');
@@ -964,12 +977,12 @@ export async function exportShareCard(mlData, h2hData) {
   ctx.fillStyle = '#ffffff';
   ctx.textAlign = 'center';
   ctx.fillText('AI', aiX + 36, 83);
-
+ 
   ctx.font = '600 28px Arial, sans-serif';
   ctx.fillStyle = 'rgba(100,116,139,0.8)';
   ctx.textAlign = 'right';
   ctx.fillText('Match Prediction', SIZE - 60, 90);
-
+ 
   // ── Competition / date line (new) ──
   if (metaLine) {
     ctx.font = '600 24px Arial, sans-serif';
@@ -977,13 +990,13 @@ export async function exportShareCard(mlData, h2hData) {
     ctx.textAlign = 'center';
     ctx.fillText(metaLine.toUpperCase(), SIZE / 2, 140);
   }
-
+ 
   // ── Crests (new) ── drawn above the team names
   const crestY = 210;
   const crestR = 54;
   drawCrestDisc(ctx, homeImg, SIZE / 4, crestY, crestR);
   drawCrestDisc(ctx, awayImg, (SIZE / 4) * 3, crestY, crestR);
-
+ 
   // ── VS Header ── (shifted down to sit under the crests)
   const vsY = 330;
   const homeShort = home.replace(/ FC$| AFC$| United$/, '').split(' ').slice(0, 2).join(' ');
@@ -1000,13 +1013,13 @@ export async function exportShareCard(mlData, h2hData) {
   ctx.font = '900 52px Arial, sans-serif';
   ctx.fillStyle = '#a855f7';
   ctx.fillText(awayShort, (SIZE / 4) * 3, vsY);
-
+ 
   // Full names below
   ctx.font = '500 25px Arial, sans-serif';
   ctx.fillStyle = 'rgba(148,163,184,0.7)';
   ctx.fillText(home, SIZE / 4, vsY + 40);
   ctx.fillText(away, (SIZE / 4) * 3, vsY + 40);
-
+ 
   // Divider
   const divGrad = ctx.createLinearGradient(60, 0, SIZE - 60, 0);
   divGrad.addColorStop(0, 'transparent');
@@ -1016,7 +1029,7 @@ export async function exportShareCard(mlData, h2hData) {
   ctx.strokeStyle = divGrad;
   ctx.lineWidth = 1.5;
   ctx.beginPath(); ctx.moveTo(60, vsY + 70); ctx.lineTo(SIZE - 60, vsY + 70); ctx.stroke();
-
+ 
   // ── Predicted Score Box ──
   const boxY = 445;
   ctx.fillStyle = 'rgba(17,24,39,0.95)';
@@ -1026,16 +1039,16 @@ export async function exportShareCard(mlData, h2hData) {
   ctx.lineWidth = 2;
   roundRect(ctx, SIZE/2 - 160, boxY, 320, 110, 20);
   ctx.stroke();
-
+ 
   ctx.font = '700 22px Arial, sans-serif';
   ctx.fillStyle = 'rgba(100,116,139,0.8)';
   ctx.textAlign = 'center';
   ctx.fillText('PREDICTED SCORE', SIZE / 2, boxY + 32);
-
+ 
   ctx.font = '900 72px Arial, sans-serif';
   ctx.fillStyle = '#ffffff';
   ctx.fillText(predicted, SIZE / 2, boxY + 95);
-
+ 
   // Confidence badge
   const cColor = confLevel === 'High' ? '#10b981' : confLevel === 'Medium' ? '#f59e0b' : '#ef4444';
   ctx.fillStyle = cColor + '22';
@@ -1049,24 +1062,24 @@ export async function exportShareCard(mlData, h2hData) {
   ctx.fillStyle = cColor;
   ctx.textAlign = 'center';
   ctx.fillText(`${confLevel.toUpperCase()} CONFIDENCE • ${conf}%`, SIZE / 2, boxY + 147);
-
+ 
   // ── Win Probability Bar ──
-  const barY = 640;
+  const barY = 680;
   ctx.font = '600 24px Arial, sans-serif';
   ctx.fillStyle = 'rgba(100,116,139,0.7)';
   ctx.fillText('WIN PROBABILITIES', SIZE / 2, barY - 16);
-
+ 
   const barX = 60;
   const barW = SIZE - 120;
   const barH = 28;
   const hw = parseFloat(homeWin) / 100;
   const dw = parseFloat(draw) / 100;
   const aw = parseFloat(awayWin) / 100;
-
+ 
   ctx.fillStyle = 'rgba(255,255,255,0.05)';
   roundRect(ctx, barX, barY, barW, barH, 14);
   ctx.fill();
-
+ 
   if (hw > 0) {
     ctx.fillStyle = '#22d3ee';
     ctx.beginPath();
@@ -1083,7 +1096,7 @@ export async function exportShareCard(mlData, h2hData) {
     ctx.roundRect ? ctx.roundRect(barX + barW * (hw + dw), barY, barW * aw, barH, [0, 14, 14, 0]) : roundRectPartial(ctx, barX + barW * (hw + dw), barY, barW * aw, barH, 0, 14, 14, 0);
     ctx.fill();
   }
-
+ 
   const labelY = barY + barH + 30;
   ctx.font = '800 30px Arial, sans-serif';
   ctx.fillStyle = '#22d3ee';
@@ -1095,18 +1108,18 @@ export async function exportShareCard(mlData, h2hData) {
   ctx.fillStyle = '#a855f7';
   ctx.textAlign = 'right';
   ctx.fillText(`${awayShort} ${awayWin}%`, barX + barW, labelY);
-
+ 
   // ── xG Stats ──
-  const xgY = 790;
+  const xgY = 830;
   ctx.strokeStyle = 'rgba(255,255,255,0.06)';
   ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(60, xgY - 20); ctx.lineTo(SIZE - 60, xgY - 20); ctx.stroke();
-
+ 
   ctx.font = '600 22px Arial, sans-serif';
   ctx.fillStyle = 'rgba(100,116,139,0.7)';
   ctx.textAlign = 'center';
   ctx.fillText('EXPECTED GOALS (xG)', SIZE / 2, xgY + 10);
-
+ 
   ctx.font = '900 54px Arial, sans-serif';
   ctx.fillStyle = '#22d3ee';
   ctx.textAlign = 'center';
@@ -1117,10 +1130,10 @@ export async function exportShareCard(mlData, h2hData) {
   ctx.font = '900 54px Arial, sans-serif';
   ctx.fillStyle = '#a855f7';
   ctx.fillText(aXg, (SIZE / 4) * 3, xgY + 72);
-
+ 
   // ── Outcome label ──
   if (outcome) {
-    const outY = 900;
+    const outY = 935;
     ctx.fillStyle = 'rgba(17,24,39,0.8)';
     roundRect(ctx, 60, outY, SIZE - 120, 64, 14);
     ctx.fill();
@@ -1136,13 +1149,13 @@ export async function exportShareCard(mlData, h2hData) {
     ctx.fillStyle = '#f59e0b';
     ctx.fillText(outcome, SIZE / 2, outY + 52);
   }
-
+ 
   // ── Footer ──
   ctx.fillStyle = 'rgba(100,116,139,0.4)';
   ctx.font = '500 22px Arial, sans-serif';
   ctx.textAlign = 'center';
   ctx.fillText('scorinai.com  •  AI-Powered Football Analytics', SIZE / 2, SIZE - 36);
-
+ 
   // Bottom accent line
   const bottomBar = ctx.createLinearGradient(0, 0, SIZE, 0);
   bottomBar.addColorStop(0, '#a855f7');
@@ -1150,7 +1163,7 @@ export async function exportShareCard(mlData, h2hData) {
   bottomBar.addColorStop(1, '#a855f7');
   ctx.fillStyle = bottomBar;
   ctx.fillRect(0, SIZE - 6, SIZE, 6);
-
+ 
   // ── Download ── (guard against a tainted canvas if a crest lacked CORS headers)
   try {
     const link = document.createElement('a');
@@ -1163,7 +1176,7 @@ export async function exportShareCard(mlData, h2hData) {
     return exportShareCardNoCrest(mlData, h2hData);
   }
 }
-
+ 
 // Fallback path: identical card but skips crest loading entirely (never taints canvas).
 function exportShareCardNoCrest(mlData, h2hData) {
   const clone = Object.assign({}, mlData);
@@ -1172,6 +1185,7 @@ function exportShareCardNoCrest(mlData, h2hData) {
   // crests already failed; loadCrest will resolve null and the card renders text-only
   return exportShareCard(clone, h2hData);
 }
+ 
 // Helper: roundRect polyfill
 function roundRect(ctx, x, y, w, h, r) {
   ctx.beginPath();

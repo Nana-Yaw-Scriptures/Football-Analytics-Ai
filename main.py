@@ -10,6 +10,9 @@ from dotenv import load_dotenv
 from services.season import SEASON
 from services.blog_preview import router as blog_router   # ← line 1 here, with imports
 from services.data_fetcher import fetch_teams
+import httpx
+from fastapi import Response
+from urllib.parse import unquote
 
 load_dotenv()
 
@@ -272,8 +275,38 @@ class ValueEstimateResponse(BaseModel):
     value_range_high: float
     value_factors: list[str]
 
-
+_CREST_HOSTS = {
+    "crests.football-data.org",
+    "media.api-sports.io",
+}
+ 
 # ── Endpoints ──
+
+@app.get("/crest")
+async def crest_proxy(url: str):
+    """Fetch a remote club crest and serve it from our own origin (CORS-safe)."""
+    target = unquote(url)
+    # basic safety: only allow known crest hosts, only https
+    if not target.startswith("https://"):
+        raise HTTPException(status_code=400, detail="invalid url")
+    host = target.split("/")[2]
+    if host not in _CREST_HOSTS:
+        raise HTTPException(status_code=400, detail="host not allowed")
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            r = await client.get(target)
+            r.raise_for_status()
+    except Exception:
+        raise HTTPException(status_code=502, detail="could not fetch crest")
+    media = r.headers.get("content-type", "image/png")
+    return Response(
+        content=r.content,
+        media_type=media,
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Cache-Control": "public, max-age=86400",  # cache a day
+        },
+    )
 
 @app.get("/")
 def root():
