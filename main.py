@@ -1401,18 +1401,29 @@ async def analyze_with_gemini(request: dict):
 
     GEMINI_KEY    = os.getenv("GOOGLE_GEMINI_API_KEY", "")
     GEMINI_MODELS = [
-        "gemini-2.5-flash-lite",
-        "gemini-2.0-flash",
         "gemini-2.5-flash",
+        "gemini-2.0-flash",
+        "gemini-2.5-flash-lite",
     ]
 
     messages     = request.get("messages", [])
     user_message = "\n".join(m.get("content", "") for m in messages)
-
+ 
+    # Forward Google Search grounding if the caller asked for it (the frontend
+    # sends tools:[{type:"google_search"}]). Grounding lets Gemini check current
+    # facts — managers, recent results — instead of answering from stale memory.
+    wants_search = any(
+        (t.get("type") == "google_search") or ("google_search" in t)
+        for t in (request.get("tools") or [])
+    )
+ 
     request_body = {
         "contents":         [{"parts": [{"text": user_message}]}],
-        "generationConfig": {"maxOutputTokens": 2000, "temperature": 0.7},
+        "generationConfig": {"maxOutputTokens": 2000, "temperature": 0.4},
     }
+    if wants_search:
+        # Gemini 2.x grounding tool
+        request_body["tools"] = [{"google_search": {}}]
 
     text       = ""
     last_error = ""
