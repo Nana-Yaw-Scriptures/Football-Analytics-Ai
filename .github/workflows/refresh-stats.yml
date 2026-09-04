@@ -1,0 +1,68 @@
+name: Refresh player stats
+
+# Runs the full scrape -> rebuild -> commit so player stats + xG stay current
+# without any manual work.
+
+on:
+  schedule:
+    # Every Tuesday 06:00 UTC (after the weekend + Monday fixtures are processed).
+    # Cron is in UTC. Adjust the day/time if you prefer.
+    - cron: "0 6 * * 2"
+  # Also allow running it by hand from the Actions tab (button click), for testing
+  # or an ad-hoc refresh.
+  workflow_dispatch:
+
+# Let the workflow push commits back to the repo.
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          # Install from requirements if present, plus the scraper's own deps.
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          pip install understatapi requests pandas
+
+      - name: Scrape all leagues (API-Football)
+        env:
+          API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
+          FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
+        run: |
+          python -c "from services.api_football_scraper import scrape_all_leagues; scrape_all_leagues()"
+
+      - name: Rebuild merged player files (+ Understat xG)
+        env:
+          API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
+          FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
+        run: |
+          python -c "from services.merged_player_service import rebuild_all; rebuild_all()"
+
+      - name: Show what changed (per-league counts)
+        run: |
+          python -c "import json,glob; [print(f.split('merged_')[1].replace('_2026.json',''), '->', len(json.load(open(f,encoding='utf-8'))), 'players') for f in glob.glob('cache/merged_*_2026.json')]"
+
+      - name: Commit and push if anything changed
+        run: |
+          git config user.name  "scorina-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add cache/merged_*.json cache/players_*.json cache/standings_cache_*.json
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "Auto-refresh player stats + standings ($(date -u +%Y-%m-%d))"
+            git push
+          fi
