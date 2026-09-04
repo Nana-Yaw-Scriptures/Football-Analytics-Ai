@@ -101,8 +101,22 @@ const DualRadar = ({ p1, p2, size = 260 }) => {
     const d = anim ? r * Math.min(v, 1) : 0;
     return { x: cx + Math.cos(a) * d, y: cy + Math.sin(a) * d };
   };
-  const vals1 = dims.map(d => Math.min((parseFloat(p1?.[d.key]) || 0) / d.scale, 1));
-  const vals2 = dims.map(d => Math.min((parseFloat(p2?.[d.key]) || 0) / d.scale, 1));
+  // Normalize each axis relative to the two players (and a fraction of the
+  // season-scale), so the radar stays readable early season when raw totals are
+  // tiny. The stronger player on each axis reaches toward the edge; the other
+  // shows proportionally. Falls back to the season scale once values grow.
+  const axisNorm = (key, scale) => {
+    const a = parseFloat(p1?.[key]) || 0;
+    const b = parseFloat(p2?.[key]) || 0;
+    const peak = Math.max(a, b);
+    // denominator: whichever is smaller — the pair's own peak, or the season scale.
+    // early season peak is tiny so it drives the shape; later, scale caps it.
+    const denom = Math.max(Math.min(peak, scale), scale * 0.15, 0.0001);
+    return { v1: Math.min(a / denom, 1), v2: Math.min(b / denom, 1) };
+  };
+  const norm  = dims.map(d => axisNorm(d.key, d.scale));
+  const vals1 = norm.map(x => x.v1);
+  const vals2 = norm.map(x => x.v2);
   const path1 = vals1.map((v, i) => { const p = pt(i, v); return `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`; }).join(' ') + 'Z';
   const path2 = vals2.map((v, i) => { const p = pt(i, v); return `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`; }).join(' ') + 'Z';
   const grid  = f => dims.map((_, i) => { const a = (Math.PI*2*i)/n-Math.PI/2; return `${(cx+Math.cos(a)*r*f).toFixed(1)},${(cy+Math.sin(a)*r*f).toFixed(1)}`; }).join(' ');
@@ -168,11 +182,11 @@ const StatBar = ({ label, v1, v2, max, suffix = '', decimal = false, color1 = '#
   const bW    = (parseFloat(v2)||0) > (parseFloat(v1)||0);
   return (
     <div className="space-y-1.5">
-      <div className="flex items-center justify-between">
-        <span className={`text-sm font-black ${aW ? '' : 'text-slate-600'}`}
+      <div className="flex items-center justify-between gap-2">
+        <span className={`text-sm font-black flex-shrink-0 ${aW ? '' : 'text-slate-600'}`}
           style={{ fontFamily: 'JetBrains Mono', color: aW ? color1 : undefined }}>{fmt(v1)}{suffix}</span>
-        <span className="text-[11px] text-slate-500 uppercase tracking-widest">{label}</span>
-        <span className={`text-sm font-black ${bW ? '' : 'text-slate-600'}`}
+        <span className="text-[10px] text-slate-500 uppercase tracking-wider text-center leading-tight px-1 flex-1 min-w-0">{label}</span>
+        <span className={`text-sm font-black flex-shrink-0 ${bW ? '' : 'text-slate-600'}`}
           style={{ fontFamily: 'JetBrains Mono', color: bW ? color2 : undefined }}>{fmt(v2)}{suffix}</span>
       </div>
       <div className="flex gap-1 h-2">
