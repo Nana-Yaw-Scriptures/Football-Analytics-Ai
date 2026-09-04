@@ -1524,6 +1524,16 @@ const PROFILE_METRICS = {
     { key: 'goalsPerNinety', label: 'Goals/90', scale: 1.0 },
     { key: 'yellowCards', label: 'Discipline', scale: 12, invert: true },
   ],
+  goalkeeper: [
+    { key: 'rating', label: 'Rating', scale: 10 },
+    { key: 'saves', label: 'Saves', scale: 120 },
+    { key: 'passAccuracy', label: 'Pass Accuracy', scale: 95 },
+    { key: 'appearances', label: 'Availability', scale: 38 },
+    { key: 'minsPerGame', label: 'Mins/Game', scale: 90 },
+    { key: 'penaltiesSaved', label: 'Pens Saved', scale: 5 },
+    { key: 'goalsConceded', label: 'Goals Against', scale: 40, invert: true },
+    { key: 'yellowCards', label: 'Discipline', scale: 12, invert: true },
+  ],
 };
 
 const PROFILE_LABELS = {
@@ -1575,11 +1585,11 @@ function H2HRow({ label, values, colors, format = v => v, higherIsBetter = true,
       {!isDraw && <div className="absolute left-0 top-2 bottom-2 w-0.5 rounded-full" style={{ backgroundColor: colors[winIdx], opacity: 0.5 }} />}
       <div className="flex items-center gap-3">
         <PlayerSide idx={0} align="right" />
-        <div className="w-24 flex-shrink-0 text-center">
-          <span className="text-base font-bold uppercase tracking-widest" style={{ color: isDraw ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.3)' }}>
+        <div className="w-28 flex-shrink-0 text-center px-1">
+          <span className="text-[11px] font-bold uppercase tracking-wide leading-tight block" style={{ color: isDraw ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.35)' }}>
             {label}
           </span>
-          {isDraw && <div className="text-base text-slate-300 font-bold">EQUAL</div>}
+          {isDraw && <div className="text-[11px] text-slate-300 font-bold mt-0.5">EQUAL</div>}
         </div>
         <PlayerSide idx={1} align="left" />
         {values.length > 2 && <PlayerSide idx={2} align="left" />}
@@ -2502,10 +2512,19 @@ function AnalyticsPage({ onNavigate }) {
     const metrics = PROFILE_METRICS[getActiveProfile()] || PROFILE_METRICS.general;
     return metrics.map(m => {
       const row = { metric: m.label };
+      // Raw values for this axis across all compared players (null -> 0).
+      const raws = selectedPlayers.map(p => {
+        let v = Number(p[m.key]) || 0;
+        if (m.invert) v = m.scale - v;
+        return Math.max(0, v);
+      });
+      // Normalize against the peak of the compared players, floored at a fraction
+      // of the season scale — so early-season (tiny) values still fill the chart,
+      // while late-season values cap at the season scale.
+      const peak  = Math.max(...raws);
+      const denom = Math.max(Math.min(peak, m.scale), m.scale * 0.15, 0.0001);
       selectedPlayers.forEach((p, i) => {
-        let val = p[m.key] || 0;
-        if (m.invert) val = m.scale - val;
-        row[`player${i + 1}`] = Math.min(100, Math.max(0, Math.round((val / m.scale) * 100)));
+        row[`player${i + 1}`] = Math.min(100, Math.max(0, Math.round((raws[i] / denom) * 100)));
       });
       return row;
     });
