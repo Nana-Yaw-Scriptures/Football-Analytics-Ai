@@ -7,6 +7,15 @@ import NavBar from '../components/NavBar';
 
 const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:8000";
 
+// Current season label, auto-derived (Aug–Dec = new season start, Jan–Jul = same).
+// Matches the backend: season start-year is the current year if month >= August, else year-1.
+const SEASON_LABEL = (() => {
+  const now = new Date();
+  const startYear = now.getMonth() >= 7 ? now.getFullYear() : now.getFullYear() - 1;
+  const endYY = String((startYear + 1) % 100).padStart(2, '0');
+  return `${startYear}\u2013${endYY}`; // e.g. 2026–27
+})();
+
 /* ══════════════════════════════════════════
    ICONS
 ══════════════════════════════════════════ */
@@ -880,7 +889,7 @@ const hasFilters = league !== 'All' || position !== 'All' || minMins > 0 || stat
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-3">
             <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"/>
-            <span className="text-cyan-400 text-xs font-bold uppercase tracking-[0.2em]">2025–26 Season</span>
+            <span className="text-cyan-400 text-xs font-bold uppercase tracking-[0.2em]">{SEASON_LABEL} Season</span>
           </div>
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
@@ -1335,7 +1344,7 @@ const hasFilters = league !== 'All' || position !== 'All' || minMins > 0 || stat
           <div className="rounded-2xl border border-white/[0.07] overflow-hidden" style={{background:'rgba(8,12,22,0.9)'}}>
             {/* Header */}
             <div className="hidden md:grid items-center px-5 py-4 border-b border-white/[0.06]"
-              style={{gridTemplateColumns:'48px 1fr 160px 80px 68px 68px 68px 68px 72px 80px',background:'rgba(255,255,255,0.02)'}}>
+              style={{gridTemplateColumns:'48px 1fr 160px 80px 68px 68px 68px 68px 72px 80px 40px',background:'rgba(255,255,255,0.02)'}}>
               <div className="text-[11px] font-bold text-slate-600 text-center">#</div>
               <button onClick={()=>sort('name')} className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-slate-600 hover:text-white transition-colors">
                 Player {sortCol==='name'&&(sortDir==='desc'?<ArrowDnIcon className="w-3 h-3"/>:<ArrowUpIcon className="w-3 h-3"/>)}
