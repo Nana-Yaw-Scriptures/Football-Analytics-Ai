@@ -39,6 +39,18 @@ jobs:
           FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
         run: python -c "from services.merged_player_service import rebuild_all; rebuild_all()"
 
+      - name: Refresh standings
+        env:
+          API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
+          FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
+        run: python -c "from services.data_fetcher import fetch_standings; [fetch_standings(lg, force_refresh=True) for lg in ['Premier League','La Liga','Bundesliga','Serie A','Ligue 1','Primeira Liga']]"
+
+      - name: Pre-compute season simulations
+        env:
+          API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
+          FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
+        run: python -c "from services.season_simulator_service import simulate_season; [simulate_season(lg) for lg in ['Premier League','La Liga','Bundesliga','Serie A','Ligue 1','Primeira Liga']]"
+
       - name: Show per-league counts
         run: python -c "import json,glob; [print(f.split('merged_')[1].replace('_2026.json',''), '->', len(json.load(open(f,encoding='utf-8'))), 'players') for f in glob.glob('cache/merged_*_2026.json')]"
 
@@ -46,10 +58,10 @@ jobs:
         run: |
           git config user.name  "scorina-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add cache/merged_*.json cache/players_*.json cache/standings_cache_*.json
+          git add cache/merged_*.json cache/players_*.json cache/standings_cache_*.json cache/simulation_*.json cache/remaining_fixtures_*.json
           if git diff --staged --quiet; then
             echo "No changes to commit."
           else
-            git commit -m "Auto-refresh player stats ($(date -u +%Y-%m-%d))"
+            git commit -m "Auto-refresh players, standings, simulations ($(date -u +%Y-%m-%d))"
             git push
           fi
