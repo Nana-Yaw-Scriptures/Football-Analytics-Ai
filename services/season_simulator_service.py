@@ -396,7 +396,7 @@ def _run_once(standings, remaining, config):
 
 def simulate_season(league):
     cache_name = f"simulation_{league.replace(' ', '_').lower()}"
-    cached = _read_cache(cache_name, max_age=1800)
+    cached = _read_cache(cache_name, max_age=604800)  # 1 week — served from bot's weekly pre-compute
     if cached is not None:
         return cached
 
