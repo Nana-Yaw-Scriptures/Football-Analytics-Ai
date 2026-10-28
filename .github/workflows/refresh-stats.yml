@@ -63,5 +63,6 @@ jobs:
             echo "No changes to commit."
           else
             git commit -m "Auto-refresh players, standings, simulations ($(date -u +%Y-%m-%d))"
+            git pull --rebase --autostash origin main || true
             git push
           fi
