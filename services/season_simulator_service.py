@@ -123,6 +123,31 @@ TEAM_ALIASES = {
     'aj auxerre': 'auxerre', 'angers sco': 'angers',
     'as saint-etienne': 'saint-etienne', 'saint-etienne': 'saint-etienne',
     'fc lorient': 'lorient', 'fc metz': 'metz',
+         'as saint-etienne': 'saint-etienne', 'saint-etienne': 'saint-etienne',
+    'fc lorient': 'lorient', 'fc metz': 'metz',
+
+    # La Liga — Deportivo (promoted)
+    'deportivo la coruna': 'deportivo la coruna',
+    'rc deportivo la coruna': 'deportivo la coruna',
+    'deportivo': 'deportivo la coruna',
+
+    # Primeira Liga
+    'sporting cp': 'sporting clube de portugal',
+    'sporting': 'sporting clube de portugal',
+    'benfica': 'benfica',
+    'sl benfica': 'benfica',
+    'braga': 'braga',
+    'sc braga': 'braga',
+    'sporting braga': 'braga',
+    'porto': 'porto',
+    'fc porto': 'porto',
+    'vitoria sc': 'vitoria',
+    'vitoria guimaraes': 'vitoria',
+    'estrela da amadora': 'estrela',
+    'estoril': 'estoril praia',
+    'famalicao': 'famalicao',
+    'maritimo': 'maritimo',
+    'academico de viseu': 'academico',
 }
 
 def find_team(name, table):
