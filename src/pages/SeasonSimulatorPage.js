@@ -51,7 +51,7 @@ function SeasonSimulatorPage({ onNavigate }) {
     setLoading(true); setError(''); setSimulation(null); setExpandedRow(null);
     try {
       const url = `${API_BASE}/simulate/${encodeURIComponent(selectedLeague)}${fresh ? '?fresh=1' : ''}`;
-      const resp = await fetchWithTimeout(url);
+      const resp = await fetchWithTimeout(url, {}, 60000);
       if (!resp.ok) { const err = await resp.json(); throw new Error(err.detail || 'Simulation failed'); }
       setSimulation(await resp.json());
     } catch (e) { setError(e.message || 'Failed'); }
