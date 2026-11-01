@@ -68,6 +68,148 @@ const deriveXG = (events, team) => {
   return Math.max((goals * 0.8) + (missed * 0.75), 0).toFixed(2);
 };
 
+/* ============================================================
+   MatchVote — "Who will win?" community vote (Supabase-backed)
+   ============================================================ */
+function MatchVote({ fixtureId, homeTeam, awayTeam, homeLogo, awayLogo }) {
+  const [counts, setCounts]   = React.useState({ home: 0, draw: 0, away: 0 });
+  const [myVote, setMyVote]   = React.useState(null);
+  const [loading, setLoading] = React.useState(true);
+  const [saving, setSaving]   = React.useState(false);
+
+  const deviceId = React.useMemo(() => {
+    try {
+      let id = localStorage.getItem('scorina_device_id');
+      if (!id) {
+        id = 'dev_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+        localStorage.setItem('scorina_device_id', id);
+      }
+      return id;
+    } catch { return 'dev_anon'; }
+  }, []);
+
+  const hName = (homeTeam || 'Home').replace(/ FC$| AFC$/, '');
+  const aName = (awayTeam || 'Away').replace(/ FC$| AFC$/, '');
+
+  React.useEffect(() => {
+    if (!fixtureId) return;
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      try {
+        const { supabase } = await import('../supabaseClient');
+        const { data, error } = await supabase
+          .from('match_votes')
+          .select('choice, device_id')
+          .eq('fixture_id', String(fixtureId));
+        if (error) throw error;
+        if (cancelled) return;
+        const c = { home: 0, draw: 0, away: 0 };
+        let mine = null;
+        (data || []).forEach(r => {
+          if (c[r.choice] !== undefined) c[r.choice] += 1;
+          if (r.device_id === deviceId) mine = r.choice;
+        });
+        setCounts(c);
+        setMyVote(mine);
+      } catch (e) {
+        /* non-fatal */
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [fixtureId, deviceId]);
+
+  const vote = async (choice) => {
+    if (saving || !fixtureId) return;
+    setSaving(true);
+    setCounts(prev => {
+      const next = { ...prev };
+      if (myVote && next[myVote] > 0) next[myVote] -= 1;
+      next[choice] += 1;
+      return next;
+    });
+    const prevVote = myVote;
+    setMyVote(choice);
+    try {
+      const { supabase } = await import('../supabaseClient');
+      const { error } = await supabase
+        .from('match_votes')
+        .upsert(
+          { fixture_id: String(fixtureId), choice, device_id: deviceId },
+          { onConflict: 'fixture_id,device_id' }
+        );
+      if (error) throw error;
+    } catch (e) {
+      setCounts(prev => {
+        const next = { ...prev };
+        if (next[choice] > 0) next[choice] -= 1;
+        if (prevVote) next[prevVote] += 1;
+        return next;
+      });
+      setMyVote(prevVote);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const total = counts.home + counts.draw + counts.away;
+  const pct = (n) => total > 0 ? Math.round((n / total) * 100) : 0;
+
+  const options = [
+    { key: 'home', label: hName,  logo: homeLogo, color: '#22d3ee', fill: 'rgba(34,211,238,0.22)' },
+    { key: 'draw', label: 'Draw', logo: null,     color: '#94a3b8', fill: 'rgba(148,163,184,0.18)' },
+    { key: 'away', label: aName,  logo: awayLogo, color: '#a855f7', fill: 'rgba(168,85,247,0.22)' },
+  ];
+
+  return (
+    <div className="rounded-2xl border border-white/[0.06] overflow-hidden mb-4" style={{ background: 'rgba(10,14,26,0.85)' }}>
+      <div className="px-5 py-3.5 border-b border-white/[0.06] flex items-center gap-2" style={{ background: 'rgba(168,85,247,0.04)' }}>
+        <UsersIcon className="w-4 h-4 text-purple-400" />
+        <span className="text-white font-black text-sm">Who will win?</span>
+        <span className="ml-auto text-[12px] text-slate-500">
+          {total > 0 ? `${total} vote${total === 1 ? '' : 's'}` : 'Be the first to vote'}
+        </span>
+      </div>
+      <div className="p-5 space-y-2.5">
+        {options.map(opt => {
+          const mine = myVote === opt.key;
+          const percent = pct(counts[opt.key]);
+          return (
+            <button
+              key={opt.key}
+              onClick={() => vote(opt.key)}
+              disabled={saving}
+              className="relative w-full rounded-xl border overflow-hidden text-left transition-all"
+              style={{ borderColor: mine ? opt.color : 'rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', minHeight: 46 }}
+            >
+              {myVote && (
+                <div className="absolute inset-y-0 left-0 transition-all duration-500" style={{ width: `${percent}%`, background: opt.fill }} />
+              )}
+              <div className="relative flex items-center gap-2.5 px-3 py-2.5">
+                {opt.logo
+                  ? <img src={opt.logo} alt="" className="w-5 h-5 object-contain" />
+                  : <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ background: 'rgba(148,163,184,0.15)' }}><span className="text-[9px] font-black text-slate-400">X</span></div>}
+                <span className="text-sm font-bold" style={{ color: mine ? opt.color : '#e2e8f0' }}>{opt.label}</span>
+                {mine && (
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke={opt.color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                )}
+                {myVote && (
+                  <span className="ml-auto text-sm font-black tabular-nums" style={{ color: mine ? opt.color : '#94a3b8' }}>{percent}%</span>
+                )}
+              </div>
+            </button>
+          );
+        })}
+        {!myVote && !loading && (
+          <p className="text-[11px] text-slate-600 text-center pt-1">Tap your pick to see what everyone thinks</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function MatchCenterPage({ fixtureId, onNavigate }) {
   const [match,          setMatch]          = useState(null);
   const [loading,        setLoading]        = useState(true);
@@ -547,7 +689,19 @@ function MatchCenterPage({ fixtureId, onNavigate }) {
               </div>
             </div>
 
+             {/* ══ WHO WILL WIN VOTE ══ */}
+            <div className="mb-4">
+              <MatchVote
+                fixtureId={fixtureId}
+                homeTeam={match.homeTeam}
+                awayTeam={match.awayTeam}
+                homeLogo={match.homeLogo}
+                awayLogo={match.awayLogo}
+              />
+            </div>
+
             {/* ══ LIVE xG TRACKER ══ */}
+
             <div className="rounded-2xl border border-white/[0.06] overflow-hidden mb-4" style={{background:'rgba(10,14,26,0.8)'}}>
               <div className="px-5 py-3.5 border-b border-white/[0.06] flex items-center justify-between" style={{background:'rgba(245,158,11,0.04)'}}>
                 <div className="flex items-center gap-2"><TargetIcon className="w-4 h-4 text-amber-400"/><span className="text-white font-black text-sm">Live xG Tracker</span></div>
@@ -1240,97 +1394,7 @@ function MatchCenterPage({ fixtureId, onNavigate }) {
                     );
                   })()}
 
-                  {/* ══ ATTACK ZONES MAP ══ */}
-                  {events.length > 0 && (() => {
-                    // Classify each event into a zone: 3 cols × 2 halves = 6 zones
-                    // Zone columns: Left (x<33), Centre (33-66), Right (x>66)
-                    // Zone rows: Home attacking half, Away attacking half
-                    // Approximate from event type + team + time
-                    const homeZones = { tl:0, tc:0, tr:0, bl:0, bc:0, br:0 };
-                    const awayZones = { tl:0, tc:0, tr:0, bl:0, bc:0, br:0 };
-                    // Use ALL events — goals weighted higher, cards/subs lighter
-                    events.forEach((e, ei) => {
-                      const t = parseInt(e.time) || 0;
-                      const isHome = e.team === match.homeTeam;
-                      const zones = isHome ? homeZones : awayZones;
-                      // Weight by event type
-                      const weight = e.type==='Goal' ? 3 : e.type==='Card' ? 1 : e.type==='subst' ? 1 : 2;
-                      // Column: spread events across left/centre/right using event index + time
-                      // Goals/shots → centre-weighted, others spread wider
-                      let col;
-                      if (e.type === 'Goal') {
-                        // Goals can come from any zone — use time-based spread
-                        col = t % 3;
-                      } else {
-                        // Use event index for natural distribution
-                        col = (ei + Math.floor(t / 20)) % 3;
-                      }
-                      // Home team attacks into away half (top of grid = tl/tc/tr)
-                      // Away team attacks into home half (bottom of grid = bl/bc/br)
-                      if (isHome) {
-                        if (col === 0) zones.tl += weight;
-                        else if (col === 1) zones.tc += weight;
-                        else zones.tr += weight;
-                      } else {
-                        if (col === 0) zones.bl += weight;
-                        else if (col === 1) zones.bc += weight;
-                        else zones.br += weight;
-                      }
-                    });
-                    // Fallback: if still all zero (no events at all), show equal base
-                    const totalH = Object.values(homeZones).reduce((a,b)=>a+b,0);
-                    const totalA = Object.values(awayZones).reduce((a,b)=>a+b,0);
-                    if (totalH === 0) { homeZones.tl=1; homeZones.tc=1; homeZones.tr=1; }
-                    if (totalA === 0) { awayZones.bl=1; awayZones.bc=1; awayZones.br=1; }
-                    const hMax = Math.max(...Object.values(homeZones), 1);
-                    const aMax = Math.max(...Object.values(awayZones), 1);
-                    const cell = (val, max, color, label) => {
-                      const pct = val / max;
-                      return (
-                        <div className="relative flex items-center justify-center rounded-lg border border-white/[0.05]"
-                          style={{
-                            background: `rgba(${color === 'cyan' ? '34,211,238' : '168,85,247'},${Math.max(0.05, pct * 0.45)})`,
-                            aspectRatio: '1.2',
-                            minHeight: 36,
-                          }}>
-                          {val > 0 && <span className="text-[11px] font-black" style={{color: color==='cyan'?'#22d3ee':'#a855f7', fontFamily:'JetBrains Mono'}}>{val}</span>}
-                        </div>
-                      );
-                    };
-                    return (
-                      <div className="rounded-2xl border border-white/[0.06] overflow-hidden" style={{background:'rgba(10,14,26,0.85)'}}>
-                        <div className="px-4 py-3 border-b border-white/[0.06] flex items-center gap-2" style={{background:'rgba(168,85,247,0.03)'}}>
-                          <BarChartIcon className="w-4 h-4 text-purple-400"/>
-                          <span className="text-white font-black text-sm">Attack Zones</span>
-                          <span className="ml-auto text-[10px] text-slate-600">Event density by pitch zone</span>
-                        </div>
-                        <div className="p-4">
-                          <div className="grid grid-cols-3 gap-1.5 mb-1">
-                            {/* Away attacking zones (top) */}
-                            {cell(awayZones.tl, aMax, 'purple', 'TL')}
-                            {cell(awayZones.tc, aMax, 'purple', 'TC')}
-                            {cell(awayZones.tr, aMax, 'purple', 'TR')}
-                          </div>
-                          {/* Halfway divider */}
-                          <div className="flex items-center gap-2 my-1.5">
-                            <div className="flex-1 h-px" style={{background:'rgba(255,255,255,0.08)'}}/>
-                            <span className="text-[9px] text-slate-700 uppercase tracking-widest">Halfway</span>
-                            <div className="flex-1 h-px" style={{background:'rgba(255,255,255,0.08)'}}/>
-                          </div>
-                          <div className="grid grid-cols-3 gap-1.5 mt-1">
-                            {/* Home attacking zones (bottom) */}
-                            {cell(homeZones.bl, hMax, 'cyan', 'BL')}
-                            {cell(homeZones.bc, hMax, 'cyan', 'BC')}
-                            {cell(homeZones.br, hMax, 'cyan', 'BR')}
-                          </div>
-                          <div className="flex items-center justify-between mt-3 text-[10px] text-slate-600">
-                            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-sm" style={{background:'rgba(34,211,238,0.4)'}}/>{(match.homeTeam||'').replace(/ FC$/,'').split(' ')[0]}</div>
-                            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-sm" style={{background:'rgba(168,85,247,0.4)'}}/>{(match.awayTeam||'').replace(/ FC$/,'').split(' ')[0]}</div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })()}
+                
 
                   {/* ══ LIVE STATS ROW ══ */}
                   <div className="grid grid-cols-4 gap-2">
