@@ -24,8 +24,11 @@ def _read_cache(name, max_age=600):
     path = os.path.join(CACHE_DIR, f"{name}.json")
     if os.path.exists(path):
         if time.time() - os.path.getmtime(path) < max_age:
-            with open(path, "r", encoding="utf-8") as f:
-                return json.load(f)
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except (json.JSONDecodeError, ValueError):
+                return None
     return None
 
 def _write_cache(name, data):
