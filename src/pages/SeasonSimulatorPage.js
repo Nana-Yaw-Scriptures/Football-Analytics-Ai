@@ -195,8 +195,8 @@ function SeasonSimulatorPage({ onNavigate }) {
             {/* Summary Stats — 2 cols mobile → 4 cols md */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 mb-5 sm:mb-6">
               {[
-                { label: 'Matches Simulated', value: simulation.totalSimulated, icon: CalendarIcon, color: '#a855f7', gradient: 'from-purple-500/10 to-purple-600/5' },
-                { label: 'Remaining Fixtures', value: simulation.totalRemaining, icon: LayersIcon, color: '#22d3ee', gradient: 'from-cyan-500/10 to-cyan-600/5' },
+                { label: 'Matches Simulated', value: simulation.totalSimulated?.toLocaleString() || 0, icon: CalendarIcon, color: '#a855f7', gradient: 'from-purple-500/10 to-purple-600/5' },
+                { label: 'Remaining Fixtures', value: simulation.totalRemaining?.toLocaleString() || 0, icon: LayersIcon, color: '#22d3ee', gradient: 'from-cyan-500/10 to-cyan-600/5' },
                 { label: 'Title Race Gap', value: simulation.predictedTable?.length >= 2 ? `${(simulation.predictedTable[0].medianPoints||simulation.predictedTable[0].points||0) - (simulation.predictedTable[1].medianPoints||simulation.predictedTable[1].points||0)} pts` : '-', icon: ZapIcon, color: '#f59e0b', gradient: 'from-yellow-500/10 to-amber-600/5' },
                 { label: 'Champion pts', value: simulation.predictedTable?.[0]?.medianPoints || simulation.predictedTable?.[0]?.points || 0, icon: AwardIcon, color: '#10b981', gradient: 'from-emerald-500/10 to-emerald-600/5' },
               ].map((s, i) => (
@@ -213,7 +213,7 @@ function SeasonSimulatorPage({ onNavigate }) {
             <div className="flex gap-1 sm:gap-1.5 mb-4 sm:mb-5 bg-[#111827]/40 rounded-xl p-1 border border-white/5 overflow-x-auto">
               {[
                 { id: 'table', label: 'Standings', shortLabel: 'Table', icon: BarChartIcon },
-                { id: 'matches', label: `Matches (${simulation.totalSimulated})`, shortLabel: `Matches`, icon: CalendarIcon },
+                { id: 'matches', label: `Matches (${simulation.totalSimulated?.toLocaleString() || 0})`, shortLabel: `Matches`, icon: CalendarIcon },
                 { id: 'insights', label: 'Insights', shortLabel: 'Insights', icon: ZapIcon },
               ].map(tab => (
                 <button key={tab.id} onClick={() => setActiveTab(tab.id)}
