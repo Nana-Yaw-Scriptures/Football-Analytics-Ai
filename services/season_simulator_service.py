@@ -578,7 +578,7 @@ def simulate_season(league, force=False):
         "currentStandings": standings,
         "predictedTable": sorted(predicted_table, key=lambda x: x["predictedPosition"]),
         "simulatedMatches": simulated_sample,
-        "totalRemaining": len(remaining), "totalSimulated": len(simulated_sample),
+        "totalRemaining": len(remaining), "totalSimulated": len(remaining) * N_RUNS,
         "skippedMatches": skipped[:10],
         "simulatedAt": datetime.now(timezone.utc).isoformat(),
     }
