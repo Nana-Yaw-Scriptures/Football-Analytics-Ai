@@ -520,8 +520,8 @@ def simulate_season(league, force=False):
             "currentGA":         src.get("goalsAgainst", 0),
             "currentGD":         src.get("goalDifference", 0),
             "predictedPosition": most_likely_pos,
-            "medianPoints":      pts_median,
-            "points":            pts_median,   # alias for frontend compat
+            "medianPoints":      total_w * 3 + total_d,
+            "points":            total_w * 3 + total_d,   # consistent with W/D/L shown
             "played":            total_p,
             "won":               total_w,
             "drawn":             total_d,
