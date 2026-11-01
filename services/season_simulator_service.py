@@ -419,11 +419,12 @@ def _run_once(standings, remaining, config):
     return table
 
 
-def simulate_season(league):
+def simulate_season(league, force=False):
     cache_name = f"simulation_{league.replace(' ', '_').lower()}"
-    cached = _read_cache(cache_name, max_age=604800)  # 1 week — served from bot's weekly pre-compute
-    if cached is not None:
-        return cached
+    if not force:
+        cached = _read_cache(cache_name, max_age=604800)
+        if cached is not None:
+            return cached
 
     config = LEAGUE_CONFIG.get(league)
     if not config:
@@ -432,6 +433,12 @@ def simulate_season(league):
     standings = get_current_standings(league)
     if not standings:
         return {"error": "Could not fetch standings"}
+    if all((t.get("played", 0) or 0) == 0 for t in standings):
+        print(f"[Simulator] {league}: standings not ready (0 games) - keeping existing cache")
+        existing = _read_cache(cache_name, max_age=999999999)
+        if existing is not None:
+            return existing
+        return {"error": "Standings not ready"}
 
     remaining = get_remaining_fixtures(league)
     n_teams = config["teams"]
