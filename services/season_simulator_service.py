@@ -496,17 +496,14 @@ def simulate_season(league, force=False):
         most_likely_pos = pos_dist.index(max(pos_dist)) + 1
         zc = zone_counts.get(name, {})
         src = next((s for s in standings if s["team"] == name), {})
-        # Estimate simulated W/D/L from median points gain
-        cur_pts  = src.get("points", 0)
-        cur_p    = max(src.get("played", 1), 1)
-        sim_pts  = pts_median - cur_pts
-        sim_w    = round(sim_pts / 3 * 0.7)
-        sim_d    = round((sim_pts - sim_w * 3) / 1) if sim_pts > sim_w * 3 else 0
-        sim_l    = max(0, len(remaining) // max(len(standings),1) - sim_w - sim_d)
-        total_p  = src.get("played", 0) + sim_w + sim_d + sim_l
-        total_w  = src.get("won",   0) + sim_w
-        total_d  = src.get("drawn", 0) + sim_d
-        total_l  = src.get("lost",  0) + sim_l
+        # Use the actual median-run table values (already correct), not estimates
+        total_p  = team["played"]
+        total_w  = team["won"]
+        total_d  = team["drawn"]
+        total_l  = team["lost"]
+        sim_w    = total_w - src.get("won",   0)
+        sim_d    = total_d - src.get("drawn", 0)
+        sim_l    = total_l - src.get("lost",  0)
 
         predicted_table.append({
             "team":              name,
