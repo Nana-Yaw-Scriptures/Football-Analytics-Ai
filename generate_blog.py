@@ -726,6 +726,17 @@ def main():
     if not isinstance(fixtures, list) or not fixtures:
         print("No upcoming fixtures. Nothing to generate."); return
 
+    # Keep only fixtures within the next 7 days (this week)
+    now = datetime.now(timezone.utc)
+    cutoff = now + timedelta(days=7)
+    def _within_week(fx):
+        d = dt(fx.get("date"))   # use your existing parse helper name
+        return d is not None and now <= d <= cutoff
+    fixtures = [fx for fx in fixtures if _within_week(fx)]
+    print(f"{len(fixtures)} fixtures within the next 7 days.")
+    if not fixtures:
+        print("No fixtures this week. Nothing to generate."); return
+
     featured = select_featured(fixtures)
     if not featured:
         print("No featured (big-club) fixtures this week."); return
