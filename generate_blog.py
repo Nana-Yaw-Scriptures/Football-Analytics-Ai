@@ -358,6 +358,7 @@ FOOTER = ('<footer><div class="in"><a href="/blog/">Journal</a><a href="' + SITE
 
 def page(title, desc, canon, body, extra_head="", script="", active=""):
     return fill("""<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/>
+<link rel="icon" type="image/svg+xml" href="/scorina_ai_logo.svg"/><link rel="icon" type="image/png" href="/favicon.png"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/><title>__T__</title>
 <meta name="description" content="__D__"/><link rel="canonical" href="__C__"/><meta name="robots" content="index, follow"/>
 <meta property="og:title" content="__T__"/><meta property="og:description" content="__D__"/><meta property="og:url" content="__C__"/>
@@ -540,6 +541,36 @@ def scoreline_html(hxg, axg, home, away, maxg=3):
             cells += f'<div class="cell" style="background:rgba(45,212,238,{op});color:{col}">{i}-{j}</div>'
     return f'<div class="heat">{cells}</div>'
 
+def most_likely_consistent_score(hxg, axg, hw, dr, aw, maxg=6):
+    """Most likely exact scoreline that agrees with the favoured outcome.
+    Uses the same Poisson grid as the heatmap but restricts to scores matching
+    whichever of home-win / draw / away-win the model rates highest, so the
+    headline score never shows a draw when one side is clearly favoured."""
+    try:
+        h, a = float(hxg), float(axg)
+    except (TypeError, ValueError):
+        return None
+    try:
+        hwn, drn, awn = float(hw), float(dr), float(aw)
+    except (TypeError, ValueError):
+        return None
+    if hwn >= awn and hwn >= drn:
+        want = "home"
+    elif awn >= drn:
+        want = "away"
+    else:
+        want = "draw"
+    best, best_p = None, -1.0
+    for i in range(maxg + 1):
+        for j in range(maxg + 1):
+            if want == "home" and not (i > j):  continue
+            if want == "away" and not (j > i):  continue
+            if want == "draw" and not (i == j): continue
+            pv = _poisson(i, h) * _poisson(j, a)
+            if pv > best_p:
+                best_p, best = pv, f"{i}-{j}"
+    return best
+
 def key_factors_panel(p, pred):
     """Visual panel of the model's main signals, built from clean data fields."""
     hs = pred.get("home_form_sequence") or []
@@ -718,7 +749,10 @@ def main():
              "al": fx.get("awayLogo") or pred.get("away_crest") or "",
              "hw": pct(pred.get("home_win")), "dr": pct(pred.get("draw")), "aw": pct(pred.get("away_win")),
              "xgh": pred.get("home_expected_goals", ""), "xga": pred.get("away_expected_goals", ""),
-             "score": pred.get("most_likely_score") or pred.get("predicted_score") or "—",
+             "score": (most_likely_consistent_score(
+                    pred.get("home_expected_goals"), pred.get("away_expected_goals"),
+                    pct(pred.get("home_win")), pct(pred.get("draw")), pct(pred.get("away_win")))
+                    or pred.get("most_likely_score") or pred.get("predicted_score") or "—"),
              "conf": pred.get("confidence_level") or "Medium",
              "exc": f"Our model reads {home} vs {away} — win probabilities, expected goals and the most likely scoreline, plus the case for each result."}
         build_match(fx, pred, p)
